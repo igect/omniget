@@ -137,8 +137,8 @@ pub fn run_gallery_dl_download(
     #[cfg(target_os = "windows")]
     cmd.creation_flags(0x08000000);
     
+    // Basic arguments - NO --no-progress flag!
     cmd.arg("-d").arg(&output_dir);
-    cmd.arg("--no-progress");  // Changed from --progress
     
     match content_type.as_str() {
         "photos" => {
@@ -200,7 +200,6 @@ pub fn run_gallery_dl_download(
             files_count: Some(files_downloaded),
         })
     } else {
-        // ✅ Return ACTUAL error from gallery-dl
         let error_msg = if !stderr_output.is_empty() {
             stderr_output.trim().to_string()
         } else {
