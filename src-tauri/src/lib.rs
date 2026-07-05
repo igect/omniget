@@ -24,6 +24,7 @@ pub mod plugin_host;
 pub mod plugin_loader;
 pub mod storage;
 pub mod tray;
+pub mod openmint;
 
 pub struct AppState {
     pub active_downloads: Arc<tokio::sync::Mutex<HashMap<u64, CancellationToken>>>,
@@ -627,6 +628,12 @@ pub fn run() {
             commands::p2p::p2p_resume_send,
             commands::app_lifecycle::force_exit_app,
             commands::app_lifecycle::get_debug_info,
+            openmint::check_python_dependencies,
+            openmint::run_gallery_dl_download,
+            openmint::load_profiles,
+            openmint::save_profile,
+            openmint::delete_profile,
+            openmint::setup_openmint_folders,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")
