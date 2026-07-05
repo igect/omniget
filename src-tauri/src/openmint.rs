@@ -1,14 +1,20 @@
-use tauri::command;
-use std::process::Command;
+use tauri::{command, Emitter};
+use std::process::{Command, Stdio};
 use std::fs;
 use std::path::PathBuf;
+use std::io::{BufRead, BufReader};
 use serde::{Deserialize, Serialize};
+use chrono::Utc;
+
+#[cfg(target_os = "windows")]
+use std::os::windows::process::CommandExt;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Profile {
     pub url: String,
     pub username: Option<String>,
     pub platform: String,
+    pub added_at: i64,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -18,11 +24,32 @@ pub struct DownloadResult {
     pub files_count: Option<u32>,
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct DownloadProgress {
+    pub progress: u32,
+    pub message: String,
+    pub files_downloaded: u32,
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct DownloadStats {
     pub total_downloads: u32,
     pub total_files: u32,
     pub success_rate: f64,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct QueuedDownload {
+    pub id: String,
+    pub url: String,
+    pub platform: String,
+    pub content_type: String,
+    pub output_dir: String,
+    pub cookies_file: Option<String>,
+    pub status: String,
+    pub progress: u32,
+    pub files_downloaded: u32,
+    pub created_at: i64,
 }
 
 // Check Python dependencies
@@ -49,16 +76,71 @@ pub fn check_python_dependencies() -> Result<String, String> {
     Ok("All dependencies OK".to_string())
 }
 
-// Run gallery-dl download
+// Validate profile URL
 #[command]
-pub fn run_gallery_dl_download(
+pub fn validate_profile_url(url: String, platform: String) -> Result<String, String> {
+    // Basic URL validation
+    if url.is_empty() {
+        return Err("URL cannot be empty".to_string());
+    }
+
+    // Check if it's a valid URL or username
+    let is_url = url.starts_with("http://") || url.starts_with("https://");
+    
+    if !is_url {
+        // It's a username, validate format
+        if !url.chars().all(|c| c.is_alphanumeric() || c == '_' || c == '.') {
+            return Err("Username can only contain letters, numbers, underscores, and dots".to_string());
+        }
+        if url.len() < 3 || url.len() > 30 {
+            return Err("Username must be between 3 and 30 characters".to_string());
+        }
+        return Ok(format!("Valid username: {}", url));
+    }
+
+    // Validate URL format
+    let lower_url = url.to_lowercase();
+    let platform_lower = platform.to_lowercase();
+    
+    let valid_domains = match platform_lower.as_str() {
+        "instagram" => vec!["instagram.com"],
+        "tiktok" => vec!["tiktok.com"],
+        "facebook" => vec!["facebook.com", "fb.com"],
+        "x" => vec!["twitter.com", "x.com"],
+        _ => vec![],
+    };
+
+    if valid_domains.is_empty() {
+        return Err(format!("Unsupported platform: {}", platform));
+    }
+
+    for domain in valid_domains {
+        if lower_url.contains(domain) {
+            return Ok(format!("Valid {} URL", platform));
+        }
+    }
+
+    Err(format!("URL does not appear to be a valid {} profile", platform))
+}
+
+// Run gallery-dl download with real-time progress
+#[command]
+pub async fn run_gallery_dl_download(
+    app: tauri::AppHandle,
     url: String,
     output_dir: String,
     cookies_file: Option<String>,
     content_type: String,
+    download_id: String,
 ) -> Result<DownloadResult, String> {
     let mut cmd = Command::new("gallery-dl");
+    
+    // Hide console window on Windows
+    #[cfg(target_os = "windows")]
+    cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW flag
+    
     cmd.arg("-d").arg(&output_dir);
+    cmd.arg("--progress");
 
     match content_type.as_str() {
         "photos" => {
@@ -78,22 +160,69 @@ pub fn run_gallery_dl_download(
     cmd.arg("--sleep-request").arg("2");
     cmd.arg(&url);
 
-    let output = cmd.output()
-        .map_err(|e| format!("Failed to execute gallery-dl: {}", e))?;
+    // Set up pipes for stdout and stderr
+    cmd.stdout(Stdio::piped());
+    cmd.stderr(Stdio::piped());
 
-    let stdout = String::from_utf8_lossy(&output.stdout);
-    let stderr = String::from_utf8_lossy(&output.stderr);
+    let mut child = cmd.spawn()
+        .map_err(|e| format!("Failed to start gallery-dl: {}", e))?;
 
-    if output.status.success() {
-        let files_count = stdout.matches("[").count() as u32;
+    // Stream stdout
+    if let Some(stdout) = child.stdout.take() {
+        let reader = BufReader::new(stdout);
+        let app_clone = app.clone();
+        let download_id_clone = download_id.clone();
         
+        std::thread::spawn(move || {
+            for line in reader.lines() {
+                if let Ok(line) = line {
+                    let _ = app_clone.emit(&format!("download_{}", download_id_clone), DownloadProgress {
+                        progress: 0,
+                        message: line.clone(),
+                        files_downloaded: 0,
+                    });
+                }
+            }
+        });
+    }
+
+    // Stream stderr
+    if let Some(stderr) = child.stderr.take() {
+        let reader = BufReader::new(stderr);
+        let app_clone = app.clone();
+        let download_id_clone = download_id.clone();
+        
+        std::thread::spawn(move || {
+            for line in reader.lines() {
+                if let Ok(line) = line {
+                    // Parse progress from stderr
+                    let files_downloaded = if line.contains("[#") {
+                        line.matches("[#").count() as u32
+                    } else {
+                        0
+                    };
+
+                    let _ = app_clone.emit(&format!("download_{}", download_id_clone), DownloadProgress {
+                        progress: 0,
+                        message: line.clone(),
+                        files_downloaded,
+                    });
+                }
+            }
+        });
+    }
+
+    let status = child.wait()
+        .map_err(|e| format!("Download process failed: {}", e))?;
+
+    if status.success() {
         Ok(DownloadResult {
             success: true,
-            message: stdout.to_string(),
-            files_count: Some(files_count),
+            message: "Download completed successfully".to_string(),
+            files_count: Some(1),
         })
     } else {
-        Err(format!("Download failed: {}", stderr))
+        Err("Download failed".to_string())
     }
 }
 
@@ -128,9 +257,12 @@ pub fn load_profiles(platform: String) -> Result<Vec<Profile>, String> {
     Ok(platform_profiles)
 }
 
-// Save profile
+// Save profile with validation
 #[command]
 pub fn save_profile(platform: String, url: String) -> Result<String, String> {
+    // Validate URL first
+    let _ = validate_profile_url(url.clone(), platform.clone())?;
+
     let config_dir = dirs::data_local_dir()
         .ok_or("Could not find data directory")?
         .join("OpenMint");
@@ -140,6 +272,7 @@ pub fn save_profile(platform: String, url: String) -> Result<String, String> {
 
     let profiles_file = config_dir.join("profiles.json");
 
+    // Load existing profiles or create empty
     let mut all_profiles: serde_json::Value = if profiles_file.exists() {
         let content = fs::read_to_string(&profiles_file)
             .unwrap_or_else(|_| "{}".to_string());
@@ -148,10 +281,34 @@ pub fn save_profile(platform: String, url: String) -> Result<String, String> {
         serde_json::json!({})
     };
 
+    // Extract username from URL
+    let username = if url.starts_with("http") {
+        url.split('/').filter(|s| !s.is_empty()).last().map(|s| s.to_string())
+    } else {
+        Some(url.clone())
+    };
+
+    // Check for duplicates
+    if let Some(arr) = all_profiles
+        .as_object()
+        .and_then(|obj| obj.get(&platform))
+        .and_then(|v| v.as_array())
+    {
+        for profile in arr {
+            if let Some(existing_url) = profile.get("url").and_then(|v| v.as_str()) {
+                if existing_url == url || existing_url.contains(&username.clone().unwrap_or_default()) {
+                    return Err("Profile already exists".to_string());
+                }
+            }
+        }
+    }
+
+    // Add new profile
     let new_profile = serde_json::json!({
         "url": url,
+        "username": username,
         "platform": platform,
-        "added_at": chrono::Utc::now().timestamp()
+        "added_at": Utc::now().timestamp()
     });
 
     if let Some(arr) = all_profiles
@@ -166,6 +323,7 @@ pub fn save_profile(platform: String, url: String) -> Result<String, String> {
         }
     }
 
+    // Save back to file
     let content = serde_json::to_string_pretty(&all_profiles)
         .map_err(|e| format!("Failed to serialize: {}", e))?;
 
@@ -248,4 +406,46 @@ pub fn setup_openmint_folders(base_dir: String, cookies_dir: String) -> Result<S
     }
 
     Ok("Folder structure created successfully".to_string())
+}
+
+// Get download statistics
+#[command]
+pub fn get_download_stats() -> Result<DownloadStats, String> {
+    let stats_file = dirs::data_local_dir()
+        .ok_or("Could not find data directory")?
+        .join("OpenMint")
+        .join("download_stats.json");
+
+    if !stats_file.exists() {
+        return Ok(DownloadStats {
+            total_downloads: 0,
+            total_files: 0,
+            success_rate: 100.0,
+        });
+    }
+
+    let content = fs::read_to_string(&stats_file)
+        .map_err(|e| format!("Failed to read stats: {}", e))?;
+
+    let stats: DownloadStats = serde_json::from_str(&content)
+        .map_err(|e| format!("Failed to parse stats: {}", e))?;
+
+    Ok(stats)
+}
+
+// Save download statistics
+#[command]
+pub fn save_download_stats(stats: DownloadStats) -> Result<String, String> {
+    let stats_file = dirs::data_local_dir()
+        .ok_or("Could not find data directory")?
+        .join("OpenMint")
+        .join("download_stats.json");
+
+    let content = serde_json::to_string_pretty(&stats)
+        .map_err(|e| format!("Failed to serialize stats: {}", e))?;
+
+    fs::write(&stats_file, content)
+        .map_err(|e| format!("Failed to write stats: {}", e))?;
+
+    Ok("Stats saved".to_string())
 }
