@@ -123,9 +123,8 @@ pub fn validate_profile_url(url: String, platform: String) -> Result<String, Str
     Err(format!("URL does not appear to be a valid {} profile", platform))
 }
 
-// Run gallery-dl download with real-time progress
 #[command]
-pub async fn run_gallery_dl_download(
+pub fn run_gallery_dl_download(
     app: tauri::AppHandle,
     url: String,
     output_dir: String,
@@ -135,81 +134,60 @@ pub async fn run_gallery_dl_download(
 ) -> Result<DownloadResult, String> {
     let mut cmd = Command::new("gallery-dl");
     
-    // Hide console window on Windows
     #[cfg(target_os = "windows")]
-    cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW flag
+    cmd.creation_flags(0x08000000);
     
     cmd.arg("-d").arg(&output_dir);
-    cmd.arg("--progress");
-
+    cmd.arg("--no-progress");  // Changed from --progress
+    
     match content_type.as_str() {
         "photos" => {
-            cmd.arg("--filter").arg("extension in ('jpg','jpeg','png','gif','webp')");
+            cmd.arg("--filter").arg("extension in ('jpg', 'jpeg', 'png', 'gif', 'webp')");
         }
         "videos" => {
-            cmd.arg("--filter").arg("extension in ('mp4','webm','mkv','mov')");
+            cmd.arg("--filter").arg("extension in ('mp4', 'webm', 'mkv', 'mov', 'avi')");
         }
-        "all" => {}
         _ => {}
     }
 
     if let Some(cookies) = cookies_file {
-        cmd.arg("--cookies").arg(cookies);
+        if !cookies.is_empty() {
+            cmd.arg("--cookies").arg(&cookies);
+        }
     }
 
     cmd.arg("--sleep-request").arg("2");
     cmd.arg(&url);
 
-    // Set up pipes for stdout and stderr
-    cmd.stdout(Stdio::piped());
+    // Set stdout to null to prevent the process from hanging when the pipe fills up
+    cmd.stdout(Stdio::null());
     cmd.stderr(Stdio::piped());
 
     let mut child = cmd.spawn()
         .map_err(|e| format!("Failed to start gallery-dl: {}", e))?;
 
-    // Stream stdout
-    if let Some(stdout) = child.stdout.take() {
-        let reader = BufReader::new(stdout);
-        let app_clone = app.clone();
-        let download_id_clone = download_id.clone();
-        
-        std::thread::spawn(move || {
-            for line in reader.lines() {
-                if let Ok(line) = line {
-                    let _ = app_clone.emit(&format!("download_{}", download_id_clone), DownloadProgress {
-                        progress: 0,
-                        message: line.clone(),
-                        files_downloaded: 0,
-                    });
-                }
-            }
-        });
-    }
+    let mut stderr_output = String::new();
+    let mut files_downloaded = 0u32;
 
-    // Stream stderr
+    // Read stderr
     if let Some(stderr) = child.stderr.take() {
         let reader = BufReader::new(stderr);
-        let app_clone = app.clone();
-        let download_id_clone = download_id.clone();
-        
-        std::thread::spawn(move || {
-            for line in reader.lines() {
-                if let Ok(line) = line {
-                    // Parse progress from stderr
-                    let files_downloaded = if line.contains("[#") {
-                        line.matches("[#").count() as u32
-                    } else {
-                        0
-                    };
-
-                    let _ = app_clone.emit(&format!("download_{}", download_id_clone), DownloadProgress {
-                        progress: 0,
-                        message: line.clone(),
-                        files_downloaded,
-                    });
+        for line in reader.lines() {
+            if let Ok(line) = line {
+                stderr_output.push_str(&line);
+                stderr_output.push('\n');
+                
+                if line.contains("[#") || line.contains("Downloading") {
+                    files_downloaded += 1;
                 }
+                
+                let _ = app.emit(&format!("download_{}", download_id), DownloadProgress {
+                    progress: 0,
+                    message: line.clone(),
+                    files_downloaded,
+                });
             }
-        });
+        }
     }
 
     let status = child.wait()
@@ -218,11 +196,17 @@ pub async fn run_gallery_dl_download(
     if status.success() {
         Ok(DownloadResult {
             success: true,
-            message: "Download completed successfully".to_string(),
-            files_count: Some(1),
+            message: format!("Download completed. {} files.", files_downloaded),
+            files_count: Some(files_downloaded),
         })
     } else {
-        Err("Download failed".to_string())
+        // ✅ Return ACTUAL error from gallery-dl
+        let error_msg = if !stderr_output.is_empty() {
+            stderr_output.trim().to_string()
+        } else {
+            format!("gallery-dl exited with code {}", status.code().unwrap_or(-1))
+        };
+        Err(error_msg)
     }
 }
 
