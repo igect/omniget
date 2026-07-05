@@ -1,4 +1,4 @@
-use tauri::{command, Emitter};
+use tauri::{command, Emitter, AppHandle};
 use std::process::{Command, Stdio};
 use std::fs;
 use std::path::PathBuf;
@@ -17,11 +17,11 @@ pub struct Profile {
     pub added_at: i64,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct DownloadResult {
     pub success: bool,
     pub message: String,
-    pub files_count: Option<u32>,
+    pub files_count: u32,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -31,31 +31,20 @@ pub struct DownloadProgress {
     pub files_downloaded: u32,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct DownloadStats {
-    pub total_downloads: u32,
-    pub total_files: u32,
-    pub success_rate: f64,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct QueuedDownload {
-    pub id: String,
-    pub url: String,
-    pub platform: String,
-    pub content_type: String,
-    pub output_dir: String,
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct AppSettings {
+    pub output_directory: Option<String>,
     pub cookies_file: Option<String>,
-    pub status: String,
-    pub progress: u32,
-    pub files_downloaded: u32,
-    pub created_at: i64,
 }
 
-// Check Python dependencies
+// Check Python dependencies (hidden window)
 #[command]
 pub fn check_python_dependencies() -> Result<String, String> {
-    let python_check = Command::new("python")
+    let mut python_cmd = Command::new("python");
+    #[cfg(target_os = "windows")]
+    python_cmd.creation_flags(0x08000000);
+    
+    let python_check = python_cmd
         .arg("--version")
         .output()
         .map_err(|e| format!("Python not found: {}", e))?;
@@ -64,7 +53,11 @@ pub fn check_python_dependencies() -> Result<String, String> {
         return Err("Python is not installed".to_string());
     }
 
-    let gallery_check = Command::new("gallery-dl")
+    let mut gallery_cmd = Command::new("gallery-dl");
+    #[cfg(target_os = "windows")]
+    gallery_cmd.creation_flags(0x08000000);
+    
+    let gallery_check = gallery_cmd
         .arg("--version")
         .output()
         .map_err(|e| format!("gallery-dl not found: {}", e))?;
@@ -76,68 +69,25 @@ pub fn check_python_dependencies() -> Result<String, String> {
     Ok("All dependencies OK".to_string())
 }
 
-// Validate profile URL
+// Run gallery-dl download asynchronously
 #[command]
-pub fn validate_profile_url(url: String, platform: String) -> Result<String, String> {
-    // Basic URL validation
-    if url.is_empty() {
-        return Err("URL cannot be empty".to_string());
-    }
-
-    // Check if it's a valid URL or username
-    let is_url = url.starts_with("http://") || url.starts_with("https://");
-    
-    if !is_url {
-        // It's a username, validate format
-        if !url.chars().all(|c| c.is_alphanumeric() || c == '_' || c == '.') {
-            return Err("Username can only contain letters, numbers, underscores, and dots".to_string());
-        }
-        if url.len() < 3 || url.len() > 30 {
-            return Err("Username must be between 3 and 30 characters".to_string());
-        }
-        return Ok(format!("Valid username: {}", url));
-    }
-
-    // Validate URL format
-    let lower_url = url.to_lowercase();
-    let platform_lower = platform.to_lowercase();
-    
-    let valid_domains = match platform_lower.as_str() {
-        "instagram" => vec!["instagram.com"],
-        "tiktok" => vec!["tiktok.com"],
-        "facebook" => vec!["facebook.com", "fb.com"],
-        "x" => vec!["twitter.com", "x.com"],
-        _ => vec![],
-    };
-
-    if valid_domains.is_empty() {
-        return Err(format!("Unsupported platform: {}", platform));
-    }
-
-    for domain in valid_domains {
-        if lower_url.contains(domain) {
-            return Ok(format!("Valid {} URL", platform));
-        }
-    }
-
-    Err(format!("URL does not appear to be a valid {} profile", platform))
-}
-
-#[command]
-pub fn run_gallery_dl_download(
-    app: tauri::AppHandle,
+pub async fn run_gallery_dl_download(
+    app: AppHandle,
     url: String,
     output_dir: String,
     cookies_file: Option<String>,
     content_type: String,
     download_id: String,
 ) -> Result<DownloadResult, String> {
+    // Create output directory if it doesn't exist
+    fs::create_dir_all(&output_dir)
+        .map_err(|e| format!("Failed to create output directory: {}", e))?;
+
     let mut cmd = Command::new("gallery-dl");
     
     #[cfg(target_os = "windows")]
     cmd.creation_flags(0x08000000);
     
-    // Basic arguments - NO --no-progress flag!
     cmd.arg("-d").arg(&output_dir);
     
     match content_type.as_str() {
@@ -159,29 +109,36 @@ pub fn run_gallery_dl_download(
     cmd.arg("--sleep-request").arg("2");
     cmd.arg(&url);
 
-    // Set stdout to null to prevent the process from hanging when the pipe fills up
-    cmd.stdout(Stdio::null());
+    cmd.stdout(Stdio::piped());
     cmd.stderr(Stdio::piped());
 
     let mut child = cmd.spawn()
         .map_err(|e| format!("Failed to start gallery-dl: {}", e))?;
 
-    let mut stderr_output = String::new();
     let mut files_downloaded = 0u32;
+    let mut last_message = String::new();
 
-    // Read stderr
+    // Read stderr asynchronously
     if let Some(stderr) = child.stderr.take() {
         let reader = BufReader::new(stderr);
+        let app_clone = app.clone();
+        let download_id_clone = download_id.clone();
+        
         for line in reader.lines() {
             if let Ok(line) = line {
-                stderr_output.push_str(&line);
-                stderr_output.push('\n');
+                last_message = line.clone();
                 
-                if line.contains("[#") || line.contains("Downloading") {
+                // Count files more accurately
+                if line.contains("[#") || 
+                   line.contains("Downloading") || 
+                   line.contains(".jpg") || 
+                   line.contains(".png") ||
+                   line.contains(".mp4") {
                     files_downloaded += 1;
                 }
                 
-                let _ = app.emit(&format!("download_{}", download_id), DownloadProgress {
+                // Emit progress event
+                let _ = app_clone.emit(&format!("download_{}", download_id_clone), DownloadProgress {
                     progress: 0,
                     message: line.clone(),
                     files_downloaded,
@@ -196,17 +153,70 @@ pub fn run_gallery_dl_download(
     if status.success() {
         Ok(DownloadResult {
             success: true,
-            message: format!("Download completed. {} files.", files_downloaded),
-            files_count: Some(files_downloaded),
+            message: format!("Download completed successfully. {} files downloaded.", files_downloaded),
+            files_count: files_downloaded,
         })
     } else {
-        let error_msg = if !stderr_output.is_empty() {
-            stderr_output.trim().to_string()
+        let error_msg = if !last_message.is_empty() {
+            last_message
         } else {
             format!("gallery-dl exited with code {}", status.code().unwrap_or(-1))
         };
         Err(error_msg)
     }
+}
+
+// Save app settings
+#[command]
+pub fn save_app_settings(
+    output_directory: Option<String>,
+    cookies_file: Option<String>,
+) -> Result<String, String> {
+    let settings = AppSettings {
+        output_directory,
+        cookies_file,
+    };
+
+    let config_dir = dirs::data_local_dir()
+        .ok_or("Could not find data directory")?
+        .join("OpenMint");
+
+    fs::create_dir_all(&config_dir)
+        .map_err(|e| format!("Failed to create config dir: {}", e))?;
+
+    let settings_file = config_dir.join("app_settings.json");
+
+    let content = serde_json::to_string_pretty(&settings)
+        .map_err(|e| format!("Failed to serialize settings: {}", e))?;
+
+    fs::write(&settings_file, content)
+        .map_err(|e| format!("Failed to write settings: {}", e))?;
+
+    Ok("Settings saved successfully".to_string())
+}
+
+// Load app settings
+#[command]
+pub fn load_app_settings() -> Result<AppSettings, String> {
+    let settings_file = dirs::data_local_dir()
+        .ok_or("Could not find data directory")?
+        .join("OpenMint")
+        .join("app_settings.json");
+
+    if !settings_file.exists() {
+        return Ok(AppSettings {
+            output_directory: None,
+            cookies_file: None,
+        });
+    }
+
+    let content = fs::read_to_string(&settings_file)
+        .map_err(|e| format!("Failed to read settings: {}", e))?;
+
+    let settings: AppSettings = serde_json::from_str(&content)
+        .map_err(|e| format!("Failed to parse settings: {}", e))?;
+
+    Ok(settings)
 }
 
 // Load profiles
@@ -243,9 +253,6 @@ pub fn load_profiles(platform: String) -> Result<Vec<Profile>, String> {
 // Save profile with validation
 #[command]
 pub fn save_profile(platform: String, url: String) -> Result<String, String> {
-    // Validate URL first
-    let _ = validate_profile_url(url.clone(), platform.clone())?;
-
     let config_dir = dirs::data_local_dir()
         .ok_or("Could not find data directory")?
         .join("OpenMint");
@@ -255,7 +262,6 @@ pub fn save_profile(platform: String, url: String) -> Result<String, String> {
 
     let profiles_file = config_dir.join("profiles.json");
 
-    // Load existing profiles or create empty
     let mut all_profiles: serde_json::Value = if profiles_file.exists() {
         let content = fs::read_to_string(&profiles_file)
             .unwrap_or_else(|_| "{}".to_string());
@@ -264,14 +270,12 @@ pub fn save_profile(platform: String, url: String) -> Result<String, String> {
         serde_json::json!({})
     };
 
-    // Extract username from URL
     let username = if url.starts_with("http") {
         url.split('/').filter(|s| !s.is_empty()).last().map(|s| s.to_string())
     } else {
         Some(url.clone())
     };
 
-    // Check for duplicates
     if let Some(arr) = all_profiles
         .as_object()
         .and_then(|obj| obj.get(&platform))
@@ -279,14 +283,13 @@ pub fn save_profile(platform: String, url: String) -> Result<String, String> {
     {
         for profile in arr {
             if let Some(existing_url) = profile.get("url").and_then(|v| v.as_str()) {
-                if existing_url == url || existing_url.contains(&username.clone().unwrap_or_default()) {
+                if existing_url == url {
                     return Err("Profile already exists".to_string());
                 }
             }
         }
     }
 
-    // Add new profile
     let new_profile = serde_json::json!({
         "url": url,
         "username": username,
@@ -306,7 +309,6 @@ pub fn save_profile(platform: String, url: String) -> Result<String, String> {
         }
     }
 
-    // Save back to file
     let content = serde_json::to_string_pretty(&all_profiles)
         .map_err(|e| format!("Failed to serialize: {}", e))?;
 
@@ -389,46 +391,4 @@ pub fn setup_openmint_folders(base_dir: String, cookies_dir: String) -> Result<S
     }
 
     Ok("Folder structure created successfully".to_string())
-}
-
-// Get download statistics
-#[command]
-pub fn get_download_stats() -> Result<DownloadStats, String> {
-    let stats_file = dirs::data_local_dir()
-        .ok_or("Could not find data directory")?
-        .join("OpenMint")
-        .join("download_stats.json");
-
-    if !stats_file.exists() {
-        return Ok(DownloadStats {
-            total_downloads: 0,
-            total_files: 0,
-            success_rate: 100.0,
-        });
-    }
-
-    let content = fs::read_to_string(&stats_file)
-        .map_err(|e| format!("Failed to read stats: {}", e))?;
-
-    let stats: DownloadStats = serde_json::from_str(&content)
-        .map_err(|e| format!("Failed to parse stats: {}", e))?;
-
-    Ok(stats)
-}
-
-// Save download statistics
-#[command]
-pub fn save_download_stats(stats: DownloadStats) -> Result<String, String> {
-    let stats_file = dirs::data_local_dir()
-        .ok_or("Could not find data directory")?
-        .join("OpenMint")
-        .join("download_stats.json");
-
-    let content = serde_json::to_string_pretty(&stats)
-        .map_err(|e| format!("Failed to serialize stats: {}", e))?;
-
-    fs::write(&stats_file, content)
-        .map_err(|e| format!("Failed to write stats: {}", e))?;
-
-    Ok("Stats saved".to_string())
 }

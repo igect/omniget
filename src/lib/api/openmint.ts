@@ -11,7 +11,7 @@ export interface Profile {
 export interface DownloadResult {
   success: boolean;
   message: string;
-  files_count?: number;
+  files_count: number;
 }
 
 export interface DownloadProgress {
@@ -20,31 +20,13 @@ export interface DownloadProgress {
   files_downloaded: number;
 }
 
-export interface DownloadStats {
-  total_downloads: number;
-  total_files: number;
-  success_rate: number;
-}
-
-export interface QueuedDownload {
-  id: string;
-  url: string;
-  platform: string;
-  content_type: string;
-  output_dir: string;
-  cookies_file?: string;
-  status: string;
-  progress: number;
-  files_downloaded: number;
-  created_at: number;
+export interface AppSettings {
+  output_directory: string | null;
+  cookies_file: string | null;
 }
 
 export async function checkPythonDependencies(): Promise<string> {
   return await invoke<string>('check_python_dependencies');
-}
-
-export async function validateProfileUrl(url: string, platform: string): Promise<string> {
-  return await invoke<string>('validate_profile_url', { url, platform });
 }
 
 export async function runGalleryDlDownload(
@@ -72,6 +54,20 @@ export async function listenToDownloadProgress(
   });
 }
 
+export async function saveAppSettings(
+  outputDirectory: string | null,
+  cookiesFile: string | null
+): Promise<string> {
+  return await invoke<string>('save_app_settings', {
+    outputDirectory,
+    cookiesFile
+  });
+}
+
+export async function loadAppSettings(): Promise<AppSettings> {
+  return await invoke<AppSettings>('load_app_settings');
+}
+
 export async function loadProfiles(platform: string): Promise<Profile[]> {
   return await invoke<Profile[]>('load_profiles', { platform });
 }
@@ -86,14 +82,6 @@ export async function deleteProfile(platform: string, index: number): Promise<st
 
 export async function setupOpenMintFolders(baseDir: string, cookiesDir: string): Promise<string> {
   return await invoke<string>('setup_openmint_folders', { baseDir, cookiesDir });
-}
-
-export async function getDownloadStats(): Promise<DownloadStats> {
-  return await invoke<DownloadStats>('get_download_stats');
-}
-
-export async function saveDownloadStats(stats: DownloadStats): Promise<string> {
-  return await invoke<string>('save_download_stats', { stats });
 }
 
 export function generateDownloadId(): string {

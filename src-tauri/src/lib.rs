@@ -629,14 +629,13 @@ pub fn run() {
             commands::app_lifecycle::force_exit_app,
             commands::app_lifecycle::get_debug_info,
             openmint::check_python_dependencies,
-            openmint::validate_profile_url,
             openmint::run_gallery_dl_download,
+            openmint::save_app_settings,
+            openmint::load_app_settings,
             openmint::load_profiles,
             openmint::save_profile,
             openmint::delete_profile,
             openmint::setup_openmint_folders,
-            openmint::get_download_stats,
-            openmint::save_download_stats,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")

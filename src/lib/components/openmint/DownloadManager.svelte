@@ -4,9 +4,11 @@
     checkPythonDependencies, 
     listenToDownloadProgress,
     generateDownloadId,
+    saveAppSettings,
+    loadAppSettings,
     type DownloadProgress 
   } from '$lib/api/openmint';
-  import { createEventDispatcher } from 'svelte';
+  import { createEventDispatcher, onMount } from 'svelte';
   
   const dispatch = createEventDispatcher();
   
@@ -21,6 +23,22 @@
   let depsStatus = $state('');
   let currentDownloadId = $state<string | null>(null);
   let unlistenProgress: (() => void) | null = null;
+  let liveOutput = $state<string[]>([]);
+
+  onMount(async () => {
+    // Load saved settings
+    try {
+      const settings = await loadAppSettings();
+      if (settings.output_directory) {
+        outputDir = settings.output_directory;
+      }
+      if (settings.cookies_file) {
+        cookiesFile = settings.cookies_file;
+      }
+    } catch (error) {
+      console.error('Failed to load settings:', error);
+    }
+  });
 
   async function checkDeps() {
     try {
@@ -41,14 +59,14 @@
     progress = 0;
     status = 'Starting download...';
     statusType = 'info';
+    liveOutput = [];
     
     const downloadId = generateDownloadId();
     currentDownloadId = downloadId;
 
     try {
-      // Listen for progress updates
       unlistenProgress = await listenToDownloadProgress(downloadId, (progressData: DownloadProgress) => {
-        status = progressData.message;
+        liveOutput = [...liveOutput, progressData.message];
         if (progressData.files_downloaded > 0) {
           progress = Math.min((progressData.files_downloaded / 100) * 100, 100);
         }
@@ -63,15 +81,14 @@
       );
 
       if (result.success) {
-        status = `✅ Downloaded ${result.files_count || 0} files successfully!`;
+        status = `✅ Downloaded ${result.files_count} files successfully!`;
         statusType = 'success';
         progress = 100;
         
-        // Notify parent component
         dispatch('downloadComplete', {
           url,
           platform: contentType,
-          filesCount: result.files_count || 0
+          filesCount: result.files_count
         });
       } else {
         status = `❌ ${result.message}`;
@@ -90,6 +107,23 @@
     }
   }
 
+  async function saveSettings() {
+    try {
+      await saveAppSettings(
+        outputDir || null,
+        cookiesFile || null
+      );
+      status = 'Settings saved successfully!';
+      statusType = 'success';
+      setTimeout(() => {
+        status = '';
+      }, 3000);
+    } catch (error) {
+      status = `Failed to save settings: ${error}`;
+      statusType = 'error';
+    }
+  }
+
   function clearStatus() {
     status = '';
     statusType = 'info';
@@ -101,8 +135,10 @@
 </script>
 
 <div class="download-manager">
-  <div class="deps-check" class:ok={depsStatus.includes('OK')} class:error={depsStatus && !depsStatus.includes('OK')}>
-    <span>{depsStatus || 'Checking dependencies...'}</span>
+  <div class="deps-check">
+    <span class:ok={depsStatus.includes('OK')} class:error={!depsStatus.includes('OK')}>
+      {depsStatus || 'Checking dependencies...'}
+    </span>
   </div>
 
   {#if status}
@@ -125,13 +161,15 @@
 
   <div class="form-group">
     <label for="output-dir">Output Directory</label>
-    <input
-      id="output-dir"
-      type="text"
-      bind:value={outputDir}
-      placeholder="E:\Downloads"
-      disabled={downloading}
-    />
+    <div class="input-with-button">
+      <input
+        id="output-dir"
+        type="text"
+        bind:value={outputDir}
+        placeholder="E:\Downloads"
+        disabled={downloading}
+      />
+    </div>
   </div>
 
   <div class="form-group">
@@ -147,22 +185,33 @@
 
   <div class="form-group">
     <label for="cookies-file">Cookies File (optional)</label>
-    <input
-      id="cookies-file"
-      type="text"
-      bind:value={cookiesFile}
-      placeholder="E:\Downloads\instagram.com_cookies.txt"
-      disabled={downloading}
-    />
+    <div class="input-with-button">
+      <input
+        id="cookies-file"
+        type="text"
+        bind:value={cookiesFile}
+        placeholder="E:\Downloads\instagram.com_cookies.txt"
+        disabled={downloading}
+      />
+    </div>
   </div>
 
-  <button
-    class="download-btn"
-    onclick={startDownload}
-    disabled={downloading || !url.trim() || !outputDir.trim()}
-  >
-    {downloading ? 'Downloading...' : 'Start Download'}
-  </button>
+  <div class="button-group">
+    <button
+      class="save-settings-btn"
+      onclick={saveSettings}
+      disabled={downloading}
+    >
+      Save Settings
+    </button>
+    <button
+      class="download-btn"
+      onclick={startDownload}
+      disabled={downloading || !url.trim() || !outputDir.trim()}
+    >
+      {downloading ? 'Downloading...' : 'Start Download'}
+    </button>
+  </div>
 
   {#if downloading || progress > 0}
     <div class="progress-container">
@@ -173,10 +222,14 @@
     </div>
   {/if}
 
-  {#if downloading}
+  {#if downloading && liveOutput.length > 0}
     <div class="live-output">
       <p class="output-label">Live Output:</p>
-      <div class="output-text">{status}</div>
+      <div class="output-text">
+        {#each liveOutput as line, i}
+          <div class="output-line">{line}</div>
+        {/each}
+      </div>
     </div>
   {/if}
 </div>
@@ -193,8 +246,6 @@
     border-radius: 6px;
     font-size: 0.875rem;
     font-weight: 500;
-    background: var(--bg-secondary);
-    border: 1px solid var(--border);
   }
 
   .deps-check.ok {
@@ -286,11 +337,16 @@
     cursor: not-allowed;
   }
 
+  .button-group {
+    display: flex;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+
+  .save-settings-btn,
   .download-btn {
-    width: 100%;
+    flex: 1;
     padding: 0.875rem;
-    background: var(--accent);
-    color: var(--accent-fg);
     border: none;
     border-radius: 6px;
     font-weight: 600;
@@ -299,12 +355,28 @@
     transition: all 0.2s;
   }
 
+  .save-settings-btn {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+  }
+
+  .save-settings-btn:hover:not(:disabled) {
+    background: var(--bg-tertiary);
+  }
+
+  .download-btn {
+    background: var(--accent);
+    color: var(--accent-fg);
+  }
+
   .download-btn:hover:not(:disabled) {
     opacity: 0.9;
     transform: translateY(-1px);
   }
 
-  .download-btn:disabled {
+  .download-btn:disabled,
+  .save-settings-btn:disabled {
     opacity: 0.5;
     cursor: not-allowed;
   }
@@ -354,9 +426,18 @@
     font-family: 'Courier New', monospace;
     font-size: 0.8125rem;
     color: var(--text-primary);
-    word-break: break-all;
-    max-height: 150px;
+    max-height: 200px;
     overflow-y: auto;
+  }
+
+  .output-line {
+    padding: 2px 0;
+    border-bottom: 1px solid var(--border);
+    word-break: break-all;
+  }
+
+  .output-line:last-child {
+    border-bottom: none;
   }
 
   @keyframes slideIn {
