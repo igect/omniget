@@ -29,7 +29,6 @@ pub struct DownloadResult {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct DownloadProgress {
-    pub progress: u32,
     pub message: String,
     pub files_downloaded: u32,
 }
@@ -56,16 +55,21 @@ fn omniget_config_dir() -> Result<PathBuf, String> {
 // Check Python dependencies (hidden window)
 #[command]
 pub fn check_python_dependencies() -> Result<String, String> {
-    let mut python_cmd = Command::new("python");
-    #[cfg(target_os = "windows")]
-    python_cmd.creation_flags(0x08000000);
+    // Debian/Ubuntu (the distros our .deb/.AppImage builds target) don't ship
+    // a `python` alias out of the box - only `python3` exists unless the user
+    // installed python-is-python3. Trying `python3` first and falling back to
+    // `python` avoids reporting "Python is not installed" when it actually is.
+    let python_found = ["python3", "python"].iter().any(|bin| {
+        let mut cmd = Command::new(bin);
+        #[cfg(target_os = "windows")]
+        cmd.creation_flags(0x08000000);
+        cmd.arg("--version")
+            .output()
+            .map(|out| out.status.success())
+            .unwrap_or(false)
+    });
 
-    let python_check = python_cmd
-        .arg("--version")
-        .output()
-        .map_err(|e| format!("Python not found: {}", e))?;
-
-    if !python_check.status.success() {
+    if !python_found {
         return Err("Python is not installed".to_string());
     }
 
@@ -169,6 +173,18 @@ fn run_gallery_dl_download_blocking(
         }
     }
 
+    // Respect the main app's Advanced Settings (proxy + custom User-Agent)
+    // instead of running gallery-dl in its own silo. Previously these had
+    // no effect on openmint downloads even when configured app-wide.
+    let app_settings = crate::storage::config::load_settings_standalone();
+    let user_agent = app_settings.advanced.user_agent.trim();
+    if !user_agent.is_empty() {
+        cmd.arg("--user-agent").arg(user_agent);
+    }
+    if let Some(proxy) = omniget_core::core::http_client::proxy_url() {
+        cmd.arg("--proxy").arg(&proxy);
+    }
+
     cmd.arg("--sleep-request").arg("2");
     
     // For stories and highlights, we already set the URL above
@@ -195,9 +211,14 @@ fn run_gallery_dl_download_blocking(
         thread::spawn(move || {
             let reader = BufReader::new(stdout);
             for line in reader.lines().flatten() {
+                // Blank lines (gallery-dl prints separators between items/
+                // galleries) aren't a downloaded file - counting them
+                // inflates files_downloaded shown to the user.
+                if line.trim().is_empty() {
+                    continue;
+                }
                 let count = files_downloaded.fetch_add(1, Ordering::SeqCst) + 1;
                 let _ = app.emit(&format!("download_{}", download_id), DownloadProgress {
-                    progress: 0,
                     message: line,
                     files_downloaded: count,
                 });
@@ -218,7 +239,6 @@ fn run_gallery_dl_download_blocking(
                 *last_stderr_line.lock().unwrap() = line.clone();
                 let count = files_downloaded.load(Ordering::SeqCst);
                 let _ = app.emit(&format!("download_{}", download_id), DownloadProgress {
-                    progress: 0,
                     message: line,
                     files_downloaded: count,
                 });
@@ -394,9 +414,21 @@ pub fn save_profile(platform: String, url: String) -> Result<String, String> {
         .and_then(|v| v.as_array())
     {
         for profile in arr {
-            if let Some(existing_url) = profile.get("url").and_then(|v| v.as_str()) {
-                if existing_url == url {
-                    return Err("Profile already exists".to_string());
+            let existing_url = profile.get("url").and_then(|v| v.as_str());
+            if existing_url == Some(url.as_str()) {
+                return Err("Profile already exists".to_string());
+            }
+            // Exact URL match misses e.g. http vs https or a "?hl=en" query
+            // string on an otherwise-identical profile - fall back to
+            // comparing the normalized username too.
+            if let Some(new_name) = &username {
+                let existing_name = profile.get("username").and_then(|v| v.as_str());
+                if let Some(existing_name) = existing_name {
+                    if !existing_name.is_empty()
+                        && existing_name.eq_ignore_ascii_case(new_name)
+                    {
+                        return Err("Profile already exists".to_string());
+                    }
                 }
             }
         }

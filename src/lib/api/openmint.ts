@@ -15,7 +15,6 @@ export interface DownloadResult {
 }
 
 export interface DownloadProgress {
-  progress: number;
   message: string;
   files_downloaded: number;
 }
