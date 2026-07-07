@@ -49,6 +49,7 @@
   },
   "bundle": {
     "active": true,
+    "publisher": "sayfalse",
     "targets": "all",
     "createUpdaterArtifacts": true,
     "resources": {
