@@ -149,6 +149,18 @@ Downloads are reliable, not a guessing game. Speed and ETA come straight from th
 
 ---
 
+## OpenMint: Creator & Social Media Downloader
+
+Download complete creator profiles, image galleries, videos, and stories from popular social media platforms. Powered by `gallery-dl` under the hood, OpenMint runs asynchronously and manages your downloads in a clean tab.
+
+- **Supported Platforms:** Instagram, TikTok, Facebook, and X (formerly Twitter).
+- **Profile Management:** Save your favorite creator profiles/URLs so you can check and download new content with one click.
+- **Stories & Highlights:** Download active Instagram stories and highlights via an integrated helper.
+- **Advanced Options:** Set a custom output folder, load cookies files to download private or age-restricted content, and choose whether to download images, videos, or all media types.
+- **Asynchronous Global Store:** Downloads run in the background, allowing you to browse other parts of the app without losing track of your download status or progress log.
+
+---
+
 ## It also plays everything inside
 
 This is the part people do not expect. OmniGet is not just where you download. It is where you watch, read, and listen.
@@ -249,6 +261,9 @@ Run the two Terminal commands in the [first launch note](#️-please-read-this-b
 
 **Is this just a yt-dlp GUI?**
 It uses yt-dlp under the hood for the 1,800+ generic sites, with native extractors for the big platforms, plus a real interface, a queue, a library, and built-in players on top. So yes, and a lot more than a GUI.
+
+**What is OpenMint?**
+OpenMint is OmniGet's built-in manager for social media and creator content. It uses `gallery-dl` under the hood to download full galleries, videos, stories, and highlights from Instagram, TikTok, Facebook, and X. You can save profiles to download new content easily.
 
 **Can it download a full Udemy or Hotmart course?**
 Yes. You log in once on the platform, pick the course, and OmniGet downloads every lesson and attachment, then plays them back with timestamped notes.

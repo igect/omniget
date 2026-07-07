@@ -8,6 +8,7 @@
 - [x] Implement `src/lib/stores/openmint-download-store.svelte.ts` to manage download state globally.
 - [x] Update `src/lib/components/openmint/DownloadManager.svelte` to use the shared store instead of local component state.
 - [x] Re-verify compilation and functionality.
+- [x] Update documentation (README.md, README_zh_CN.md, and README.ru.md) with details about OpenMint.
 
 ## Progress
 - Initiated session. Identified target files.
@@ -15,3 +16,4 @@
 - Received new user request to use a global store for managing download state, which allows reattaching/persisting download state across page/view navigation.
 - Created `openmint-download-store.svelte.ts` and refactored `DownloadManager.svelte`.
 - Verified compilation and types check out successfully.
+- Updated all three README versions (English, Chinese, Russian) to include detailed descriptions of the OpenMint feature (platforms, profile manager, cookies/options) and added it to the FAQ section.
