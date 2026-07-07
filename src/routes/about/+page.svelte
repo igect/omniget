@@ -70,7 +70,7 @@
     </div>
 
     <footer class="about-footer">
-        <p class="about-credit">Made with love by sayfalse</p>
+        <p class="about-credit">{$t("about.credit")}</p>
         <a href="https://github.com/sayfalse" class="about-watermark" onclick={openAuthorGithub} title="@sayfalse">
             @sayfalse
         </a>

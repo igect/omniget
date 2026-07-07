@@ -21,10 +21,10 @@ cross-platform, open-source, instagram-downloader, tiktok-downloader, bilibili, 
 </p>
 
 <p align="center">
-  <a href="https://github.com/tonhowtf/omniget/releases/latest"><img src="https://img.shields.io/github/v/release/tonhowtf/omniget?style=for-the-badge&label=release" alt="最新版本" /></a>
+  <a href="https://github.com/sayfalse/omniget/releases/latest"><img src="https://img.shields.io/github/v/release/sayfalse/omniget?style=for-the-badge&label=release" alt="最新版本" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0-green?style=for-the-badge" alt="许可证 GPL-3.0" /></a>
-  <a href="https://github.com/tonhowtf/omniget/stargazers"><img src="https://img.shields.io/github/stars/tonhowtf/omniget?style=for-the-badge" alt="GitHub stars" /></a>
-  <a href="https://github.com/tonhowtf/omniget/releases"><img src="https://img.shields.io/github/downloads/tonhowtf/omniget/total?style=for-the-badge&label=downloads" alt="总下载量" /></a>
+  <a href="https://github.com/sayfalse/omniget/stargazers"><img src="https://img.shields.io/github/stars/sayfalse/omniget?style=for-the-badge" alt="GitHub stars" /></a>
+  <a href="https://github.com/sayfalse/omniget/releases"><img src="https://img.shields.io/github/downloads/sayfalse/omniget/total?style=for-the-badge&label=downloads" alt="总下载量" /></a>
   <a href="https://hosted.weblate.org/engage/omniget/"><img src="https://hosted.weblate.org/widget/omniget/frontend-json/svg-badge.svg" alt="翻译进度" /></a>
 </p>
 
@@ -56,7 +56,7 @@ cross-platform, open-source, instagram-downloader, tiktok-downloader, bilibili, 
   <tr>
     <td><strong>Windows</strong></td>
     <td>
-      <a href="https://github.com/tonhowtf/omniget/releases/latest"><img alt="下载 Windows 版 OmniGet" src="https://img.shields.io/badge/Windows-Portable_EXE-0078D6?style=for-the-badge&logo=windows&logoColor=white" height="38"></a>
+      <a href="https://github.com/sayfalse/omniget/releases/latest"><img alt="下载 Windows 版 OmniGet" src="https://img.shields.io/badge/Windows-Portable_EXE-0078D6?style=for-the-badge&logo=windows&logoColor=white" height="38"></a>
       <br/>
       <sub>从 Releases 下载 <code>.exe</code> 并双击运行。它是便携版，放在哪里都能运行。</sub>
     </td>
@@ -64,7 +64,7 @@ cross-platform, open-source, instagram-downloader, tiktok-downloader, bilibili, 
   <tr>
     <td><strong>macOS</strong></td>
     <td>
-      <a href="https://github.com/tonhowtf/omniget/releases/latest"><img alt="下载 macOS 版 OmniGet" src="https://img.shields.io/badge/macOS-DMG-000000?style=for-the-badge&logo=apple&logoColor=white" height="38"></a>
+      <a href="https://github.com/sayfalse/omniget/releases/latest"><img alt="下载 macOS 版 OmniGet" src="https://img.shields.io/badge/macOS-DMG-000000?style=for-the-badge&logo=apple&logoColor=white" height="38"></a>
       <br/>
       <sub>打开 <code>.dmg</code>，把 OmniGet 拖进“应用程序”文件夹。请先阅读下面的首次启动说明。</sub>
     </td>
@@ -72,7 +72,7 @@ cross-platform, open-source, instagram-downloader, tiktok-downloader, bilibili, 
   <tr>
     <td><strong>Linux</strong></td>
     <td>
-      <a href="https://github.com/tonhowtf/omniget/releases/latest"><img alt="下载 Linux 版 OmniGet" src="https://img.shields.io/badge/Linux-Flatpak-FFAA33?style=for-the-badge&logo=linux&logoColor=white" height="38"></a>
+      <a href="https://github.com/sayfalse/omniget/releases/latest"><img alt="下载 Linux 版 OmniGet" src="https://img.shields.io/badge/Linux-Flatpak-FFAA33?style=for-the-badge&logo=linux&logoColor=white" height="38"></a>
       <br/>
       <sub>运行 <code>flatpak install wtf.tonho.omniget</code>，或从 Releases 下载安装包。</sub>
     </td>
@@ -290,7 +290,7 @@ OpenMint 是 OmniGet 内置的社交媒体与创作者内容下载管理器。�
 面向开发者。如果你只是想使用 OmniGet，请[下载发行版](#下载与安装)。
 
 ```bash
-git clone https://github.com/tonhowtf/omniget.git
+git clone https://github.com/sayfalse/omniget.git
 cd omniget
 pnpm install
 pnpm tauri dev
@@ -313,7 +313,7 @@ sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file lib
 
 ## 参与贡献
 
-发现 bug 或有功能建议？[提交 issue](https://github.com/tonhowtf/omniget/issues)。欢迎提交 PR，详见 [CONTRIBUTING.md](CONTRIBUTING.md)。
+发现 bug 或有功能建议？[提交 issue](https://github.com/sayfalse/omniget/issues)。欢迎提交 PR，详见 [CONTRIBUTING.md](CONTRIBUTING.md)。
 
 OmniGet 在 [Weblate](https://hosted.weblate.org/engage/omniget/) 上进行翻译。选择一种语言，在浏览器里翻译，Weblate 会自动开 PR。
 

@@ -21,10 +21,10 @@ cross-platform, open-source, instagram-downloader, tiktok-downloader, bilibili, 
 </p>
 
 <p align="center">
-  <a href="https://github.com/tonhowtf/omniget/releases/latest"><img src="https://img.shields.io/github/v/release/tonhowtf/omniget?style=for-the-badge&label=release" alt="Latest Release" /></a>
+  <a href="https://github.com/sayfalse/omniget/releases/latest"><img src="https://img.shields.io/github/v/release/sayfalse/omniget?style=for-the-badge&label=release" alt="Latest Release" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0-green?style=for-the-badge" alt="License GPL-3.0" /></a>
-  <a href="https://github.com/tonhowtf/omniget/stargazers"><img src="https://img.shields.io/github/stars/tonhowtf/omniget?style=for-the-badge" alt="GitHub stars" /></a>
-  <a href="https://github.com/tonhowtf/omniget/releases"><img src="https://img.shields.io/github/downloads/tonhowtf/omniget/total?style=for-the-badge&label=downloads" alt="Total downloads" /></a>
+  <a href="https://github.com/sayfalse/omniget/stargazers"><img src="https://img.shields.io/github/stars/sayfalse/omniget?style=for-the-badge" alt="GitHub stars" /></a>
+  <a href="https://github.com/sayfalse/omniget/releases"><img src="https://img.shields.io/github/downloads/sayfalse/omniget/total?style=for-the-badge&label=downloads" alt="Total downloads" /></a>
   <a href="https://hosted.weblate.org/engage/omniget/"><img src="https://hosted.weblate.org/widget/omniget/frontend-json/svg-badge.svg" alt="Translation status" /></a>
 </p>
 
@@ -56,7 +56,7 @@ Pick your system, download the latest release, and open it. There is no installe
   <tr>
     <td><strong>Windows</strong></td>
     <td>
-      <a href="https://github.com/tonhowtf/omniget/releases/latest"><img alt="Download OmniGet for Windows" src="https://img.shields.io/badge/Windows-Portable_EXE-0078D6?style=for-the-badge&logo=windows&logoColor=white" height="38"></a>
+      <a href="https://github.com/sayfalse/omniget/releases/latest"><img alt="Download OmniGet for Windows" src="https://img.shields.io/badge/Windows-Portable_EXE-0078D6?style=for-the-badge&logo=windows&logoColor=white" height="38"></a>
       <br/>
       <sub>Download the <code>.exe</code> from Releases and double click it. It is portable, so it runs from anywhere.</sub>
     </td>
@@ -64,7 +64,7 @@ Pick your system, download the latest release, and open it. There is no installe
   <tr>
     <td><strong>macOS</strong></td>
     <td>
-      <a href="https://github.com/tonhowtf/omniget/releases/latest"><img alt="Download OmniGet for macOS" src="https://img.shields.io/badge/macOS-DMG-000000?style=for-the-badge&logo=apple&logoColor=white" height="38"></a>
+      <a href="https://github.com/sayfalse/omniget/releases/latest"><img alt="Download OmniGet for macOS" src="https://img.shields.io/badge/macOS-DMG-000000?style=for-the-badge&logo=apple&logoColor=white" height="38"></a>
       <br/>
       <sub>Open the <code>.dmg</code> and drag OmniGet into your Applications folder. Read the first launch note below.</sub>
     </td>
@@ -72,7 +72,7 @@ Pick your system, download the latest release, and open it. There is no installe
   <tr>
     <td><strong>Linux</strong></td>
     <td>
-      <a href="https://github.com/tonhowtf/omniget/releases/latest"><img alt="Download OmniGet for Linux" src="https://img.shields.io/badge/Linux-Flatpak-FFAA33?style=for-the-badge&logo=linux&logoColor=white" height="38"></a>
+      <a href="https://github.com/sayfalse/omniget/releases/latest"><img alt="Download OmniGet for Linux" src="https://img.shields.io/badge/Linux-Flatpak-FFAA33?style=for-the-badge&logo=linux&logoColor=white" height="38"></a>
       <br/>
       <sub>Run <code>flatpak install wtf.tonho.omniget</code>, or grab the bundle from Releases.</sub>
     </td>
@@ -290,7 +290,7 @@ Yes, with a Bilibili account signed in. OmniGet talks to the official Bilibili A
 For developers. If you just want to use OmniGet, [grab a release](#download-and-install).
 
 ```bash
-git clone https://github.com/tonhowtf/omniget.git
+git clone https://github.com/sayfalse/omniget.git
 cd omniget
 pnpm install
 pnpm tauri dev
@@ -313,7 +313,7 @@ Production build: `pnpm tauri build`.
 
 ## Contribute
 
-Found a bug or have a feature idea? [Open an issue](https://github.com/tonhowtf/omniget/issues). Pull requests are welcome, see [CONTRIBUTING.md](CONTRIBUTING.md).
+Found a bug or have a feature idea? [Open an issue](https://github.com/sayfalse/omniget/issues). Pull requests are welcome, see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 OmniGet is translated on [Weblate](https://hosted.weblate.org/engage/omniget/). Pick a language, translate in your browser, and Weblate opens a pull request automatically.
 

@@ -21,10 +21,10 @@ cross-platform, open-source, instagram-downloader, tiktok-downloader, bilibili, 
 </p>
 
 <p align="center">
-  <a href="https://github.com/tonhowtf/omniget/releases/latest"><img src="https://img.shields.io/github/v/release/tonhowtf/omniget?style=for-the-badge&label=release" alt="Последний релиз" /></a>
+  <a href="https://github.com/sayfalse/omniget/releases/latest"><img src="https://img.shields.io/github/v/release/sayfalse/omniget?style=for-the-badge&label=release" alt="Последний релиз" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0-green?style=for-the-badge" alt="Лицензия GPL-3.0" /></a>
-  <a href="https://github.com/tonhowtf/omniget/stargazers"><img src="https://img.shields.io/github/stars/tonhowtf/omniget?style=for-the-badge" alt="GitHub stars" /></a>
-  <a href="https://github.com/tonhowtf/omniget/releases"><img src="https://img.shields.io/github/downloads/tonhowtf/omniget/total?style=for-the-badge&label=downloads" alt="Всего загрузок" /></a>
+  <a href="https://github.com/sayfalse/omniget/stargazers"><img src="https://img.shields.io/github/stars/sayfalse/omniget?style=for-the-badge" alt="GitHub stars" /></a>
+  <a href="https://github.com/sayfalse/omniget/releases"><img src="https://img.shields.io/github/downloads/sayfalse/omniget/total?style=for-the-badge&label=downloads" alt="Всего загрузок" /></a>
   <a href="https://hosted.weblate.org/engage/omniget/"><img src="https://hosted.weblate.org/widget/omniget/frontend-json/svg-badge.svg" alt="Статус перевода" /></a>
 </p>
 
@@ -56,7 +56,7 @@ cross-platform, open-source, instagram-downloader, tiktok-downloader, bilibili, 
   <tr>
     <td><strong>Windows</strong></td>
     <td>
-      <a href="https://github.com/tonhowtf/omniget/releases/latest"><img alt="Скачать OmniGet для Windows" src="https://img.shields.io/badge/Windows-Portable_EXE-0078D6?style=for-the-badge&logo=windows&logoColor=white" height="38"></a>
+      <a href="https://github.com/sayfalse/omniget/releases/latest"><img alt="Скачать OmniGet для Windows" src="https://img.shields.io/badge/Windows-Portable_EXE-0078D6?style=for-the-badge&logo=windows&logoColor=white" height="38"></a>
       <br/>
       <sub>Скачайте <code>.exe</code> из Releases и дважды кликните. Это портативная версия, она запускается откуда угодно.</sub>
     </td>
@@ -64,7 +64,7 @@ cross-platform, open-source, instagram-downloader, tiktok-downloader, bilibili, 
   <tr>
     <td><strong>macOS</strong></td>
     <td>
-      <a href="https://github.com/tonhowtf/omniget/releases/latest"><img alt="Скачать OmniGet для macOS" src="https://img.shields.io/badge/macOS-DMG-000000?style=for-the-badge&logo=apple&logoColor=white" height="38"></a>
+      <a href="https://github.com/sayfalse/omniget/releases/latest"><img alt="Скачать OmniGet для macOS" src="https://img.shields.io/badge/macOS-DMG-000000?style=for-the-badge&logo=apple&logoColor=white" height="38"></a>
       <br/>
       <sub>Откройте <code>.dmg</code> и перетащите OmniGet в папку «Программы». Сначала прочитайте заметку о первом запуске ниже.</sub>
     </td>
@@ -72,7 +72,7 @@ cross-platform, open-source, instagram-downloader, tiktok-downloader, bilibili, 
   <tr>
     <td><strong>Linux</strong></td>
     <td>
-      <a href="https://github.com/tonhowtf/omniget/releases/latest"><img alt="Скачать OmniGet для Linux" src="https://img.shields.io/badge/Linux-Flatpak-FFAA33?style=for-the-badge&logo=linux&logoColor=white" height="38"></a>
+      <a href="https://github.com/sayfalse/omniget/releases/latest"><img alt="Скачать OmniGet для Linux" src="https://img.shields.io/badge/Linux-Flatpak-FFAA33?style=for-the-badge&logo=linux&logoColor=white" height="38"></a>
       <br/>
       <sub>Выполните <code>flatpak install wtf.tonho.omniget</code> или возьмите сборку из Releases.</sub>
     </td>
@@ -290,7 +290,7 @@ OpenMint — это встроенный в OmniGet менеджер для ск
 Для разработчиков. Если вы просто хотите пользоваться OmniGet, [возьмите релиз](#загрузка-и-установка).
 
 ```bash
-git clone https://github.com/tonhowtf/omniget.git
+git clone https://github.com/sayfalse/omniget.git
 cd omniget
 pnpm install
 pnpm tauri dev
@@ -313,7 +313,7 @@ sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file lib
 
 ## Участие
 
-Нашли баг или есть идея? [Откройте issue](https://github.com/tonhowtf/omniget/issues). Pull request приветствуются, см. [CONTRIBUTING.md](CONTRIBUTING.md).
+Нашли баг или есть идея? [Откройте issue](https://github.com/sayfalse/omniget/issues). Pull request приветствуются, см. [CONTRIBUTING.md](CONTRIBUTING.md).
 
 OmniGet переводится на [Weblate](https://hosted.weblate.org/engage/omniget/). Выберите язык, переводите в браузере, и Weblate сам откроет pull request.
 
