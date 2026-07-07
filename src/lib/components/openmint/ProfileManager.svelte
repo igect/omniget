@@ -20,31 +20,61 @@
   let loading = $state(false);
   let error = $state('');
 
+  // Monotonic counter to guard against out-of-order async responses. Without
+  // this, switching platform tabs (or an add-then-switch) while a previous
+  // load/save was still in flight could let a stale response land last and
+  // silently overwrite the list with the wrong platform's data - looking
+  // like a newly-added profile had vanished, when it was actually saved
+  // fine and you were just looking at a stale render of a different tab.
+  let requestId = 0;
+
   async function loadPlatformProfiles() {
+    const platform = activePlatform;
+    const thisRequest = ++requestId;
+
     loading = true;
     error = '';
     try {
-      profiles = await loadProfiles(activePlatform);
+      const result = await loadProfiles(platform);
+      if (thisRequest !== requestId) return; // a newer request already won
+      profiles = result;
     } catch (err) {
+      if (thisRequest !== requestId) return;
       error = 'Failed to load profiles';
       console.error(err);
+    } finally {
+      if (thisRequest === requestId) {
+        loading = false;
+      }
     }
-    loading = false;
+  }
+
+  function errorMessage(err: unknown, fallback: string): string {
+    if (typeof err === 'string') return err;
+    if (err instanceof Error) return err.message;
+    return fallback;
   }
 
   async function addProfile() {
-    if (!newUrl.trim()) {
+    // Trim once and use the trimmed value everywhere - previously the
+    // validation check trimmed but the value actually sent to the backend
+    // did not, so pasted whitespace/newlines got stored as-is.
+    const trimmedUrl = newUrl.trim();
+
+    if (!trimmedUrl) {
       error = 'Please enter a URL or username';
       return;
     }
-    
+
     error = '';
     try {
-      await saveProfile(activePlatform, newUrl);
+      await saveProfile(activePlatform, trimmedUrl);
       newUrl = '';
       await loadPlatformProfiles();
     } catch (err) {
-      error = 'Failed to add profile';
+      // Surface the real reason (e.g. "Profile already exists") instead of
+      // a generic message that made every failure look like a mystery.
+      error = errorMessage(err, 'Failed to add profile');
       console.error(err);
     }
   }

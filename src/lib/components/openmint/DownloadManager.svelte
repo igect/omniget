@@ -1,32 +1,39 @@
 <script lang="ts">
-  import { 
-    runGalleryDlDownload, 
-    checkPythonDependencies, 
-    listenToDownloadProgress,
-    generateDownloadId,
+  import {
+    checkPythonDependencies,
     saveAppSettings,
     loadAppSettings,
-    type DownloadProgress 
   } from '$lib/api/openmint';
+  import {
+    isActive,
+    getFilesDownloaded,
+    getLiveOutput,
+    getStatus,
+    getStatusType,
+    getLastFilesCount,
+    clearStatus as clearStoreStatus,
+    startDownload as startStoreDownload,
+    reattachIfActive,
+  } from '$lib/stores/openmint-download-store.svelte';
   import { createEventDispatcher, onMount } from 'svelte';
-  
+
   const dispatch = createEventDispatcher();
-  
+
   let url = $state('');
   let outputDir = $state('');
   let contentType = $state('all');
   let cookiesFile = $state('');
-  let downloading = $state(false);
-  let progress = $state(0);
-  let status = $state('');
-  let statusType = $state<'success' | 'error' | 'info'>('info');
   let depsStatus = $state('');
-  let currentDownloadId = $state<string | null>(null);
-  let unlistenProgress: (() => void) | null = null;
-  let liveOutput = $state<string[]>([]);
+
+  let downloading = $derived(isActive());
+  let filesDownloaded = $derived(getFilesDownloaded());
+  let liveOutput = $derived(getLiveOutput());
+  let status = $derived(getStatus());
+  let statusType = $derived(getStatusType());
 
   onMount(async () => {
-    // Load saved settings
+    reattachIfActive();
+
     try {
       const settings = await loadAppSettings();
       if (settings.output_directory) {
@@ -50,60 +57,25 @@
 
   async function startDownload() {
     if (!url.trim() || !outputDir.trim()) {
-      status = 'Please fill in all required fields';
-      statusType = 'error';
       return;
     }
 
-    downloading = true;
-    progress = 0;
-    status = 'Starting download...';
-    statusType = 'info';
-    liveOutput = [];
-    
-    const downloadId = generateDownloadId();
-    currentDownloadId = downloadId;
+    const startedUrl = url;
+    const startedContentType = contentType;
 
     try {
-      unlistenProgress = await listenToDownloadProgress(downloadId, (progressData: DownloadProgress) => {
-        liveOutput = [...liveOutput, progressData.message];
-        if (progressData.files_downloaded > 0) {
-          progress = Math.min((progressData.files_downloaded / 100) * 100, 100);
-        }
-      });
-
-      const result = await runGalleryDlDownload(
-        url,
-        outputDir,
-        cookiesFile || null,
-        contentType,
-        downloadId
-      );
-
-      if (result.success) {
-        status = `✅ Downloaded ${result.files_count} files successfully!`;
-        statusType = 'success';
-        progress = 100;
-        
-        dispatch('downloadComplete', {
-          url,
-          platform: contentType,
-          filesCount: result.files_count
-        });
-      } else {
-        status = `❌ ${result.message}`;
-        statusType = 'error';
-      }
+      await startStoreDownload(url, outputDir, cookiesFile, contentType);
     } catch (error) {
-      status = `❌ Download failed: ${error}`;
-      statusType = 'error';
-    } finally {
-      downloading = false;
-      if (unlistenProgress) {
-        unlistenProgress();
-        unlistenProgress = null;
-      }
-      currentDownloadId = null;
+      console.error('Failed to start download:', error);
+      return;
+    }
+
+    if (getStatusType() === 'success') {
+      dispatch('downloadComplete', {
+        url: startedUrl,
+        platform: startedContentType,
+        filesCount: getLastFilesCount()
+      });
     }
   }
 
@@ -113,20 +85,14 @@
         outputDir || null,
         cookiesFile || null
       );
-      status = 'Settings saved successfully!';
-      statusType = 'success';
-      setTimeout(() => {
-        status = '';
-      }, 3000);
+      clearStoreStatus();
     } catch (error) {
-      status = `Failed to save settings: ${error}`;
-      statusType = 'error';
+      console.error('Failed to save settings:', error);
     }
   }
 
   function clearStatus() {
-    status = '';
-    statusType = 'info';
+    clearStoreStatus();
   }
 
   $effect(() => {
@@ -213,12 +179,22 @@
     </button>
   </div>
 
-  {#if downloading || progress > 0}
+  {#if downloading || filesDownloaded > 0}
     <div class="progress-container">
-      <div class="progress-bar">
-        <div class="progress-fill" style="width: {progress}%"></div>
-      </div>
-      <div class="progress-text">{Math.round(progress)}%</div>
+      {#if downloading}
+        <div class="progress-indeterminate">
+          <div class="spinner"></div>
+          <span class="progress-text">
+            Downloading... {filesDownloaded} {filesDownloaded === 1 ? 'file' : 'files'} downloaded
+          </span>
+        </div>
+      {:else}
+        <div class="progress-complete">
+          <span class="progress-text">
+            ✅ Completed: {filesDownloaded} {filesDownloaded === 1 ? 'file' : 'files'} downloaded
+          </span>
+        </div>
+      {/if}
     </div>
   {/if}
 
@@ -385,26 +361,36 @@
     margin-top: 1.5rem;
   }
 
-  .progress-bar {
-    width: 100%;
-    height: 10px;
+  .progress-indeterminate {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
     background: var(--bg-secondary);
-    border-radius: 5px;
-    overflow: hidden;
-    margin-bottom: 0.5rem;
+    border-radius: 6px;
+    border: 1px solid var(--border);
   }
 
-  .progress-fill {
-    height: 100%;
-    background: linear-gradient(90deg, var(--accent), var(--accent-light));
-    transition: width 0.3s ease;
+  .spinner {
+    width: 24px;
+    height: 24px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+
+  .progress-complete {
+    padding: 1rem;
+    background: rgba(34, 197, 94, 0.15);
+    border-radius: 6px;
+    border: 1px solid rgba(34, 197, 94, 0.3);
   }
 
   .progress-text {
-    text-align: center;
     font-size: 0.875rem;
     font-weight: 600;
-    color: var(--text-secondary);
+    color: var(--text-primary);
   }
 
   .live-output {
@@ -448,6 +434,12 @@
     to {
       opacity: 1;
       transform: translateY(0);
+    }
+  }
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
     }
   }
 </style>
