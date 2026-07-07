@@ -618,6 +618,9 @@
       "user_agent": "カスタム User-Agent（上級者向け）",
       "user_agent_desc": "ダウンロードにカスタム User-Agent を送信します。空欄で既定値を使用。",
       "user_agent_placeholder": "ブラウザの既定 User-Agent",
+      "github_token": "GitHub 個人アクセストークン",
+      "github_token_desc": "プラグインのインストール・更新時のAPIレート制限エラーを回避するため、GitHubトークンを貼り付けてください。",
+      "github_token_placeholder": "ghp_...",
       "twitter_manual_cookie": "手動Cookie",
       "twitter_manual_cookie_desc": "ダウンロードに失敗した場合、ここに手動のCookieヘッダーを貼り付けて再試行できます。Twitter/Xに限定されません。例: sessionid=...; csrftoken=...; auth_token=..."
     },

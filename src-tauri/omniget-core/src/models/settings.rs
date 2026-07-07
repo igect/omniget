@@ -245,6 +245,8 @@ pub struct AdvancedSettings {
     pub twitter_manual_cookie: String,
     #[serde(default)]
     pub user_agent: String,
+    #[serde(default)]
+    pub github_token: String,
 }
 
 fn default_concurrent_fragments() -> u32 {
@@ -516,6 +518,7 @@ impl Default for AppSettings {
                 cookies_from_browser: String::new(),
                 twitter_manual_cookie: String::new(),
                 user_agent: String::new(),
+                github_token: String::new(),
             },
             telegram: TelegramSettings::default(),
             proxy: ProxySettings::default(),

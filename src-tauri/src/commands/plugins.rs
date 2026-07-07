@@ -372,8 +372,13 @@ pub async fn install_plugin_zip_from_repo(
     .map_err(|e| e.to_string())?;
 
     let api_url = format!("https://api.github.com/repos/{}/releases/latest", repo);
-    let release: GitHubRelease = client
-        .get(&api_url)
+    let settings = crate::storage::config::load_settings_standalone();
+    let token = settings.advanced.github_token.trim().to_string();
+    let mut req = client.get(&api_url);
+    if !token.is_empty() {
+        req = req.header("Authorization", format!("token {}", token));
+    }
+    let release: GitHubRelease = req
         .send()
         .await
         .map_err(|e| format!("NetworkUnreachable|Failed to fetch release: {}", e))?

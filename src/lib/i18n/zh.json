@@ -618,6 +618,9 @@
       "user_agent": "自定义 User-Agent（高级）",
       "user_agent_desc": "为下载发送自定义 User-Agent。留空则使用默认值。",
       "user_agent_placeholder": "浏览器默认 User-Agent",
+      "github_token": "GitHub 个人访问令牌",
+      "github_token_desc": "粘贴 GitHub 令牌以避免安装/更新插件时出现 API 速率限制错误。",
+      "github_token_placeholder": "ghp_...",
       "twitter_manual_cookie": "手动 Cookie",
       "twitter_manual_cookie_desc": "如果下载失败，您可以在此粘贴手动的 Cookie 标头并重试。不限于 Twitter/X。示例：sessionid=...; csrftoken=...; auth_token=..."
     },

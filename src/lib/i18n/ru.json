@@ -618,6 +618,9 @@
       "user_agent": "Пользовательский User-Agent (дополнительно)",
       "user_agent_desc": "Отправлять свой User-Agent при загрузках. Оставьте пустым для использования стандартного.",
       "user_agent_placeholder": "User-Agent браузера по умолчанию",
+      "github_token": "Личный токен доступа GitHub",
+      "github_token_desc": "Вставьте токен GitHub, чтобы избежать ошибок ограничения скорости API при установке/обновлении плагинов.",
+      "github_token_placeholder": "ghp_...",
       "twitter_manual_cookie": "Ручной Cookie",
       "twitter_manual_cookie_desc": "Если загрузка не удаётся, вы можете вставить сюда заголовок Cookie вручную и повторить попытку. Не ограничивается Twitter/X. Пример: sessionid=...; csrftoken=...; auth_token=..."
     },

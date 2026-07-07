@@ -618,6 +618,9 @@
       "user_agent": "User-Agent personnalisé (avancé)",
       "user_agent_desc": "Envoie un User-Agent personnalisé aux téléchargements. Laissez vide pour utiliser celui par défaut.",
       "user_agent_placeholder": "User-Agent par défaut du navigateur",
+      "github_token": "Jeton d'accès personnel GitHub",
+      "github_token_desc": "Collez un jeton GitHub pour éviter les erreurs de limite de débit de l'API lors de l'installation/mise à jour des plugins.",
+      "github_token_placeholder": "ghp_...",
       "twitter_manual_cookie": "Cookie manuel",
       "twitter_manual_cookie_desc": "Si un téléchargement échoue, vous pouvez coller ici un en-tête Cookie manuel et réessayer. Ce n'est pas limité à Twitter/X. Exemple : sessionid=...; csrftoken=...; auth_token=..."
     },

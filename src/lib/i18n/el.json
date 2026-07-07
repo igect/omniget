@@ -618,6 +618,9 @@
       "user_agent": "Προσαρμοσμένο User-Agent (για προχωρημένους)",
       "user_agent_desc": "Στέλνει προσαρμοσμένο User-Agent στις λήψεις. Άφησέ το κενό για χρήση του προεπιλεγμένου.",
       "user_agent_placeholder": "Προεπιλεγμένο User-Agent του προγράμματος περιήγησης",
+      "github_token": "Προσωπικό διακριτικό πρόσβασης GitHub",
+      "github_token_desc": "Επικολλήστε ένα διακριτικό GitHub για να αποφύγετε σφάλματα ορίου ρυθμού API κατά την εγκατάσταση/ενημέρωση προσθηκών.",
+      "github_token_placeholder": "ghp_...",
       "twitter_manual_cookie": "Χειροκίνητο cookie",
       "twitter_manual_cookie_desc": "Αν μια λήψη αποτύχει, μπορείτε να επικολλήσετε εδώ μια χειροκίνητη κεφαλίδα Cookie και να δοκιμάσετε ξανά. Δεν περιορίζεται στο Twitter/X. Παράδειγμα: sessionid=...; csrftoken=...; auth_token=..."
     },

@@ -80,6 +80,7 @@ export type AppSettings = {
     cookies_from_browser: string;
     twitter_manual_cookie: string;
     user_agent: string;
+    github_token: string;
   };
   telegram: {
     concurrent_downloads: number;

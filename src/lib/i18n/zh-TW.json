@@ -618,6 +618,9 @@
       "user_agent": "自訂 User-Agent（進階）",
       "user_agent_desc": "為下載傳送自訂 User-Agent。留空則使用預設值。",
       "user_agent_placeholder": "瀏覽器預設 User-Agent",
+      "github_token": "GitHub 個人存取權杖",
+      "github_token_desc": "貼上 GitHub 權杖以避免安裝/更新外掛程式時發生 API 速率限制錯誤。",
+      "github_token_placeholder": "ghp_...",
       "twitter_manual_cookie": "手動 Cookie",
       "twitter_manual_cookie_desc": "如果下載失敗，您可以在此貼上手動的 Cookie 標頭並重試。不限於 Twitter/X。範例：sessionid=...; csrftoken=...; auth_token=..."
     },
