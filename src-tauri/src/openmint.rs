@@ -86,18 +86,6 @@ pub fn check_python_dependencies() -> Result<String, String> {
 }
 
 // Run gallery-dl download asynchronously.
-//
-// Fixes vs the previous version:
-// 1. stdout was piped but never read. gallery-dl writes one line per
-//    downloaded file to stdout (stderr is warnings/errors only). Once
-//    enough output piled up in the unread stdout pipe, gallery-dl would
-//    block writing to it and the whole download would hang forever,
-//    which is what showed up as a UI freeze.
-// 2. File counting was done by pattern-matching stderr lines, which
-//    rarely contain per-file lines, hence "0 files downloaded" even on
-//    successful runs.
-// 3. All the blocking process/IO work now runs inside spawn_blocking so
-//    it can't stall the async runtime that also serves the rest of the UI.
 #[command]
 pub async fn run_gallery_dl_download(
     app: AppHandle,
@@ -122,23 +110,55 @@ fn run_gallery_dl_download_blocking(
     content_type: String,
     download_id: String,
 ) -> Result<DownloadResult, String> {
-    // Create output directory if it doesn't exist
+    // Create base output directory
     fs::create_dir_all(&output_dir)
         .map_err(|e| format!("Failed to create output directory: {}", e))?;
 
     let mut cmd = Command::new("gallery-dl");
-
+    
     #[cfg(target_os = "windows")]
     cmd.creation_flags(0x08000000);
 
-    cmd.arg("-d").arg(&output_dir);
+    // Determine output directory based on content type
+    let final_output_dir = match content_type.as_str() {
+        "photos" => PathBuf::from(&output_dir).join("Photos"),
+        "videos" => PathBuf::from(&output_dir).join("Videos"),
+        "stories" => PathBuf::from(&output_dir).join("Stories"),
+        "highlights" => PathBuf::from(&output_dir).join("Highlights"),
+        _ => PathBuf::from(&output_dir),
+    };
 
+    fs::create_dir_all(&final_output_dir)
+        .map_err(|e| format!("Failed to create content directory: {}", e))?;
+
+    cmd.arg("-d").arg(&final_output_dir);
+
+    // Apply strict content type filters
     match content_type.as_str() {
         "photos" => {
-            cmd.arg("--filter").arg("extension in ('jpg', 'jpeg', 'png', 'gif', 'webp')");
+            cmd.arg("--filter").arg("extension in ('jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'jfif', 'heic', 'avif', 'tiff', 'svg')");
         }
         "videos" => {
-            cmd.arg("--filter").arg("extension in ('mp4', 'webm', 'mkv', 'mov', 'avi')");
+            cmd.arg("--filter").arg("extension in ('mp4', 'webm', 'mkv', 'mov', 'avi', 'm4v', 'flv', 'wmv', '3gp', 'mpeg', 'mpg', 'ts', 'f4v', 'mts', 'm2ts')");
+        }
+        "stories" => {
+            // Stories require specific URL handling
+            // Extract username from URL and construct stories URL
+            if let Some(username) = extract_username_from_url(&url) {
+                let stories_url = format!("https://www.instagram.com/stories/{}/", username);
+                cmd.arg(&stories_url);
+            } else {
+                cmd.arg(&url);
+            }
+        }
+        "highlights" => {
+            // Highlights require specific URL handling
+            if let Some(username) = extract_username_from_url(&url) {
+                let highlights_url = format!("https://www.instagram.com/{}/highlights/", username);
+                cmd.arg(&highlights_url);
+            } else {
+                cmd.arg(&url);
+            }
         }
         _ => {}
     }
@@ -150,7 +170,11 @@ fn run_gallery_dl_download_blocking(
     }
 
     cmd.arg("--sleep-request").arg("2");
-    cmd.arg(&url);
+    
+    // For stories and highlights, we already set the URL above
+    if content_type != "stories" && content_type != "highlights" {
+        cmd.arg(&url);
+    }
 
     cmd.stdout(Stdio::piped());
     cmd.stderr(Stdio::piped());
@@ -161,11 +185,9 @@ fn run_gallery_dl_download_blocking(
     let stdout = child.stdout.take().ok_or("Failed to capture stdout")?;
     let stderr = child.stderr.take().ok_or("Failed to capture stderr")?;
 
-    // Shared across both reader threads so the emitted file count is
-    // always accurate regardless of which stream is chattier.
     let files_downloaded = Arc::new(AtomicU32::new(0));
 
-    // stdout: one line per downloaded file. This is the real progress signal.
+    // stdout reader
     let stdout_handle = {
         let app = app.clone();
         let download_id = download_id.clone();
@@ -183,8 +205,7 @@ fn run_gallery_dl_download_blocking(
         })
     };
 
-    // stderr: warnings/errors, plus we keep the last line around in case
-    // the process exits with a failure so we can surface a useful message.
+    // stderr reader
     let last_stderr_line = Arc::new(std::sync::Mutex::new(String::new()));
     let stderr_handle = {
         let app = app.clone();
@@ -205,8 +226,6 @@ fn run_gallery_dl_download_blocking(
         })
     };
 
-    // Drain both streams fully before waiting on exit status, otherwise we
-    // can race the child's own buffered writes on process exit.
     let _ = stdout_handle.join();
     let _ = stderr_handle.join();
 
@@ -230,6 +249,28 @@ fn run_gallery_dl_download_blocking(
         };
         Err(error_msg)
     }
+}
+
+// Helper function to extract username from Instagram URL
+fn extract_username_from_url(url: &str) -> Option<String> {
+    if !url.contains("instagram.com") {
+        return None;
+    }
+    
+    // Handle various Instagram URL formats
+    let url = url.trim_end_matches('/');
+    
+    // Find the part after instagram.com/
+    if let Some(pos) = url.find("instagram.com/") {
+        let after_domain = &url[pos + 14..];
+        let username = after_domain.split('/').next()?;
+        let cleaned = username.split(['?', '#']).next()?;
+        if !cleaned.is_empty() && cleaned != "stories" && cleaned != "highlights" {
+            return Some(cleaned.to_string());
+        }
+    }
+    
+    None
 }
 
 // Save app settings

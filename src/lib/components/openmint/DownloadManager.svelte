@@ -3,6 +3,7 @@
     checkPythonDependencies,
     saveAppSettings,
     loadAppSettings,
+    loadProfiles,
   } from '$lib/api/openmint';
   import {
     isActive,
@@ -24,6 +25,10 @@
   let contentType = $state('all');
   let cookiesFile = $state('');
   let depsStatus = $state('');
+  
+  // Profile management
+  let savedProfiles = $state<Array<{ url: string; username?: string }>>([]);
+  let selectedProfileIndex = $state(-1);
 
   let downloading = $derived(isActive());
   let filesDownloaded = $derived(getFilesDownloaded());
@@ -42,10 +47,27 @@
       if (settings.cookies_file) {
         cookiesFile = settings.cookies_file;
       }
+      
+      // Load saved profiles
+      await loadSavedProfiles();
     } catch (error) {
       console.error('Failed to load settings:', error);
     }
   });
+
+  async function loadSavedProfiles() {
+    try {
+      const instagramProfiles = await loadProfiles('instagram');
+      savedProfiles = instagramProfiles;
+      
+      // Auto-select first profile if none selected and no manual URL
+      if (savedProfiles.length > 0 && selectedProfileIndex === -1 && !url.trim()) {
+        selectedProfileIndex = 0;
+      }
+    } catch (error) {
+      console.error('Failed to load profiles:', error);
+    }
+  }
 
   async function checkDeps() {
     try {
@@ -55,16 +77,33 @@
     }
   }
 
+  function getDownloadUrl(): string | null {
+    // Priority 1: Manual URL input
+    if (url.trim()) {
+      return url.trim();
+    }
+    
+    // Priority 2: Selected saved profile
+    if (selectedProfileIndex >= 0 && savedProfiles[selectedProfileIndex]) {
+      return savedProfiles[selectedProfileIndex].url;
+    }
+    
+    return null;
+  }
+
   async function startDownload() {
-    if (!url.trim() || !outputDir.trim()) {
+    const downloadUrl = getDownloadUrl();
+    
+    if (!downloadUrl || !outputDir.trim()) {
+      status = "Please enter a profile URL or select a saved profile, and specify output directory";
+      statusType = "error";
       return;
     }
 
-    const startedUrl = url;
     const startedContentType = contentType;
 
     try {
-      await startStoreDownload(url, outputDir, cookiesFile, contentType);
+      await startStoreDownload(downloadUrl, outputDir, cookiesFile, contentType);
     } catch (error) {
       console.error('Failed to start download:', error);
       return;
@@ -72,7 +111,7 @@
 
     if (getStatusType() === 'success') {
       dispatch('downloadComplete', {
-        url: startedUrl,
+        url: downloadUrl,
         platform: startedContentType,
         filesCount: getLastFilesCount()
       });
@@ -95,16 +134,33 @@
     clearStoreStatus();
   }
 
+  function selectProfile(index: number) {
+    selectedProfileIndex = index;
+    // Clear manual URL when selecting a saved profile
+    if (index >= 0) {
+      url = '';
+    }
+  }
+
+  function clearSelectedProfile() {
+    selectedProfileIndex = -1;
+  }
+
   $effect(() => {
     checkDeps();
+  });
+  
+  // Watch for manual URL changes
+  $effect(() => {
+    if (url.trim()) {
+      selectedProfileIndex = -1;
+    }
   });
 </script>
 
 <div class="download-manager">
-  <div class="deps-check">
-    <span class:ok={depsStatus.includes('OK')} class:error={!depsStatus.includes('OK')}>
-      {depsStatus || 'Checking dependencies...'}
-    </span>
+  <div class="deps-check" class:ok={depsStatus.includes('OK')} class:error={!depsStatus.includes('OK')}>
+    <span>{depsStatus || 'Checking dependencies...'}</span>
   </div>
 
   {#if status}
@@ -115,14 +171,37 @@
   {/if}
 
   <div class="form-group">
-    <label for="profile-url">Profile URL</label>
+    <label for="profile-url">Profile URL (optional - overrides saved profiles)</label>
     <input
       id="profile-url"
       type="text"
       bind:value={url}
       placeholder="https://instagram.com/username"
       disabled={downloading}
+      oninput={clearSelectedProfile}
     />
+    {#if !url.trim() && savedProfiles.length > 0}
+      <div class="saved-profiles">
+        <p class="profile-label">Or select a saved profile:</p>
+        <div class="profile-list">
+          {#each savedProfiles as profile, index}
+            <button
+              class:profile-button={true}
+              class:selected={selectedProfileIndex === index}
+              onclick={() => selectProfile(index)}
+              disabled={downloading}
+            >
+              <span class="profile-name">{profile.username || profile.url}</span>
+              {#if selectedProfileIndex === index}
+                <span class="checkmark">✓</span>
+              {/if}
+            </button>
+          {/each}
+        </div>
+      </div>
+    {:else if !url.trim() && savedProfiles.length === 0}
+      <p class="no-profiles">No saved profiles. Add profiles in the Profiles tab.</p>
+    {/if}
   </div>
 
   <div class="form-group">
@@ -141,11 +220,11 @@
   <div class="form-group">
     <label for="content-type">Content Type</label>
     <select id="content-type" bind:value={contentType} disabled={downloading}>
-      <option value="all">All Content</option>
       <option value="photos">Photos Only</option>
       <option value="videos">Videos Only</option>
-      <option value="stories">Stories</option>
-      <option value="highlights">Highlights</option>
+      <option value="stories">Stories Only</option>
+      <option value="highlights">Highlights Only</option>
+      <option value="all">All Content</option>
     </select>
   </div>
 
@@ -173,7 +252,7 @@
     <button
       class="download-btn"
       onclick={startDownload}
-      disabled={downloading || !url.trim() || !outputDir.trim()}
+      disabled={!getDownloadUrl() || !outputDir.trim() || downloading}
     >
       {downloading ? 'Downloading...' : 'Start Download'}
     </button>
@@ -213,7 +292,7 @@
 <style>
   .download-manager {
     padding: 1rem;
-    max-width: 600px;
+    max-width: 800px;
   }
 
   .deps-check {
@@ -313,6 +392,69 @@
     cursor: not-allowed;
   }
 
+  .saved-profiles {
+    margin-top: 0.75rem;
+    padding: 0.75rem;
+    background: var(--bg-secondary);
+    border-radius: 6px;
+    border: 1px solid var(--border);
+  }
+
+  .profile-label {
+    font-size: 0.8125rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.5rem;
+  }
+
+  .profile-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .profile-button {
+    padding: 0.5rem 0.75rem;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.8125rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.2s;
+  }
+
+  .profile-button:hover:not(:disabled) {
+    background: var(--bg-hover);
+    border-color: var(--accent);
+  }
+
+  .profile-button.selected {
+    background: rgba(34, 197, 94, 0.15);
+    border-color: #22c55e;
+    color: #22c55e;
+  }
+
+  .profile-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .profile-name {
+    font-weight: 500;
+  }
+
+  .checkmark {
+    font-weight: bold;
+  }
+
+  .no-profiles {
+    font-size: 0.8125rem;
+    color: var(--text-secondary);
+    font-style: italic;
+  }
+
   .button-group {
     display: flex;
     gap: 0.75rem;
@@ -409,11 +551,12 @@
   }
 
   .output-text {
-    font-family: 'Courier New', monospace;
+    font-family: 'Cascadia Mono', 'Courier New', monospace;
     font-size: 0.8125rem;
     color: var(--text-primary);
-    max-height: 200px;
+    max-height: 300px;
     overflow-y: auto;
+    line-height: 1.5;
   }
 
   .output-line {
