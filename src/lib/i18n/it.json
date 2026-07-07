@@ -618,7 +618,7 @@
       "user_agent": "User-Agent personalizzato (avanzato)",
       "user_agent_desc": "Invia un User-Agent personalizzato ai download. Lascia vuoto per usare quello predefinito.",
       "user_agent_placeholder": "User-Agent predefinito del browser",
-      "github_token": "Token di acesso personale GitHub",
+      "github_token": "Token di accesso personale GitHub",
       "github_token_desc": "Incolla un token GitHub per evitare errori di limite di velocità dell'API durante l'installazione/aggiornamento dei plugin.",
       "github_token_placeholder": "ghp_...",
       "twitter_manual_cookie": "Cookie manuale",
