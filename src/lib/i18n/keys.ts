@@ -31,6 +31,7 @@ export type TranslationKeys =
   | 'about.feature_hotmart'
   | 'about.feature_i18n'
   | 'about.feature_mascot'
+  | 'about.feature_openmint'
   | 'about.feature_platforms'
   | 'about.feature_progress'
   | 'about.feature_tech'
