@@ -959,6 +959,7 @@
   },
   "about": {
     "tab": {
+      "overview": "概述",
       "terms": "使用條款",
       "project": "專案",
       "roadmap": "開發計畫",

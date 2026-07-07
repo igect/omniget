@@ -86,6 +86,7 @@
     font-weight: 500;
     color: var(--text-muted);
     border-radius: var(--radius-sm);
+    text-transform: capitalize;
     text-decoration: none;
     transition: color var(--duration-fast) var(--ease-out), background var(--duration-fast) var(--ease-out);
   }

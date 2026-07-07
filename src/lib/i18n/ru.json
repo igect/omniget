@@ -959,6 +959,7 @@
   },
   "about": {
     "tab": {
+      "overview": "обзор",
       "terms": "условия",
       "project": "проект",
       "roadmap": "план",

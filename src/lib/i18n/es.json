@@ -959,6 +959,7 @@
   },
   "about": {
     "tab": {
+      "overview": "vista general",
       "terms": "términos",
       "project": "proyecto",
       "roadmap": "roadmap",

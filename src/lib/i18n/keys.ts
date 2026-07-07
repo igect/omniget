@@ -56,6 +56,7 @@ export type TranslationKeys =
   | 'about.star_description'
   | 'about.tab.changelog'
   | 'about.tab.debug'
+  | 'about.tab.overview'
   | 'about.tab.project'
   | 'about.tab.roadmap'
   | 'about.tab.terms'

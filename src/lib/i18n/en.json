@@ -959,6 +959,7 @@
   },
   "about": {
     "tab": {
+      "overview": "overview",
       "terms": "terms",
       "project": "project",
       "roadmap": "roadmap",

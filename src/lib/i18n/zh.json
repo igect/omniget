@@ -959,6 +959,7 @@
   },
   "about": {
     "tab": {
+      "overview": "概述",
       "terms": "条款",
       "project": "项目",
       "roadmap": "路线图",
