@@ -306,6 +306,14 @@
           </div>
           <input type="text" class="input-text" placeholder={$t('settings.advanced.user_agent_placeholder')} value={settings.advanced?.user_agent ?? ""} onchange={(e) => updateSettings({ advanced: { user_agent: (e.target as HTMLInputElement).value.trim() } })} />
         </div>
+        <div class="divider"></div>
+        <div class="setting-row">
+          <div class="setting-col">
+            <span class="setting-label">{$t('settings.advanced.github_token')}</span>
+            <span class="setting-path">{$t('settings.advanced.github_token_desc')}</span>
+          </div>
+          <input type="password" class="input-text" placeholder={$t('settings.advanced.github_token_placeholder')} value={settings.advanced?.github_token ?? ""} onchange={(e) => updateSettings({ advanced: { github_token: (e.target as HTMLInputElement).value.trim() } })} />
+        </div>
       </div>
     {:else if subView === "debug"}
       <div class="card">
