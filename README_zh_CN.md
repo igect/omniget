@@ -222,7 +222,7 @@ OmniGet 在一个窗口里搞定这一切。粘贴课程链接、YouTube 链接�
 
 ## 会自我安装的插件
 
-OmniGet 自带完整的插件（课程、学习、Telegram、转换等等），它们会在首次启动时自行安装。当有新版本发布时，它们也会自动更新，你永远不用去手动找下载。可以在侧边栏里随时开关任意插件，也可以卸载你不需要的。你移除的，就一直保持移除状态。
+OmniGet 自带完整的插件（课程、学习、Telegram、转换等等），它们会在首次启动时自行安装。当有新版本发布时，它们也会自动更新，你永远不用去手动找下载。插件支持热加载，无需重启应用。可以在侧边栏里随时开关任意插件，也可以卸载你不需要的。你移除的，就一直保持移除状态。
 
 <p align="center">
   <img src="assets/readme/en/plugins.png" alt="OmniGet 插件与依赖，浏览器扩展配对以及以表格形式展示的受管理工具" width="820" />
@@ -244,7 +244,8 @@ OmniGet 自带完整的插件（课程、学习、Telegram、转换等等），�
 - **Telegram 聊天浏览器**，可保存任意聊天中的照片、视频和文件。
 - **浏览器扩展**（Chrome 和 Firefox），一键把当前页面交给 OmniGet。
 - **全局快捷键**（`Ctrl+Shift+D`，macOS 上为 `Cmd+Shift+D`），下载剪贴板里的任意链接。
-- **9 种语言** 和 **14 种主题**，包括 Catppuccin、Dracula、One Dark Pro 以及三种墨水屏配色。
+- **10 种语言** 和 **15 种主题**，包括 Catppuccin、Dracula、One Dark Pro、NyxVamp 以及三种墨水屏配色。
+- **GitHub 令牌支持**，在专家设置中配置，可绕过 GitHub API 速率限制以检查更新。
 
 ---
 
@@ -319,7 +320,7 @@ OmniGet 在 [Weblate](https://hosted.weblate.org/engage/omniget/) 上进行翻�
 
 ## 致平台方
 
-如果你代表某个被列出的平台并有顾虑，请用公司邮箱发邮件至 **tonhowtf@gmail.com**。该平台会立即从列表中移除。
+如果你代表某个被列出的平台并有顾虑，请[提交 issue](https://github.com/sayfalse/omniget/issues) 或用公司邮箱联系。该平台会立即从列表中移除。
 
 ## 法律声明
 
