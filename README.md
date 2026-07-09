@@ -154,9 +154,10 @@ Downloads are reliable, not a guessing game. Speed and ETA come straight from th
 Download complete creator profiles, image galleries, videos, and stories from popular social media platforms. Powered by `gallery-dl` under the hood, OpenMint runs asynchronously and manages your downloads in a clean tab.
 
 - **Supported Platforms:** Instagram, TikTok, Facebook, and X (formerly Twitter).
-- **Profile Management:** Save your favorite creator profiles/URLs so you can check and download new content with one click.
-- **Stories & Highlights:** Download active Instagram stories and highlights via an integrated helper.
-- **Advanced Options:** Set a custom output folder, load cookies files to download private or age-restricted content, and choose whether to download images, videos, or all media types.
+- **Saved Profiles:** Save your favorite creator profiles and URLs. Check back for new content with one click.
+- **Stories & Highlights:** Download active Instagram stories and highlights via an integrated URL helper.
+- **Advanced Options:** Set a custom output folder, load cookies files to download private or age-restricted content, route through a proxy, set a custom User-Agent, and choose whether to download images, videos, or all media types.
+- **Real-Time Progress:** Live file count, deduplication, and a streaming log so you always know what is happening.
 - **Asynchronous Global Store:** Downloads run in the background, allowing you to browse other parts of the app without losing track of your download status or progress log.
 
 ---
@@ -222,7 +223,7 @@ Settings are grouped and quiet. Common choices are right there, the deep options
 
 ## Plugins that install themselves
 
-OmniGet ships with its full set of plugins (courses, study, Telegram, convert, and more) and they set themselves up on first launch. They also update on their own when a new version is released, so you never chase a download. Turn any of them on or off from the sidebar, and uninstall the ones you do not want. What you remove stays removed.
+OmniGet ships with its full set of plugins (courses, study, Telegram, convert, and more) and they set themselves up on first launch. They also update on their own when a new version is released, so you never chase a download. Plugins hot-load without restarting the app. Turn any of them on or off from the sidebar, and uninstall the ones you do not want. What you remove stays removed.
 
 <p align="center">
   <img src="assets/readme/en/plugins.png" alt="OmniGet plugins and dependencies, browser extension pairing and managed tools as a table" width="820" />
@@ -244,7 +245,8 @@ Quietly there when you need them.
 - **Telegram chat browser** that lets you save photos, videos, and files from any chat.
 - **Browser extension** (Chrome and Firefox) that hands the current page to OmniGet with one click.
 - **Global hotkey** (`Ctrl+Shift+D`, or `Cmd+Shift+D` on macOS) that downloads whatever URL is in your clipboard.
-- **9 languages** and **14 themes**, including Catppuccin, Dracula, One Dark Pro, and three e-ink variants.
+- **10 languages** and **15 themes**, including Catppuccin, Dracula, One Dark Pro, NyxVamp, and three e-ink variants.
+- **GitHub token support** in Expert settings to bypass GitHub API rate limits when checking for updates.
 
 ---
 
@@ -319,7 +321,7 @@ OmniGet is translated on [Weblate](https://hosted.weblate.org/engage/omniget/). 
 
 ## Notice to platform owners
 
-If you represent a listed platform and have concerns, email **tonhowtf@gmail.com** from a company address. The platform comes off the list right away.
+If you represent a listed platform and have concerns, [open an issue](https://github.com/sayfalse/omniget/issues) or email from a company address. The platform comes off the list right away.
 
 ## Legal
 
