@@ -25,7 +25,6 @@ cross-platform, open-source, instagram-downloader, tiktok-downloader, bilibili, 
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0-green?style=for-the-badge" alt="许可证 GPL-3.0" /></a>
   <a href="https://github.com/sayfalse/omniget/stargazers"><img src="https://img.shields.io/github/stars/sayfalse/omniget?style=for-the-badge" alt="GitHub stars" /></a>
   <a href="https://github.com/sayfalse/omniget/releases"><img src="https://img.shields.io/github/downloads/sayfalse/omniget/total?style=for-the-badge&label=downloads" alt="总下载量" /></a>
-  <a href="https://hosted.weblate.org/engage/omniget/"><img src="https://hosted.weblate.org/widget/omniget/frontend-json/svg-badge.svg" alt="翻译进度" /></a>
 </p>
 
 <p align="center">
