@@ -223,6 +223,8 @@ Settings are grouped and quiet. Common choices are right there, the deep options
 
 OmniGet ships with its full set of plugins (courses, study, Telegram, convert, and more) and they set themselves up on first launch. They also update on their own when a new version is released, so you never chase a download. Plugins hot-load without restarting the app. Turn any of them on or off from the sidebar, and uninstall the ones you do not want. What you remove stays removed.
 
+Plugin ABI compatibility is verified at load time — every plugin declares its SDK version and the core rejects mismatched binaries with a clear error message, so you never run a broken plugin silently.
+
 <p align="center">
   <img src="assets/readme/en/plugins.png" alt="OmniGet plugins and dependencies, browser extension pairing and managed tools as a table" width="820" />
   <br/>
@@ -243,7 +245,7 @@ Quietly there when you need them.
 - **Telegram chat browser** that lets you save photos, videos, and files from any chat.
 - **Browser extension** (Chrome and Firefox) that hands the current page to OmniGet with one click.
 - **Global hotkey** (`Ctrl+Shift+D`, or `Cmd+Shift+D` on macOS) that downloads whatever URL is in your clipboard.
-- **10 languages** and **15 themes**, including Catppuccin, Dracula, One Dark Pro, NyxVamp, and three e-ink variants.
+- **10 languages** with full interface coverage — every button, label, and hint is translated, and the locale files sync automatically so no key is ever missing. **15 themes**, including Catppuccin, Dracula, One Dark Pro, NyxVamp, and three e-ink variants.
 - **GitHub token support** in Expert settings to bypass GitHub API rate limits when checking for updates.
 
 ---
