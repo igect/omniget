@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/i18n";
   import { showToast } from "$lib/stores/toast-store.svelte";
   import {
     downloadStore,
@@ -23,7 +24,7 @@
       }
       return "Salvando faixa…";
     }
-    if (job.stage === "skipped") return "Já tinha";
+    if (job.stage === "skipped") return t("study.music.downloads.skipped");
     if (job.stage === "done") {
       if (job.kind === "bulk") {
         const ok = job.successCount ?? 0;
@@ -44,7 +45,7 @@
     const codec = getLastCodec() ?? "mp3";
     const dir = getLastDownloadDir();
     if (!dir) {
-      showToast("error", "Escolhe a pasta de novo no botão de baixar.");
+      showToast("error", t("study.music.downloads.pick_folder"));
       downloadStore.removeJob(job.id);
       return;
     }
@@ -77,7 +78,7 @@
     const codec = job.codec ?? getLastCodec() ?? "mp3";
     const dir = job.outputDir ?? getLastDownloadDir();
     if (!dir) {
-      showToast("error", "Escolhe a pasta de novo no botão de baixar.");
+      showToast("error", t("study.music.downloads.pick_folder"));
       return;
     }
     downloadStore.removeFailedTrackFromBulk(job.id, failed.id);
@@ -101,7 +102,7 @@
     const codec = job.codec ?? getLastCodec() ?? "mp3";
     const dir = job.outputDir ?? getLastDownloadDir();
     if (!dir) {
-      showToast("error", "Escolhe a pasta de novo no botão de baixar.");
+      showToast("error", t("study.music.downloads.pick_folder"));
       return;
     }
     const failed = downloadStore.consumeFailedTracks(job.id);
@@ -184,7 +185,7 @@
         Downloads <span class="muted">({jobs.length})</span>
       </span>
       <div class="head-actions">
-        <button type="button" class="link" onclick={clearDone}>Limpar concluídos</button>
+        <button type="button" class="link" onclick={clearDone}>{$t("study.music.downloads.clear_done")}</button>
         <button type="button" class="close" onclick={toggleDrawer} aria-label="Fechar">×</button>
       </div>
     </header>

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/i18n";
   import SettingsField from "./SettingsField.svelte";
   import SettingsSlider from "./SettingsSlider.svelte";
   import SettingsToggle from "./SettingsToggle.svelte";
@@ -23,8 +24,8 @@
 
 <section class="tab">
   <SettingsField
-    label="Limite de conclusão"
-    description="Porcentagem do vídeo a partir da qual a aula é marcada como completa"
+    label={$t("study.settings.player.completion_threshold_label")}
+    description={$t("study.settings.player.completion_threshold_desc")}
     valueDisplay={`${Math.round((player.completion_threshold ?? 0.95) * 100)}%`}
   >
     <SettingsSlider
@@ -37,8 +38,8 @@
   </SettingsField>
 
   <SettingsField
-    label="Avanço longo"
-    description="Tempo do salto com J/L (atalho)"
+    label={$t("study.settings.player.seek_long_label")}
+    description={$t("study.settings.player.seek_long_desc")}
     valueDisplay={`${(player.seek_step_long_ms ?? 10000) / 1000}s`}
   >
     <SettingsSlider
@@ -51,8 +52,8 @@
   </SettingsField>
 
   <SettingsField
-    label="Avanço curto"
-    description="Tempo do salto com Shift+J/L"
+    label={$t("study.settings.player.seek_short_label")}
+    description={$t("study.settings.player.seek_short_desc")}
     valueDisplay={`${(player.seek_step_short_ms ?? 3000) / 1000}s`}
   >
     <SettingsSlider
@@ -65,30 +66,30 @@
   </SettingsField>
 
   <SettingsField
-    label="Pausar ao minimizar"
-    description="Pausa o vídeo quando a janela perde foco"
+    label={$t("study.settings.player.pause_on_minimize_label")}
+    description={$t("study.settings.player.pause_on_minimize_desc")}
   >
     <SettingsToggle
       value={player.pause_on_minimize ?? false}
       onChange={(v) => setPlayer("pause_on_minimize", v)}
-      ariaLabel="Pausar ao minimizar"
+      ariaLabel={$t("study.settings.player.pause_on_minimize_aria")}
     />
   </SettingsField>
 
   <SettingsField
-    label="ESC sai do fullscreen"
-    description="Quando ativo, ESC sai do fullscreen. Quando inativo, ESC fecha a aula"
+    label={$t("study.settings.player.esc_fullscreen_label")}
+    description={$t("study.settings.player.esc_fullscreen_desc")}
   >
     <SettingsToggle
       value={player.esc_exit_fullscreen ?? true}
       onChange={(v) => setPlayer("esc_exit_fullscreen", v)}
-      ariaLabel="ESC sai do fullscreen"
+      ariaLabel={$t("study.settings.player.esc_fullscreen_aria")}
     />
   </SettingsField>
 
   <SettingsField
-    label="Intensidade do blur do hero"
-    description="Desfoque atrás do título no hero da página de curso"
+    label={$t("study.settings.player.hero_blur_label")}
+    description={$t("study.settings.player.hero_blur_desc")}
     valueDisplay={`${player.hero_blur_intensity ?? 40}`}
   >
     <SettingsSlider
@@ -101,13 +102,13 @@
   </SettingsField>
 
   <SettingsField
-    label="Gerar miniaturas automaticamente"
-    description="Cria sprite VTT pra preview na barra de progresso (consome disco)"
+    label={$t("study.settings.player.thumbnails_label")}
+    description={$t("study.settings.player.thumbnails_desc")}
   >
     <SettingsToggle
       value={player.thumbnails_auto_generate ?? false}
       onChange={(v) => setPlayer("thumbnails_auto_generate", v)}
-      ariaLabel="Gerar miniaturas automaticamente"
+      ariaLabel={$t("study.settings.player.thumbnails_aria")}
     />
   </SettingsField>
 </section>

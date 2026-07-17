@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/i18n";
   import { onMount, untrack } from "svelte";
   import { tabsStore } from "$lib/study-notes/tabs-store.svelte";
   import {
@@ -104,12 +105,12 @@
   </nav>
   <div class="body">
     {#if pageId == null}
-      <p class="empty">Sem página ativa.</p>
+      <p class="empty">{t("study.notes.shell.no_active_page")}</p>
     {:else if loading}
-      <p class="empty">Carregando…</p>
+      <p class="empty">{t("study.notes.shell.loading")}</p>
     {:else if tab === "linked"}
       {#if linked.length === 0}
-        <p class="empty">Nenhuma referência direta.</p>
+        <p class="empty">{t("study.notes.shell.backlink_empty_linked")}</p>
       {:else}
         <ul class="refs">
           {#each linked as r (r.block_id)}
@@ -129,7 +130,7 @@
       {/if}
     {:else if tab === "unlinked"}
       {#if unlinked.length === 0}
-        <p class="empty">Nenhuma menção sem link.</p>
+        <p class="empty">{t("study.notes.shell.backlink_empty_unlinked")}</p>
       {:else}
         <ul class="refs">
           {#each unlinked as r (r.block_id)}
@@ -149,7 +150,7 @@
       {/if}
     {:else if tab === "props"}
       {#if props.length === 0}
-        <p class="empty">Nenhuma propriedade nesta página.</p>
+        <p class="empty">{t("study.notes.shell.backlink_empty_props")}</p>
       {:else}
         <ul class="props">
           {#each props as p (p.key)}

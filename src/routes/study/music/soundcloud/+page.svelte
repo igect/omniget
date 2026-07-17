@@ -87,7 +87,7 @@
       if (soundcloudStore.isLoggedIn) {
         void loadRecommended();
       } else {
-        loginError = "Não consegui completar o login. Tenta de novo.";
+        loginError = t("study.music.sc_login_failed");
       }
     } catch (e) {
       loginError = e instanceof Error ? e.message : String(e);
@@ -156,7 +156,7 @@
         outputDir: dir,
         quality: "progressive",
       });
-      showToast("success", `Pronto — salvo na pasta ${folderName(dir)}`);
+      showToast("success", t("study.music.sc_download_done_in_folder", { folder: folderName(dir) }));
     } catch (e) {
       downloadStore.markJobError(optId, e instanceof Error ? e.message : String(e));
     }
@@ -286,21 +286,21 @@
           <path d="M1.175 12.225c-.051 0-.094.046-.101.1l-.233 2.154.233 2.105c.007.058.05.098.101.098.05 0 .09-.04.099-.098l.255-2.105-.27-2.154c0-.057-.045-.1-.09-.1m-.899.828c-.06 0-.091.037-.104.094L0 14.479l.165 1.308c0 .055.045.094.09.094s.089-.045.104-.104l.21-1.319-.21-1.334c0-.061-.044-.1-.09-.1m1.83-1.229c-.061 0-.12.045-.12.104l-.21 2.563.225 2.458c0 .06.045.12.12.12.06 0 .12-.061.12-.12l.255-2.458-.27-2.563c0-.06-.045-.104-.12-.104m.945-.089c-.075 0-.135.06-.15.135l-.193 2.652.21 2.544c.016.077.075.135.149.135.075 0 .135-.058.15-.135l.225-2.544-.225-2.652c-.014-.075-.075-.135-.149-.135m1.139.07c-.089 0-.164.072-.164.163l-.21 2.602.193 2.581c0 .088.075.157.164.157.09 0 .166-.069.18-.157l.21-2.581-.21-2.602c-.014-.091-.09-.163-.18-.163m.93-.058c-.105 0-.18.07-.18.166l-.21 2.6.18 2.539c0 .106.075.179.179.179.111 0 .19-.073.19-.18l.224-2.539-.21-2.6c0-.094-.083-.165-.197-.165m.95-.082c-.12 0-.21.087-.21.207l-.165 2.6.165 2.482c0 .12.09.214.21.214.12 0 .211-.094.211-.214l.196-2.482-.196-2.6c0-.12-.091-.207-.21-.207m1.022-.034c-.135 0-.226.103-.226.225l-.165 2.616.165 2.466c0 .118.09.222.226.222.12 0 .21-.104.226-.222l.179-2.466-.18-2.616c-.015-.122-.105-.225-.225-.225m1.039-.225c-.135 0-.255.121-.255.255l-.135 2.84.135 2.453c0 .135.12.241.255.241s.255-.106.27-.241l.149-2.453-.15-2.84c-.014-.135-.135-.255-.27-.255m1.171.106c-.149 0-.27.121-.27.271l-.119 2.738.119 2.453c0 .15.121.27.27.27.15 0 .271-.12.286-.27l.135-2.453-.135-2.738c-.015-.15-.135-.27-.286-.271m1.205.345c-.165 0-.299.135-.299.301l-.105 2.379.105 2.469c0 .166.134.301.299.301.165 0 .3-.135.3-.3l.121-2.471-.121-2.379c0-.166-.135-.301-.3-.301m1.295-.106c-.18 0-.314.135-.314.314l-.091 2.47.091 2.453c0 .181.135.315.314.315.181 0 .315-.134.315-.315l.105-2.453-.105-2.47c0-.179-.135-.314-.315-.314m1.376-.241c-.196 0-.345.149-.345.345l-.075 2.692.075 2.452c0 .197.15.345.345.345.196 0 .346-.148.346-.345l.09-2.452-.09-2.692c0-.196-.151-.345-.346-.345m1.487 5.879H22.49a1.515 1.515 0 0 0 1.51-1.524 1.512 1.512 0 0 0-1.51-1.51c-.135 0-.27.014-.39.044C22.04 9.706 19.94 7.766 17.39 7.766c-.61 0-1.21.135-1.756.36-.15.06-.18.105-.18.255v9.117c.014.165.135.299.299.314z"/>
         </svg>
       </div>
-      <h2>Entrar com SoundCloud</h2>
-      <p>Vai abrir uma janelinha do SoundCloud. Faça login e ela fecha sozinha quando você terminar.</p>
+      <h2>{$t("study.music.sc_login_heading")}</h2>
+      <p>{$t("study.music.sc_login_desc")}</p>
       <div class="login-actions">
         <button type="button" class="cta" disabled={loginBusy} onclick={handleLogin}>
-          {loginBusy ? "Abrindo SoundCloud…" : "Entrar com SoundCloud"}
+          {loginBusy ? $t("study.music.sc_login_button_active") : $t("study.music.sc_login_button")}
         </button>
       </div>
       {#if loginError}
         <p class="error">{loginError}</p>
         <details class="why-fail">
-          <summary>Por que pode falhar?</summary>
+          <summary>{$t("study.music.sc_login_why_fail")}</summary>
           <ul>
-            <li>Conta nova: confirme o email primeiro no SoundCloud</li>
-            <li>2FA: termine o segundo passo antes de fechar a janela</li>
-            <li>Captcha: resolva no site, a janela espera você</li>
+            <li>{$t("study.music.sc_login_reason1")}</li>
+            <li>{$t("study.music.sc_login_reason2")}</li>
+            <li>{$t("study.music.sc_login_reason3")}</li>
           </ul>
         </details>
       {/if}

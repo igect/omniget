@@ -153,7 +153,7 @@
         outputDir: dir,
         quality: "progressive",
       });
-      showToast("success", `Pronto — salvo na pasta ${folderName(dir)}`);
+      showToast("success", t("study.music.sc_download_done_in_folder", { folder: folderName(dir) }));
     } catch (e) {
       downloadStore.markJobError(optId, e instanceof Error ? e.message : String(e));
     }
@@ -173,7 +173,7 @@
     <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
       <polyline points="15 18 9 12 15 6"/>
     </svg>
-    Voltar
+    {$t("study.music.back")}
   </button>
 
   {#if playlist}
@@ -186,21 +186,21 @@
         {/if}
       </div>
       <div class="info">
-        <span class="eyebrow">{playlist.is_album ? "Álbum" : "Playlist"}</span>
+        <span class="eyebrow">{playlist.is_album ? $t("study.music.sc_album_label") : $t("study.music.eyebrow_playlist")}</span>
         <h1>{playlist.title}</h1>
-        <p class="meta">{playlist.user.username} · {playlist.track_count} faixas · {fmtDuration(playlist.duration)}</p>
+        <p class="meta">{playlist.user.username} · {$t("study.music.tracks_count", { count: playlist.track_count })} · {fmtDuration(playlist.duration)}</p>
         {#if playlist.description}
           <p class="desc">{playlist.description}</p>
         {/if}
         <div class="actions">
           <button type="button" class="play-btn" onclick={() => play(0)} disabled={tracks.length === 0}>
             <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
-            Tocar
+            {$t("study.music.play")}
           </button>
           <button type="button" class="bulk-btn" onclick={downloadAll} disabled={bulkBusy || tracks.length === 0}>
             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             {bulkBusy
-              ? "Baixando playlist…"
+              ? t("study.music.sc_downloading_playlist")
               : $t('study.music.sc_download_all', { count: tracks.length })}
           </button>
         </div>
@@ -209,7 +209,7 @@
   {/if}
 
   {#if loading}
-    <p class="muted">Carregando…</p>
+    <p class="muted">{$t("study.common.loading")}</p>
   {:else if error}
     <SoundCloudError
       {error}

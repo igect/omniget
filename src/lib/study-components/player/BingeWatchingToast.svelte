@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/i18n";
   type Props = {
     nextLessonId: number | null;
     nextLessonTitle: string | null;
@@ -56,12 +57,12 @@
 {#if nextLessonId != null && !cancelled}
   <aside class="toast" role="status" aria-live="polite">
     <div class="info">
-      <span class="eyebrow">Próxima aula em {remaining}s</span>
-      <span class="title">{nextLessonTitle ?? "Continuar"}</span>
+      <span class="eyebrow">{$t("study.player.next_lesson_in", { seconds: remaining })}</span>
+      <span class="title">{nextLessonTitle ?? $t("study.player.continue")}</span>
     </div>
     <div class="actions">
-      <button type="button" class="btn ghost" onclick={cancel}>Cancelar</button>
-      <button type="button" class="btn primary" onclick={goNow}>Continuar agora</button>
+      <button type="button" class="btn ghost" onclick={cancel}>{$t("study.player.cancel")}</button>
+      <button type="button" class="btn primary" onclick={goNow}>{$t("study.player.continue_now")}</button>
     </div>
   </aside>
 {/if}

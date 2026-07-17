@@ -3,6 +3,7 @@
   import { pluginInvoke } from "$lib/plugin-invoke";
   import PageHero from "$lib/study-components/PageHero.svelte";
   import ConfirmDialog from "$lib/study-components/ConfirmDialog.svelte";
+  import { t } from "$lib/i18n";
 
   type NotetypeKind = "normal" | "cloze";
 
@@ -144,23 +145,23 @@
   const stockOptions: { value: StockKind; label: string; hint: string }[] = [
     {
       value: "basic",
-      label: "Básico",
-      hint: "Front/Back simples — 1 card por nota",
+      label: t("study.anki.notetypes.stock_basic"),
+      hint: t("study.anki.notetypes.stock_basic_hint"),
     },
     {
       value: "basic_and_reversed",
-      label: "Básico + invertido",
-      hint: "Front↔Back gera 2 cards por nota",
+      label: t("study.anki.notetypes.stock_basic_rev"),
+      hint: t("study.anki.notetypes.stock_basic_rev_hint"),
     },
     {
       value: "basic_optional_reversed",
-      label: "Básico (invertido opcional)",
-      hint: "Reverso só se campo 'Add Reverse' preenchido",
+      label: t("study.anki.notetypes.stock_basic_opt"),
+      hint: t("study.anki.notetypes.stock_basic_opt_hint"),
     },
     {
       value: "cloze",
-      label: "Cloze",
-      hint: "Use {{c1::texto}} para gerar 1 card por lacuna",
+      label: t("study.anki.notetypes.stock_cloze"),
+      hint: t("study.anki.notetypes.stock_cloze_hint"),
     },
   ];
 
@@ -258,7 +259,7 @@
   function removeField(ord: number) {
     if (!draft) return;
     if (draft.fields.length <= 1) {
-      showToast("err", "Modelo precisa ter ao menos 1 field");
+      showToast("err", t("study.anki.notetypes.err_min_fields"));
       return;
     }
     draft.fields = draft.fields.filter((f) => f.ord !== ord);
@@ -281,7 +282,7 @@
   function addTemplate() {
     if (!draft) return;
     if (draft.config.kind === "cloze") {
-      showToast("err", "Modelos cloze têm 1 template fixo");
+      showToast("err", t("study.anki.notetypes.err_cloze_template"));
       return;
     }
     const ord = nextOrd(draft.templates);
@@ -305,7 +306,7 @@
   function removeTemplate(ord: number) {
     if (!draft) return;
     if (draft.templates.length <= 1) {
-      showToast("err", "Modelo precisa ter ao menos 1 template");
+      showToast("err", t("study.anki.notetypes.err_min_templates"));
       return;
     }
     draft.templates = draft.templates.filter((t) => t.ord !== ord);
@@ -325,7 +326,7 @@
         { notetype: draft },
       );
       saveSummary = summary;
-      showToast("ok", "Modelo atualizado");
+      showToast("ok", t("study.anki.notetypes.toast_updated"));
       const id = draft.id;
       editMode = false;
       draft = null;
@@ -357,7 +358,7 @@
         args,
       );
       cloneOpen = false;
-      showToast("ok", "Modelo clonado");
+      showToast("ok", t("study.anki.notetypes.toast_cloned"));
       await loadList();
       await selectNotetype(r.id);
     } catch (e) {
@@ -385,7 +386,7 @@
         args,
       );
       createOpen = false;
-      showToast("ok", "Modelo criado");
+      showToast("ok", t("study.anki.notetypes.toast_created"));
       await loadList();
       await selectNotetype(r.id);
     } catch (e) {
@@ -409,7 +410,7 @@
         id: target.id,
       });
       if (selected?.id === target.id) deselect();
-      showToast("ok", `"${target.name}" removido`);
+      showToast("ok", t("study.anki.notetypes.toast_deleted", { name: target.name }));
       await loadList();
     } catch (e) {
       showToast("err", e instanceof Error ? e.message : String(e));
@@ -432,9 +433,9 @@
 </script>
 
 <section class="study-page">
-  <PageHero title="Modelos" subtitle="Note types da coleção">
+  <PageHero title={$t("study.anki.notetypes.title")} subtitle={$t("study.anki.notetypes.subtitle")}>
     {#snippet actions()}
-      <button class="btn primary" onclick={openCreate}>+ Novo modelo</button>
+      <button class="btn primary" onclick={openCreate}>{$t("study.anki.notetypes.btn_new")}</button>
     {/snippet}
   </PageHero>
 
@@ -445,23 +446,21 @@
   {/if}
 
   {#if loading}
-    <div class="state">Carregando modelos…</div>
+    <div class="state">{$t("study.anki.notetypes.loading")}</div>
   {:else if error}
     <div class="state err">{error}</div>
-    <button class="btn ghost" onclick={loadList}>Tentar de novo</button>
+    <button class="btn ghost" onclick={loadList}>{$t("study.anki.notetypes.retry_btn")}</button>
   {:else if summaries.length === 0}
     <div class="empty">
-      <h3>Nenhum modelo ainda</h3>
-      <p>
-        Crie um modelo a partir de um stock type pra começar a adicionar notas.
-      </p>
+      <h3>{$t("study.anki.notetypes.empty_title")}</h3>
+      <p>{$t("study.anki.notetypes.empty_hint")}</p>
       <button class="btn primary" onclick={openCreate}>
-        Criar primeiro modelo
+        {$t("study.anki.notetypes.empty_btn")}
       </button>
     </div>
   {:else}
     <div class="grid">
-      <ul class="list" aria-label="Lista de modelos">
+      <ul class="list" aria-label={$t("study.anki.notetypes.list_aria")}>
         {#each summaries as s (s.id)}
           <li>
             <button
@@ -471,14 +470,14 @@
             >
               <div class="row-name">
                 <span class="badge" class:cloze={s.kind === "cloze"}>
-                  {s.kind === "cloze" ? "Cloze" : "Normal"}
+                  {s.kind === "cloze" ? $t("study.anki.notetypes.badge_cloze") : $t("study.anki.notetypes.badge_normal")}
                 </span>
                 <span class="row-title">{s.name}</span>
               </div>
               <div class="row-meta">
-                <span>{s.field_count} fields</span>
+                <span>{$t("study.anki.notetypes.meta_fields", { count: s.field_count })}</span>
                 <span>·</span>
-                <span>{s.template_count} templates</span>
+                <span>{$t("study.anki.notetypes.meta_templates", { count: s.template_count })}</span>
               </div>
             </button>
           </li>
@@ -487,10 +486,10 @@
 
       <div class="detail" aria-live="polite">
         {#if detailLoading}
-          <div class="state">Carregando detalhes…</div>
+          <div class="state">{$t("study.anki.notetypes.detail_loading")}</div>
         {:else if !selected}
           <div class="placeholder">
-            <p>Selecione um modelo na lista pra ver fields, templates e CSS.</p>
+            <p>{$t("study.anki.notetypes.detail_placeholder")}</p>
           </div>
         {:else}
           <header class="detail-head">
@@ -500,16 +499,14 @@
                   class="title-input"
                   type="text"
                   bind:value={draft.name}
-                  aria-label="Nome do modelo"
+                  aria-label={$t("study.anki.notetypes.name_aria")}
                 />
               {:else}
                 <h3>{selected.name}</h3>
               {/if}
               <p class="detail-sub">
-                {selected.config.kind === "cloze" ? "Cloze" : "Normal"}
-                · {selected.fields.length} fields
-                · {selected.templates.length} templates
-                · atualizado em {formatDate(selected.mtime_secs)}
+                {selected.config.kind === "cloze" ? $t("study.anki.notetypes.badge_cloze") : $t("study.anki.notetypes.badge_normal")}
+                {$t("study.anki.notetypes.detail_sub", { fields: selected.fields.length, templates: selected.templates.length, date: formatDate(selected.mtime_secs) })}
               </p>
             </div>
             <div class="detail-actions">
@@ -519,18 +516,18 @@
                   onclick={cancelEdit}
                   disabled={saving}
                 >
-                  Cancelar
+                  {$t("study.anki.notetypes.btn_cancel")}
                 </button>
                 <button
                   class="btn primary"
                   onclick={saveDraft}
                   disabled={saving}
                 >
-                  {saving ? "Salvando…" : "Salvar"}
+                  {saving ? $t("study.anki.notetypes.saving") : $t("study.anki.notetypes.btn_save")}
                 </button>
               {:else}
-                <button class="btn ghost" onclick={openClone}>Clonar</button>
-                <button class="btn ghost" onclick={startEdit}>Editar</button>
+                <button class="btn ghost" onclick={openClone}>{$t("study.anki.notetypes.btn_clone")}</button>
+                <button class="btn ghost" onclick={startEdit}>{$t("study.anki.notetypes.btn_edit")}</button>
                 <button
                   class="btn ghost danger"
                   onclick={() =>
@@ -543,7 +540,7 @@
                       mtime_secs: selected!.mtime_secs,
                     })}
                 >
-                  Excluir
+                  {$t("study.anki.notetypes.btn_delete")}
                 </button>
               {/if}
             </div>
@@ -551,45 +548,42 @@
 
           {#if editMode && selectedNoteCount !== null && selectedNoteCount > 0}
             <div class="info-banner warn">
-              <strong>{selectedNoteCount}</strong>
-              {selectedNoteCount === 1 ? "nota usa" : "notas usam"} este modelo.
-              Adicionar/remover fields ou templates regenera cards e ajusta
-              notas existentes. Tags, agenda e revisões ficam intactas.
+              {@html $t("study.anki.notetypes.banner_warn", { count: selectedNoteCount })}
             </div>
           {:else if !editMode && selectedNoteCount !== null && selectedNoteCount > 0}
             <div class="info-banner">
-              <strong>{selectedNoteCount}</strong>
-              {selectedNoteCount === 1 ? "nota usa" : "notas usam"} este modelo.
+              {$t("study.anki.notetypes.banner_info", { count: selectedNoteCount })}
             </div>
           {:else}
             <div class="info-banner subtle">
-              Nenhuma nota usa este modelo ainda.
+              {$t("study.anki.notetypes.banner_empty")}
             </div>
           {/if}
 
           {#if saveSummary}
+            {@const s = saveSummary}
             <div class="info-banner ok">
-              Salvo:
-              {#if saveSummary.fields_added}
-                +{saveSummary.fields_added} {saveSummary.fields_added === 1 ? "field" : "fields"}
+              {$t("study.anki.notetypes.saved_prefix")}
+              {#if s.fields_added}
+                {$t("study.anki.notetypes.saved_fields_added", { count: s.fields_added })}
               {/if}
-              {#if saveSummary.fields_removed}
-                · −{saveSummary.fields_removed} {saveSummary.fields_removed === 1 ? "field" : "fields"}
+              {#if s.fields_removed}
+                {$t("study.anki.notetypes.saved_fields_removed", { count: s.fields_removed })}
               {/if}
-              {#if saveSummary.templates_added}
-                · +{saveSummary.templates_added} {saveSummary.templates_added === 1 ? "template" : "templates"}
+              {#if s.templates_added}
+                {$t("study.anki.notetypes.saved_templates_added", { count: s.templates_added })}
               {/if}
-              {#if saveSummary.templates_removed}
-                · −{saveSummary.templates_removed} {saveSummary.templates_removed === 1 ? "template" : "templates"}
+              {#if s.templates_removed}
+                {$t("study.anki.notetypes.saved_templates_removed", { count: s.templates_removed })}
               {/if}
-              {#if saveSummary.cards_added}
-                · +{saveSummary.cards_added} {saveSummary.cards_added === 1 ? "card" : "cards"}
+              {#if s.cards_added}
+                {$t("study.anki.notetypes.saved_cards_added", { count: s.cards_added })}
               {/if}
-              {#if saveSummary.cards_removed}
-                · −{saveSummary.cards_removed} {saveSummary.cards_removed === 1 ? "card" : "cards"}
+              {#if s.cards_removed}
+                {$t("study.anki.notetypes.saved_cards_removed", { count: s.cards_removed })}
               {/if}
-              {#if saveSummary.notes_rewritten}
-                · {saveSummary.notes_rewritten} {saveSummary.notes_rewritten === 1 ? "nota ajustada" : "notas ajustadas"}
+              {#if s.notes_rewritten}
+                {$t("study.anki.notetypes.saved_notes_rewritten", { count: s.notes_rewritten })}
               {/if}
             </div>
           {/if}
@@ -597,17 +591,17 @@
           {#if editMode && draft}
             <section class="block">
               <header class="block-head">
-                <h4>Fields</h4>
+                <h4>{$t("study.anki.notetypes.section_fields")}</h4>
                 <button
                   class="btn ghost small"
                   onclick={addField}
                   disabled={saving}
                 >
-                  + Adicionar field
+                  {$t("study.anki.notetypes.btn_add_field")}
                 </button>
               </header>
               <label class="lbl inline">
-                <span>Sort field</span>
+                <span>{$t("study.anki.notetypes.sort_field_label")}</span>
                 <select
                   bind:value={draft.config.sort_field_idx}
                   disabled={saving}
@@ -624,7 +618,7 @@
                     <input
                       type="text"
                       bind:value={f.name}
-                      placeholder="Nome do field"
+                      placeholder={$t("study.anki.notetypes.field_name_ph")}
                       disabled={saving}
                     />
                     <span class="flags">
@@ -656,7 +650,7 @@
                     <div class="row-actions">
                       <button
                         class="iconbtn"
-                        title="Mover acima"
+                        title={$t("study.anki.notetypes.move_up_title")}
                         onclick={() => moveField(f.ord, -1)}
                         disabled={saving}
                       >
@@ -664,7 +658,7 @@
                       </button>
                       <button
                         class="iconbtn"
-                        title="Mover abaixo"
+                        title={$t("study.anki.notetypes.move_down_title")}
                         onclick={() => moveField(f.ord, 1)}
                         disabled={saving}
                       >
@@ -672,7 +666,7 @@
                       </button>
                       <button
                         class="iconbtn danger"
-                        title="Remover"
+                        title={$t("study.anki.notetypes.remove_title")}
                         onclick={() => removeField(f.ord)}
                         disabled={saving || f.config.prevent_deletion}
                       >
@@ -686,56 +680,56 @@
 
             <section class="block">
               <header class="block-head">
-                <h4>Templates</h4>
+                <h4>{$t("study.anki.notetypes.section_templates")}</h4>
                 {#if draft.config.kind !== "cloze"}
                   <button
                     class="btn ghost small"
                     onclick={addTemplate}
                     disabled={saving}
                   >
-                    + Adicionar template
+                    {$t("study.anki.notetypes.btn_add_template")}
                   </button>
                 {/if}
               </header>
               {#if draft.templates.length > 1}
                 <div class="tpl-tabs" role="tablist">
-                  {#each draft.templates as t (t.ord)}
+                  {#each draft.templates as tmpl (tmpl.ord)}
                     <button
                       role="tab"
-                      aria-selected={activeTemplateOrd === t.ord}
-                      class:active={activeTemplateOrd === t.ord}
-                      onclick={() => (activeTemplateOrd = t.ord)}
+                      aria-selected={activeTemplateOrd === tmpl.ord}
+                      class:active={activeTemplateOrd === tmpl.ord}
+                      onclick={() => (activeTemplateOrd = tmpl.ord)}
                     >
-                      {t.name}
+                      {tmpl.name}
                     </button>
                   {/each}
                 </div>
               {/if}
-              {#each draft.templates as t (t.ord)}
-                {#if t.ord === activeTemplateOrd || draft.templates.length === 1}
+              {#each draft.templates as tmpl (tmpl.ord)}
+                {#if tmpl.ord === activeTemplateOrd || draft.templates.length === 1}
                   <div class="tpl-edit">
                     <label class="lbl">
-                      <span>Nome</span>
+                      <span>{$t("study.anki.notetypes.template_name_label")}</span>
                       <input
                         type="text"
-                        bind:value={t.name}
+                        bind:value={tmpl.name}
                         disabled={saving}
                       />
                     </label>
                     <div class="tpl-pane">
                       <div class="tpl-col">
-                        <span class="tpl-label">Frente (Q)</span>
+                        <span class="tpl-label">{$t("study.anki.notetypes.template_front")}</span>
                         <textarea
-                          bind:value={t.config.q_format}
+                          bind:value={tmpl.config.q_format}
                           rows="8"
                           spellcheck="false"
                           disabled={saving}
                         ></textarea>
                       </div>
                       <div class="tpl-col">
-                        <span class="tpl-label">Verso (A)</span>
+                        <span class="tpl-label">{$t("study.anki.notetypes.template_back")}</span>
                         <textarea
-                          bind:value={t.config.a_format}
+                          bind:value={tmpl.config.a_format}
                           rows="8"
                           spellcheck="false"
                           disabled={saving}
@@ -745,10 +739,10 @@
                     {#if draft.templates.length > 1}
                       <button
                         class="btn ghost danger small"
-                        onclick={() => removeTemplate(t.ord)}
+                        onclick={() => removeTemplate(tmpl.ord)}
                         disabled={saving}
                       >
-                        Remover este template
+                        {$t("study.anki.notetypes.btn_remove_template")}
                       </button>
                     {/if}
                   </div>
@@ -757,7 +751,7 @@
             </section>
 
             <section class="block">
-              <h4>CSS global</h4>
+              <h4>{$t("study.anki.notetypes.section_css")}</h4>
               <textarea
                 class="css-edit"
                 bind:value={draft.config.css}
@@ -768,9 +762,9 @@
             </section>
           {:else}
             <section class="block">
-              <h4>Fields</h4>
+              <h4>{$t("study.anki.notetypes.section_fields")}</h4>
               <p class="hint">
-                Sort field: <code>{sortFieldName}</code>
+                {$t("study.anki.notetypes.sort_field_label")}: <code>{sortFieldName}</code>
               </p>
               <ol class="fields">
                 {#each selected.fields as f (f.ord)}
@@ -787,7 +781,7 @@
                         <span class="chip">no-search</span>
                       {/if}
                       {#if f.config.prevent_deletion}
-                        <span class="chip locked">protegido</span>
+                        <span class="chip locked">{$t("study.anki.notetypes.chip_protected")}</span>
                       {/if}
                     </span>
                     {#if f.config.description}
@@ -799,7 +793,7 @@
             </section>
 
             <section class="block">
-              <h4>Templates</h4>
+              <h4>{$t("study.anki.notetypes.section_templates")}</h4>
               {#if selected.templates.length > 1}
                 <div class="tpl-tabs" role="tablist">
                   {#each selected.templates as t (t.ord)}
@@ -818,11 +812,11 @@
               {#if activeTemplate}
                 <div class="tpl-pane">
                   <div class="tpl-col">
-                    <span class="tpl-label">Frente (Q)</span>
+                    <span class="tpl-label">{$t("study.anki.notetypes.template_front")}</span>
                     <pre>{activeTemplate.config.q_format}</pre>
                   </div>
                   <div class="tpl-col">
-                    <span class="tpl-label">Verso (A)</span>
+                    <span class="tpl-label">{$t("study.anki.notetypes.template_back")}</span>
                     <pre>{activeTemplate.config.a_format}</pre>
                   </div>
                 </div>
@@ -830,18 +824,15 @@
             </section>
 
             <section class="block">
-              <h4>CSS global</h4>
-              <pre class="css">{selected.config.css || "/* sem CSS */"}</pre>
+              <h4>{$t("study.anki.notetypes.section_css")}</h4>
+              <pre class="css">{selected.config.css || $t("study.anki.notetypes.css_empty")}</pre>
             </section>
 
             {#if selected.config.kind === "cloze"}
               <section class="block">
-                <h4>Cloze</h4>
+                <h4>{$t("study.anki.notetypes.section_cloze")}</h4>
                 <p class="hint">
-                  Modelos cloze geram 1 card para cada
-                  <code>{"{{c1::…}}"}</code>,
-                  <code>{"{{c2::…}}"}</code> etc no campo. Use
-                  <code>{"{{c1::dica::pista}}"}</code> para incluir uma pista.
+                  {@html $t("study.anki.notetypes.cloze_hint")}
                 </p>
               </section>
             {/if}
@@ -861,19 +852,19 @@
     }}
   >
     <div class="modal" role="dialog" aria-modal="true">
-      <h3>Novo modelo</h3>
+      <h3>{$t("study.anki.notetypes.create_title")}</h3>
 
       <label class="lbl">
-        <span>Nome (opcional)</span>
+        <span>{$t("study.anki.notetypes.create_name_label")}</span>
         <input
           type="text"
-          placeholder="ex.: Vocabulário inglês"
+          placeholder={$t("study.anki.notetypes.create_name_ph")}
           bind:value={createName}
         />
       </label>
 
       <fieldset class="stocks">
-        <legend>Stock type</legend>
+        <legend>{$t("study.anki.notetypes.stock_legend")}</legend>
         {#each stockOptions as opt (opt.value)}
           <label class="stock" class:active={createKind === opt.value}>
             <input
@@ -897,10 +888,10 @@
           onclick={() => (createOpen = false)}
           disabled={creating}
         >
-          Cancelar
+          {$t("study.anki.notetypes.btn_cancel")}
         </button>
         <button class="btn primary" onclick={doCreate} disabled={creating}>
-          {creating ? "Criando…" : "Criar modelo"}
+          {creating ? $t("study.anki.notetypes.creating") : $t("study.anki.notetypes.create_btn")}
         </button>
       </footer>
     </div>
@@ -909,11 +900,9 @@
 
 <ConfirmDialog
   bind:open={confirmOpen}
-  title="Excluir modelo"
-  message={pendingDelete
-    ? `"${pendingDelete.name}" será removido. Cards e notas associados também serão deletados. Esta ação não pode ser desfeita.`
-    : ""}
-  confirmLabel="Excluir"
+  title={$t("study.anki.notetypes.confirm_delete_title")}
+  message={pendingDelete ? $t("study.anki.notetypes.confirm_delete_msg", { name: pendingDelete.name }) : ""}
+  confirmLabel={$t("study.anki.notetypes.confirm_delete_confirm")}
   variant="danger"
   onConfirm={confirmDelete}
 />
@@ -927,13 +916,10 @@
     }}
   >
     <div class="modal" role="dialog" aria-modal="true">
-      <h3>Clonar modelo</h3>
-      <p class="hint">
-        Cria um novo modelo independente com fields, templates e CSS idênticos.
-        Notas existentes não são copiadas.
-      </p>
+      <h3>{$t("study.anki.notetypes.clone_title")}</h3>
+      <p class="hint">{$t("study.anki.notetypes.clone_hint")}</p>
       <label class="lbl">
-        <span>Nome do clone</span>
+        <span>{$t("study.anki.notetypes.clone_name_label")}</span>
         <input type="text" bind:value={cloneName} disabled={cloning} />
       </label>
       <footer class="modal-foot">
@@ -942,10 +928,10 @@
           onclick={() => (cloneOpen = false)}
           disabled={cloning}
         >
-          Cancelar
+          {$t("study.anki.notetypes.btn_cancel")}
         </button>
         <button class="btn primary" onclick={doClone} disabled={cloning}>
-          {cloning ? "Clonando…" : "Clonar"}
+          {cloning ? $t("study.anki.notetypes.cloning") : $t("study.anki.notetypes.btn_clone")}
         </button>
       </footer>
     </div>

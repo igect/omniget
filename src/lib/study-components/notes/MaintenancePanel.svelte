@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/i18n";
   import {
     notesSearchRebuild,
     notesRefsRebuildAll,
@@ -23,7 +24,7 @@
     busy = "search";
     try {
       const r = await notesSearchRebuild();
-      onToast("ok", `Busca reindexada: ${r.indexed} blocos`);
+      onToast("ok", t("study.notes.maintenance_search_done", { indexed: r.indexed }));
     } catch (e) {
       onToast("err", e instanceof Error ? e.message : String(e));
     } finally {
@@ -35,7 +36,7 @@
     busy = "refs";
     try {
       const r = await notesRefsRebuildAll();
-      onToast("ok", `Backlinks reconstruídos: ${r.total_refs} refs`);
+      onToast("ok", t("study.notes.maintenance_refs_done", { refs: r.total_refs }));
     } catch (e) {
       onToast("err", e instanceof Error ? e.message : String(e));
     } finally {
@@ -47,7 +48,7 @@
     busy = "qcache";
     try {
       const r = await notesQueryInvalidateCache();
-      onToast("ok", `Cache limpo (${r.size_after} entradas restantes)`);
+      onToast("ok", t("study.notes.maintenance_cache_done", { size: r.size_after }));
     } catch (e) {
       onToast("err", e instanceof Error ? e.message : String(e));
     } finally {
@@ -69,7 +70,7 @@
       a.click();
       document.body.removeChild(a);
       setTimeout(() => URL.revokeObjectURL(url), 1000);
-      onToast("ok", "Grafo exportado");
+      onToast("ok", t("study.notes.maintenance_graph_exported"));
     } catch (e) {
       onToast("err", e instanceof Error ? e.message : String(e));
     } finally {
@@ -112,7 +113,7 @@
         name: importPreview.name,
         markdown: importPreview.markdown,
       });
-      onToast("ok", `Importado: ${r.blocks_created} blocos em "${importPreview.name}"`);
+      onToast("ok", t("study.notes.maintenance_import_done", { blocks: r.blocks_created, name: importPreview.name }));
       importPreview = null;
     } catch (e) {
       onToast("err", e instanceof Error ? e.message : String(e));
@@ -123,11 +124,8 @@
 </script>
 
 <article class="card">
-  <h3>Manutenção</h3>
-  <p class="hint">
-    Tarefas de housekeeping. Reconstruir índices é seguro mas pode levar alguns segundos
-    em databases grandes.
-  </p>
+  <h3>{t("study.notes.maintenance_title")}</h3>
+  <p class="hint">{t("study.notes.maintenance_hint")}</p>
 
   <div class="actions-grid">
     <button
@@ -135,45 +133,45 @@
       class="btn"
       onclick={rebuildSearch}
       disabled={busy !== null}
-      title="Reindexa FTS5 (notes_v2). Use se a busca estiver retornando resultados desatualizados."
+      title={t("study.notes.maintenance_search_title")}
     >
-      {busy === "search" ? "Reindexando…" : "Reconstruir busca"}
+      {busy === "search" ? t("study.notes.maintenance_reindexing") : t("study.notes.maintenance_rebuild_search")}
     </button>
     <button
       type="button"
       class="btn"
       onclick={rebuildRefs}
       disabled={busy !== null}
-      title="Recalcula a tabela de refs/backlinks varrendo todo o conteúdo."
+      title={t("study.notes.maintenance_refs_title")}
     >
-      {busy === "refs" ? "Calculando…" : "Reconstruir backlinks"}
+      {busy === "refs" ? t("study.notes.maintenance_calculating") : t("study.notes.maintenance_rebuild_refs")}
     </button>
     <button
       type="button"
       class="btn"
       onclick={clearQueryCache}
       disabled={busy !== null}
-      title="Limpa cache de queries. Inofensivo; queries serão recalculadas."
+      title={t("study.notes.maintenance_cache_title")}
     >
-      {busy === "qcache" ? "Limpando…" : "Limpar cache de queries"}
+      {busy === "qcache" ? t("study.notes.maintenance_cleaning") : t("study.notes.maintenance_clear_cache")}
     </button>
     <button
       type="button"
       class="btn"
       onclick={exportGraph}
       disabled={busy !== null}
-      title="Baixa o grafo de notes (nodes + edges) como JSON pra inspeção/backup."
+      title={t("study.notes.maintenance_graph_title")}
     >
-      {busy === "graph" ? "Exportando…" : "Exportar grafo (JSON)"}
+      {busy === "graph" ? t("study.notes.maintenance_exporting") : t("study.notes.maintenance_export_graph")}
     </button>
     <button
       type="button"
       class="btn"
       onclick={pickImport}
       disabled={busy !== null || importing}
-      title="Lê um .md do disco e cria uma página com o conteúdo."
+      title={t("study.notes.maintenance_import_btn_title")}
     >
-      Importar markdown
+      {t("study.notes.maintenance_import_md")}
     </button>
     <input
       type="file"
@@ -195,21 +193,15 @@
       if (e.target === e.currentTarget) cancelImport();
     }}
   >
-    <div class="modal" role="dialog" aria-label="Confirmar importação" aria-modal="true">
-      <h3>Importar markdown?</h3>
+    <div class="modal" role="dialog" aria-label={t("study.notes.maintenance_import_dialog_aria")} aria-modal="true">
+      <h3>{t("study.notes.maintenance_import_title")}</h3>
       <p class="meta">
         <strong>{importPreview.name}</strong>
         <span class="muted">· {importPreview.lines} linhas</span>
       </p>
-      <p class="hint">
-        Vai criar uma página chamada <code>{importPreview.name}</code> e parsear o markdown
-        em blocos hierárquicos.
-      </p>
+      <p class="hint">{t("study.notes.maintenance_import_hint", { name: importPreview.name })}</p>
 
-      <p class="warn-soft">
-        Se já existir uma página com esse nome, o backend devolve erro e nada
-        é importado.
-      </p>
+      <p class="warn-soft">{t("study.notes.maintenance_import_warn")}</p>
 
       <footer class="foot">
         <span class="spacer"></span>
@@ -219,7 +211,7 @@
           onclick={cancelImport}
           disabled={importing}
         >
-          Cancelar
+          {t("study.notes.cancel")}
         </button>
         <button
           type="button"
@@ -227,7 +219,7 @@
           onclick={confirmImport}
           disabled={importing}
         >
-          {importing ? "Importando…" : "Importar"}
+          {importing ? t("study.notes.maintenance_import_importing") : t("study.notes.maintenance_import_confirm")}
         </button>
       </footer>
     </div>

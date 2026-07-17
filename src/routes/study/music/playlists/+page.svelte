@@ -125,7 +125,7 @@
             />
           </div>
           <span class="title">{p.name}</span>
-          <span class="sub">{p.track_count} faixa(s)</span>
+          <span class="sub">{$t("study.music.tracks_count", { count: p.track_count })}</span>
         </a>
       {/each}
     </div>
@@ -134,13 +134,13 @@
   {#if ownedSpotify.length > 0}
     <section class="spotify-section">
       <header class="section-head">
-        <h2>Suas playlists Spotify</h2>
+        <h2>{$t("study.music.your_spotify_playlists")}</h2>
         <span class="badge-spotify">
           <svg viewBox="0 0 168 168" width="14" height="14" aria-hidden="true">
             <circle cx="84" cy="84" r="84" fill="#1db954" />
             <path fill="#000" d="M119.6 110.6c-1.5 2.5-4.7 3.3-7.2 1.8-19.7-12-44.5-14.7-73.7-8-2.8.6-5.6-1.1-6.3-3.9-.6-2.8 1.1-5.6 3.9-6.3 31.9-7.3 59.4-4.2 81.5 9.2 2.5 1.5 3.3 4.7 1.8 7.2zm9.5-21.2c-1.9 3.1-5.9 4.1-9 2.2-22.6-13.9-57-17.9-83.8-9.8-3.5 1.1-7.1-.9-8.2-4.3-1.1-3.5.9-7.1 4.3-8.2 30.6-9.3 68.5-4.8 94.5 11.1 3.1 1.9 4.1 5.9 2.2 9zm.8-22c-27-16-71.6-17.5-97.4-9.7-4.1 1.2-8.4-1.1-9.6-5.2-1.2-4.1 1.1-8.4 5.2-9.6 29.6-9 78.7-7.2 109.8 11.3 3.7 2.2 4.9 7 2.7 10.7-2.2 3.7-7 4.9-10.7 2.5z"/>
           </svg>
-          Suas
+          {$t("study.music.your_label")}
         </span>
       </header>
       <div class="playlist-grid">
@@ -155,7 +155,7 @@
               />
             </div>
             <span class="title">{p.name}</span>
-            <span class="sub">{p.tracks_total} faixa(s){p.owner_name ? ` · ${p.owner_name}` : ""}</span>
+            <span class="sub">{$t("study.music.tracks_count", { count: p.tracks_total })}{p.owner_name ? ` · ${p.owner_name}` : ""}</span>
           </a>
         {/each}
       </div>
@@ -165,9 +165,9 @@
   {#if followedSpotify.length > 0}
     <section class="spotify-section">
       <header class="section-head">
-        <h2>Playlists seguidas</h2>
-        <span class="badge-warn" title="Em apps em Development mode, o Spotify pode bloquear o acesso às tracks dessas playlists (403)">
-          algumas podem dar erro
+        <h2>{$t("study.music.followed_playlists")}</h2>
+        <span class="badge-warn" title="{$t("study.music.some_may_error")}">
+          {$t("study.music.some_may_error")}
         </span>
       </header>
       <div class="playlist-grid">
@@ -182,7 +182,7 @@
               />
             </div>
             <span class="title">{p.name}</span>
-            <span class="sub">{p.tracks_total} faixa(s){p.owner_name ? ` · ${p.owner_name}` : ""}</span>
+            <span class="sub">{$t("study.music.tracks_count", { count: p.tracks_total })}{p.owner_name ? ` · ${p.owner_name}` : ""}</span>
           </a>
         {/each}
       </div>
@@ -192,7 +192,7 @@
   {#if soundcloudStore.playlists.length > 0}
     <section class="spotify-section">
       <header class="section-head">
-        <h2>Suas playlists SoundCloud</h2>
+        <h2>{$t("study.music.your_soundcloud_playlists")}</h2>
         <span class="badge-soundcloud">SoundCloud</span>
       </header>
       <div class="playlist-grid">
@@ -207,7 +207,7 @@
               />
             </div>
             <span class="title">{p.title}</span>
-            <span class="sub">{p.track_count} faixa(s){p.user.username ? ` · ${p.user.username}` : ""}</span>
+            <span class="sub">{$t("study.music.tracks_count", { count: p.track_count })}{p.user.username ? ` · ${p.user.username}` : ""}</span>
           </a>
         {/each}
       </div>

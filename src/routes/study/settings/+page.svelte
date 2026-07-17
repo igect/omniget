@@ -32,16 +32,16 @@
     | "maintenance";
 
   const TABS = $derived<{ key: TabKey; label: string }[]>([
-    { key: "player", label: "Player" },
-    { key: "subtitles", label: "Legendas" },
-    { key: "audio", label: "Áudio" },
-    { key: "behavior", label: "Comportamento" },
-    { key: "library", label: "Biblioteca" },
-    { key: "music", label: "Música" },
-    { key: "youtube", label: "YouTube" },
+    { key: "player", label: $t("study.settings.tab_player") as string },
+    { key: "subtitles", label: $t("study.settings.tab_subtitles") as string },
+    { key: "audio", label: $t("study.settings.tab_audio") as string },
+    { key: "behavior", label: $t("study.settings.tab_behavior") as string },
+    { key: "library", label: $t("study.settings.tab_library") as string },
+    { key: "music", label: $t("study.settings.tab_music") as string },
+    { key: "youtube", label: $t("study.settings.tab_youtube") as string },
     { key: "diagnostic", label: $t("study.settings.tab_diagnostic") as string },
-    { key: "notes", label: "Notas" },
-    { key: "maintenance", label: "Manutenção" },
+    { key: "notes", label: $t("study.settings.tab_notes") as string },
+    { key: "maintenance", label: $t("study.settings.tab_maintenance") as string },
   ]);
 
   let activeTab = $state<TabKey>("player");
@@ -159,7 +159,7 @@
   <header class="head">
     <div class="head-text">
       <h1>{$t("study.hub.settings")}</h1>
-      <p class="hint">Ajustes do player, legendas, biblioteca e manutenção.</p>
+      <p class="hint">{$t("study.settings.subtitle")}</p>
     </div>
     <div class="status">
       {#if savingState === "saving"}
@@ -189,7 +189,7 @@
 
   <div class="tab-body">
     {#if loading}
-      <p class="muted">Carregando…</p>
+      <p class="muted">{$t("study.common.loading")}</p>
     {:else if error}
       <p class="error">{error}</p>
     {:else if activeTab === "player"}

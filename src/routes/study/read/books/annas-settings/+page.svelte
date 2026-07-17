@@ -136,10 +136,10 @@
       );
       okMsg =
         r.removed === 0
-          ? "Cache já estava vazio"
+          ? t("study.read.annas_cache_empty")
           : r.removed === 1
-            ? "1 entrada de cache removida"
-            : `${r.removed} entradas de cache removidas`;
+            ? t("study.read.annas_cache_one")
+            : t("study.read.annas_cache_many", { count: r.removed });
       setTimeout(() => (okMsg = ""), 3000);
     } catch (e) {
       errorMsg = e instanceof Error ? e.message : String(e);
@@ -173,8 +173,8 @@
       });
       await loadBrowserStatus();
       okMsg = next
-        ? "Browser auxiliar habilitado"
-        : "Browser auxiliar desabilitado";
+        ? t("study.read.annas_browser_enabled")
+        : t("study.read.annas_browser_disabled");
       setTimeout(() => (okMsg = ""), 3000);
     } catch (e) {
       errorMsg = e instanceof Error ? e.message : String(e);
@@ -293,27 +293,21 @@
     </section>
 
     <section class="block">
-      <h3>Cache de busca</h3>
-      <p class="muted small">
-        Resultados são guardados em memória pra não bombardear os mirrors.
-        Limpe se você está vendo dados desatualizados.
-      </p>
+      <h3>{$t("study.read.annas_cache_title")}</h3>
+      <p class="muted small">{$t("study.read.annas_cache_hint")}</p>
       <button
         type="button"
         class="ghost-btn"
         onclick={clearCache}
         disabled={clearingCache}
       >
-        {clearingCache ? "Limpando…" : "Limpar cache"}
+        {clearingCache ? $t("study.read.annas_cache_clearing") : $t("study.read.annas_cache_clear_btn")}
       </button>
     </section>
 
     <section class="block">
-      <h3>Browser auxiliar</h3>
-      <p class="muted small">
-        Alguns mirrors exigem JavaScript pra retornar HTML. Habilite o browser
-        embutido pra esses casos. Pode ficar mais lento.
-      </p>
+      <h3>{$t("study.read.annas_browser_title")}</h3>
+      <p class="muted small">{$t("study.read.annas_browser_hint")}</p>
       {#if browserStatus}
         <div class="browser-status">
           <span
@@ -323,9 +317,9 @@
             aria-hidden="true"
           ></span>
           <span>
-            {browserStatus.enabled ? "Habilitado" : "Desabilitado"}
+            {browserStatus.enabled ? $t("study.read.annas_browser_on") : $t("study.read.annas_browser_off")}
             {#if browserStatus.available === false}
-              · não detectado no sistema
+              · {$t("study.read.annas_browser_not_detected")}
             {/if}
           </span>
         </div>
@@ -337,10 +331,10 @@
         disabled={browserBusy}
       >
         {browserBusy
-          ? "Aplicando…"
+          ? $t("study.read.annas_browser_applying")
           : browserStatus?.enabled
-            ? "Desabilitar"
-            : "Habilitar"}
+            ? $t("study.read.annas_browser_disable_btn")
+            : $t("study.read.annas_browser_enable_btn")}
       </button>
     </section>
 

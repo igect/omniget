@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/i18n";
   import { notesUndoListOps, notesUndoLastOp, type OpSummary } from "$lib/notes-bridge";
 
   type Props = {
@@ -28,7 +29,7 @@
     busy = opId;
     try {
       const r = await notesUndoLastOp(opId);
-      onToast("ok", `Desfeito: ${r.kind} (${r.blocks_affected} blocos)`);
+      onToast("ok", t("study.notes.oplog_undone_result", { kind: r.kind, count: r.blocks_affected }));
       await refresh();
     } catch (e) {
       onToast("err", e instanceof Error ? e.message : String(e));
@@ -54,22 +55,22 @@
 
 <details class="op-log" ontoggle={onToggle}>
   <summary>
-    <span>Histórico de operações (op-log)</span>
+    <span>{t("study.notes.oplog_title")}</span>
     <span class="caret" aria-hidden="true">▸</span>
   </summary>
 
   <div class="body">
     <div class="actions">
       <button type="button" class="btn ghost sm" onclick={refresh} disabled={loading}>
-        {loading ? "Carregando…" : "Atualizar"}
+        {loading ? t("study.notes.oplog_loading") : t("study.notes.oplog_refresh")}
       </button>
-      <span class="hint">Últimas 50 operações. Você pode desfazer ops antigas, não só a última.</span>
+      <span class="hint">{t("study.notes.oplog_hint")}</span>
     </div>
 
     {#if !loaded && !loading}
-      <p class="muted">Expanda para carregar.</p>
+      <p class="muted">{t("study.notes.oplog_expand")}</p>
     {:else if ops.length === 0}
-      <p class="muted">Sem operações registradas ainda.</p>
+      <p class="muted">{t("study.notes.oplog_empty")}</p>
     {:else}
       <ul class="list">
         {#each ops as op (op.op_id)}
@@ -78,16 +79,16 @@
             <span class="when">{fmtTime(op.created_at)}</span>
             <span class="rows-count">{op.row_count} {op.row_count === 1 ? "row" : "rows"}</span>
             {#if op.undone}
-              <span class="badge undone">desfeito</span>
+              <span class="badge undone">{t("study.notes.oplog_undone")}</span>
             {/if}
             <button
               type="button"
               class="btn ghost sm"
               onclick={() => undoOp(op.op_id)}
               disabled={op.undone || busy === op.op_id}
-              title={op.undone ? "Já desfeito" : "Desfazer esta operação"}
+              title={op.undone ? t("study.notes.oplog_already_undone") : t("study.notes.oplog_undo")}
             >
-              {busy === op.op_id ? "…" : "Desfazer"}
+              {busy === op.op_id ? "…" : t("study.notes.oplog_undo_label")}
             </button>
           </li>
         {/each}

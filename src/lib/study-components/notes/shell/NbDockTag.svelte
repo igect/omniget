@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/i18n";
   import { onMount } from "svelte";
   import { tabsStore } from "$lib/study-notes/tabs-store.svelte";
   import {
@@ -56,15 +57,15 @@
 <aside class="nb-dock">
   <header class="dock-head">
     <span class="dock-title">Tags</span>
-    <button class="refresh" type="button" onclick={() => void reload()} title="Recarregar" aria-label="Recarregar">
+    <button class="refresh" type="button" onclick={() => void reload()} title={t("study.notes.shell.reload")} aria-label={t("study.notes.shell.reload")}>
       ↻
     </button>
   </header>
   <div class="body">
     {#if loading && tags.length === 0}
-      <p class="empty">Carregando…</p>
+      <p class="empty">{t("study.notes.shell.loading")}</p>
     {:else if tags.length === 0}
-      <p class="empty">Nenhuma tag.</p>
+      <p class="empty">{t("study.notes.shell.tag_empty")}</p>
     {:else}
       <ul class="tag-list">
         {#each tags as tag (tag.name)}
@@ -86,11 +87,11 @@
       {#if activeTag}
         <div class="tag-pages">
           <header class="sub-head">
-            Páginas com #{activeTag}
+            {t("study.notes.shell.tag_pages_with", { tag: activeTag })}
             {#if activeLoading}<span class="loading">…</span>{/if}
           </header>
           {#if activeTagPages.length === 0 && !activeLoading}
-            <p class="empty">Nenhuma página.</p>
+            <p class="empty">{t("study.notes.shell.tag_no_pages")}</p>
           {:else}
             <ul class="entries">
               {#each activeTagPages as p (p.id)}

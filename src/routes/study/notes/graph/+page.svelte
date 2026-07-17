@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount, onDestroy } from "svelte";
   import { goto } from "$app/navigation";
+  import { t } from "$lib/i18n";
   import {
     notesGraph,
     type Graph,
@@ -336,9 +337,9 @@
   </header>
 
   <aside class="filters">
-    <h3>Filtros</h3>
+    <h3>{$t("study.notes.graph_filters")}</h3>
     <label class="field">
-      <span>Include tags (vírgula)</span>
+      <span>{$t("study.notes.graph_include_tags")}</span>
       <input
         type="text"
         bind:value={includeTagInput}
@@ -349,7 +350,7 @@
       />
     </label>
     <label class="field">
-      <span>Exclude tags</span>
+      <span>{$t("study.notes.graph_exclude_tags")}</span>
       <input
         type="text"
         bind:value={excludeTagInput}
@@ -384,48 +385,48 @@
       Aplicar
     </button>
 
-    <h3>Layout</h3>
+    <h3>{$t("study.notes.graph_layout_heading")}</h3>
     <div class="layout-row">
       <button
         type="button"
         class="btn ghost sm"
         class:active={layoutKind === "force"}
         onclick={() => changeLayout("force")}
-      >Força</button>
+      >{$t("study.notes.graph_layout_force")}</button>
       <button
         type="button"
         class="btn ghost sm"
         class:active={layoutKind === "circle"}
         onclick={() => changeLayout("circle")}
-      >Círculo</button>
+      >{$t("study.notes.graph_layout_circle")}</button>
       <button
         type="button"
         class="btn ghost sm"
         class:active={layoutKind === "grid"}
         onclick={() => changeLayout("grid")}
-      >Grade</button>
+      >{$t("study.notes.graph_layout_grid")}</button>
       <button
         type="button"
         class="btn ghost sm"
         class:active={layoutKind === "concentric"}
         onclick={() => changeLayout("concentric")}
-      >Concêntrico</button>
+      >{$t("study.notes.graph_layout_concentric")}</button>
     </div>
 
     <p class="hint">
-      Click no nó: foca + dim vizinhos. Dblclick: abre página. R: reset.
+      {$t("study.notes.graph_hint")}
     </p>
   </aside>
 
   <main class="canvas-host">
     {#if loading}
-      <div class="state">Carregando grafo…</div>
+      <div class="state">{$t("study.notes.graph_loading")}</div>
     {:else if error}
       <div class="state err">{error}</div>
     {:else if graphData.nodes.length === 0}
       <div class="state">
-        <p>Sem páginas pra plotar.</p>
-        <a class="btn primary sm" href="/study/notes">Criar primeira página</a>
+        <p>{$t("study.notes.graph_empty_pages")}</p>
+        <a class="btn primary sm" href="/study/notes">{$t("study.notes.graph_create_first")}</a>
       </div>
     {/if}
     <div bind:this={container} class="canvas"></div>

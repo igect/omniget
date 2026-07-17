@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/i18n";
   import SettingsField from "./SettingsField.svelte";
   import SettingsSelect from "./SettingsSelect.svelte";
   import type { StudySettings } from "$lib/study-bridge";
@@ -11,17 +12,17 @@
   let { settings, onPatch }: Props = $props();
   const player = $derived(settings.player ?? {});
   const langOptions = [
-    { value: "pt-BR", label: "Português (Brasil)" },
-    { value: "pt", label: "Português" },
-    { value: "en", label: "English" },
-    { value: "es", label: "Español" },
+    { value: "pt-BR", label: t("study.settings.language.pt_br") },
+    { value: "pt", label: t("study.settings.language.pt") },
+    { value: "en", label: t("study.settings.language.en") },
+    { value: "es", label: t("study.settings.language.es") },
   ];
 </script>
 
 <section class="tab">
   <SettingsField
-    label="Idioma de áudio padrão"
-    description="Track auto-selecionada quando há áudios em vários idiomas (sidecars vídeo + .lang.m4a)"
+    label={$t("study.settings.audio.default_lang_label")}
+    description={$t("study.settings.audio.default_lang_desc")}
   >
     <SettingsSelect
       value={player.audio_default_lang ?? "pt-BR"}
@@ -31,8 +32,8 @@
   </SettingsField>
 
   <SettingsField
-    label="Idioma secundário"
-    description="Fallback quando o idioma padrão não está disponível na aula"
+    label={$t("study.settings.audio.secondary_lang_label")}
+    description={$t("study.settings.audio.secondary_lang_desc")}
   >
     <SettingsSelect
       value={player.audio_secondary_lang ?? "en"}

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/i18n";
   import { onMount } from "svelte";
   import {
     notesEmbedResolve,
@@ -75,14 +76,14 @@
       type="button"
       class="refresh-btn"
       onclick={() => void resolve()}
-      title="Recarregar embed"
+      title={t("study.notes.embed_reload")}
     >↻</button>
   </header>
 
   {#if eState.kind === "loading"}
-    <p class="embed-state">resolvendo…</p>
+    <p class="embed-state">{t("study.notes.embed_resolving")}</p>
   {:else if eState.kind === "error"}
-    <p class="embed-state err">erro: {eState.message}</p>
+    <p class="embed-state err">{t("study.notes.embed_error", { msg: eState.message })}</p>
   {:else if eState.kind === "resolved"}
     {@const data = eState.data}
     {#if data.kind === "missing"}
@@ -92,8 +93,8 @@
         </svg>
         <span>
           {data.target.kind === "page"
-            ? `Página "${data.target.name}" não encontrada`
-            : "Bloco não encontrado"}
+            ? t("study.notes.embed_page_not_found", { name: data.target.name })
+            : t("study.notes.embed_block_not_found")}
         </span>
       </div>
     {:else if data.kind === "cycle"}
@@ -101,13 +102,13 @@
         <svg class="warning-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <path d="M12 3l10 18H2z M12 10v5 M12 18v.5" />
         </svg>
-        <span>Embed cíclico bloqueado</span>
+        <span>{t("study.notes.embed_cycle_blocked")}</span>
       </div>
     {:else if data.kind === "block"}
       <div class="embed-block">
         <p class="embed-content">{snippetOf(data.node.content, 240)}</p>
         {#if data.truncated}
-          <p class="embed-note">… (subtree maior, truncado)</p>
+          <p class="embed-note">{t("study.notes.embed_truncated_subtree")}</p>
         {/if}
       </div>
     {:else if data.kind === "page"}
@@ -128,7 +129,7 @@
           {/each}
         </ul>
         {#if data.truncated}
-          <p class="embed-note">… (mais blocos truncados)</p>
+          <p class="embed-note">{t("study.notes.embed_truncated_more")}</p>
         {/if}
       </div>
     {/if}

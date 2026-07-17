@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/i18n";
   import { onDestroy } from "svelte";
 
   type Props = {
@@ -69,7 +70,7 @@
       await Promise.resolve();
       if (token !== renderToken) return;
       if (!host) {
-        renderState = { kind: "error", message: "container ausente" };
+        renderState = { kind: "error", message: t("study.notes.abc_no_container") };
         return;
       }
       host.innerHTML = "";
@@ -127,12 +128,12 @@
 <div class="abc-block" data-abc data-mode={mode}>
   <header class="abc-head" contenteditable="false">
     <span class="abc-icon" aria-hidden="true">♪</span>
-    <span class="abc-label">abc</span>
+    <span class="abc-label">{t("study.notes.abc_label")}</span>
     <button
       type="button"
       class="abc-toggle"
       onclick={toggleMode}
-      title={mode === "render" ? "Editar source" : "Voltar pra partitura"}
+      title={mode === "render" ? t("study.notes.edit_source") : t("study.notes.back_to_score")}
     >
       {mode === "render" ? "‹/›" : "▶"}
     </button>
@@ -146,17 +147,17 @@
       onblur={onSourceBlur}
       spellcheck="false"
       rows={Math.max(6, editingValue.split("\n").length)}
-      aria-label="Source da partitura (notação ABC)"
+      aria-label={t("study.notes.abc_source_aria")}
     ></textarea>
   {:else if renderState.kind === "idle"}
-    <p class="abc-state">Sem source. Clique em ‹/› para editar.</p>
+    <p class="abc-state">{t("study.notes.abc_no_source")}</p>
   {:else if renderState.kind === "loading"}
-    <p class="abc-state">renderizando…</p>
+    <p class="abc-state">{t("study.notes.rendering")}</p>
   {:else if renderState.kind === "error"}
     <div class="abc-error">
-      <p class="abc-error-msg">erro: {renderState.message}</p>
+      <p class="abc-error-msg">{t("study.notes.error_prefix")}{renderState.message}</p>
       <button type="button" class="abc-edit-btn" onclick={toggleMode}
-        >Editar source</button>
+        >{t("study.notes.edit_source")}</button>
     </div>
   {/if}
 

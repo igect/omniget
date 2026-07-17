@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount, onDestroy } from "svelte";
   import { pluginInvoke } from "$lib/plugin-invoke";
+  import { t } from "$lib/i18n";
   import PageHero from "$lib/study-components/PageHero.svelte";
   import ConfirmDialog from "$lib/study-components/ConfirmDialog.svelte";
 
@@ -95,7 +96,7 @@
     acting = d.id;
     try {
       await pluginInvoke("study", "study:read:downloads:retry", { id: d.id });
-      showToast("ok", "Retry agendado");
+      showToast("ok", t("study.read.downloads_retry_scheduled"));
       await load();
     } catch (e) {
       showToast("err", e instanceof Error ? e.message : String(e));
@@ -108,7 +109,7 @@
     acting = d.id;
     try {
       await pluginInvoke("study", "study:read:downloads:cancel", { id: d.id });
-      showToast("ok", "Cancelado");
+      showToast("ok", t("study.read.downloads_cancelled"));
       await load();
     } catch (e) {
       showToast("err", e instanceof Error ? e.message : String(e));
@@ -128,10 +129,10 @@
       showToast(
         "ok",
         r.removed === 0
-          ? "Nada pra limpar"
+          ? t("study.read.downloads_clear_none")
           : r.removed === 1
-            ? "1 entrada removida"
-            : `${r.removed} entradas removidas`,
+            ? t("study.read.downloads_clear_one")
+            : t("study.read.downloads_clear_many", { count: r.removed }),
       );
       await load();
     } catch (e) {
@@ -166,7 +167,7 @@
   function copyMagnet(m: TorrentMirror) {
     if (navigator.clipboard) {
       navigator.clipboard.writeText(m.magnet);
-      showToast("ok", "Magnet copiado");
+      showToast("ok", t("study.read.downloads_magnet_copied"));
     }
   }
 
@@ -188,11 +189,11 @@
 
   function statusLabel(s: DownloadStatus): string {
     return {
-      queued: "fila",
-      downloading: "baixando",
-      complete: "ok",
-      error: "erro",
-      cancelled: "cancelado",
+      queued: t("study.read.downloads_status_queued"),
+      downloading: t("study.read.downloads_status_downloading"),
+      complete: t("study.read.downloads_status_complete"),
+      error: t("study.read.downloads_status_error"),
+      cancelled: t("study.read.downloads_status_cancelled"),
     }[s];
   }
 
@@ -222,14 +223,14 @@
 
 <section class="study-page">
   <PageHero
-    title="Downloads de livros"
+    title={$t("study.read.downloads_title")}
     subtitle={loading
-      ? "Carregando…"
+      ? $t("study.common.loading")
       : counts.active > 0
         ? counts.active === 1
-          ? "1 ativo"
-          : `${counts.active} ativos`
-        : "Nenhum download ativo"}
+          ? $t("study.read.downloads_active_one")
+          : $t("study.read.downloads_active_many", { count: counts.active })
+        : $t("study.read.downloads_active_none")}
   />
 
   {#if toast}
@@ -246,7 +247,7 @@
         class:active={filter === "all"}
         onclick={() => (filter = "all")}
       >
-        Todos <span class="count">{counts.total}</span>
+        {$t("study.read.downloads_tab_all")} <span class="count">{counts.total}</span>
       </button>
       <button
         type="button"
@@ -254,7 +255,7 @@
         class:active={filter === "active"}
         onclick={() => (filter = "active")}
       >
-        Ativos <span class="count">{counts.active}</span>
+        {$t("study.read.downloads_tab_active")} <span class="count">{counts.active}</span>
       </button>
       <button
         type="button"
@@ -262,7 +263,7 @@
         class:active={filter === "finished"}
         onclick={() => (filter = "finished")}
       >
-        Concluídos <span class="count">{counts.finished}</span>
+        {$t("study.read.downloads_tab_finished")} <span class="count">{counts.finished}</span>
       </button>
       <button
         type="button"
@@ -270,7 +271,7 @@
         class:active={filter === "errored"}
         onclick={() => (filter = "errored")}
       >
-        Falhas <span class="count">{counts.errored}</span>
+        {$t("study.read.downloads_tab_errored")} <span class="count">{counts.errored}</span>
       </button>
     </div>
     <button
@@ -279,20 +280,20 @@
       onclick={() => (confirmClearOpen = true)}
       disabled={clearingFinished || (counts.finished === 0 && counts.errored === 0)}
     >
-      {clearingFinished ? "Limpando…" : "Limpar concluídos"}
+      {clearingFinished ? $t("study.read.downloads_clearing") : $t("study.read.downloads_clear_finished_btn")}
     </button>
   </div>
 
   {#if error}
     <div class="state err">{error}</div>
   {:else if loading}
-    <div class="state">Carregando…</div>
+    <div class="state">{$t("study.common.loading")}</div>
   {:else if downloads.length === 0}
     <div class="empty">
-      <p>Nenhum download {filter !== "all" ? "neste filtro" : "ainda"}.</p>
+      <p>{filter !== "all" ? $t("study.read.downloads_empty_filtered") : $t("study.read.downloads_empty_all")}</p>
       {#if filter === "all"}
         <p class="hint">
-          Use <a href="/study/read/discover">Descobrir</a> pra encontrar livros.
+          {@html $t("study.read.downloads_empty_hint")}
         </p>
       {/if}
     </div>
@@ -334,7 +335,7 @@
                 onclick={() => retry(d)}
                 disabled={acting === d.id}
               >
-                {acting === d.id ? "…" : "Retry"}
+                {acting === d.id ? "…" : $t("study.read.downloads_retry_btn")}
               </button>
             {/if}
             {#if d.status === "queued" || d.status === "downloading"}
@@ -344,16 +345,16 @@
                 onclick={() => cancel(d)}
                 disabled={acting === d.id}
               >
-                {acting === d.id ? "…" : "Cancelar"}
+                {acting === d.id ? "…" : $t("study.read.downloads_cancel_btn")}
               </button>
             {/if}
             <button
               type="button"
               class="btn ghost sm"
               onclick={() => showTorrents(d)}
-              title="Listar mirrors torrent disponíveis"
+              title={$t("study.read.downloads_mirrors_title")}
             >
-              Mirrors…
+              {$t("study.read.downloads_mirrors_btn")}
             </button>
           </div>
         </li>
@@ -369,31 +370,31 @@
     onclick={(e) => { if (e.target === e.currentTarget) torrentsTarget = null; }}
   >
     <div class="modal modal-wide" role="dialog" aria-modal="true">
-      <h3>Mirrors torrent</h3>
+      <h3>{$t("study.read.downloads_mirrors_modal_title")}</h3>
       <p class="modal-hint">{torrentsTarget.title}</p>
       {#if torrentsLoading}
-        <p class="muted small">Buscando mirrors…</p>
+        <p class="muted small">{$t("study.read.downloads_mirrors_loading")}</p>
       {:else if torrents.length === 0}
-        <p class="muted small">Nenhum mirror torrent encontrado.</p>
+        <p class="muted small">{$t("study.read.downloads_mirrors_empty")}</p>
       {:else}
         <ul class="torrent-list">
-          {#each torrents as t (t.magnet)}
+          {#each torrents as tr (tr.magnet)}
             <li class="torrent-row">
               <div class="torrent-info">
-                <span class="torrent-name">{t.name}</span>
+                <span class="torrent-name">{tr.name}</span>
                 <span class="torrent-meta">
-                  {t.size_label ?? "—"}
-                  {#if t.seeders != null}
-                    · {t.seeders} seeders
+                  {tr.size_label ?? "—"}
+                  {#if tr.seeders != null}
+                    · {tr.seeders} seeders
                   {/if}
                 </span>
               </div>
               <button
                 type="button"
                 class="btn ghost sm"
-                onclick={() => copyMagnet(t)}
+                onclick={() => copyMagnet(tr)}
               >
-                Copiar magnet
+                {$t("study.read.downloads_mirrors_copy")}
               </button>
             </li>
           {/each}
@@ -405,7 +406,7 @@
           class="btn primary"
           onclick={() => (torrentsTarget = null)}
         >
-          Fechar
+          {$t("study.read.downloads_mirrors_close")}
         </button>
       </div>
     </div>
@@ -414,9 +415,9 @@
 
 <ConfirmDialog
   bind:open={confirmClearOpen}
-  title="Limpar concluídos"
-  message="Vai remover entradas de downloads concluídos e cancelados. Os arquivos baixados continuam intactos."
-  confirmLabel="Limpar"
+  title={$t("study.read.downloads_clear_confirm_title")}
+  message={$t("study.read.downloads_clear_confirm_msg")}
+  confirmLabel={$t("study.read.downloads_clear_confirm_btn")}
   variant="danger"
   onConfirm={clearFinished}
 />

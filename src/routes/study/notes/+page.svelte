@@ -145,7 +145,7 @@
       notifyDocksDirty();
       await openPage(r.id);
       void awardXp("page_created", 15, { page_id: r.id, name });
-      showToast("ok", "Página criada");
+      showToast("ok", t("study.notes.toast_page_created"));
     } catch (e) {
       showToast("err", e instanceof Error ? e.message : String(e));
     }
@@ -161,7 +161,7 @@
       notesShell.setCounts(0, 0);
       notesShell.setSaving(false);
       notifyDocksDirty();
-      showToast("ok", "Página removida");
+      showToast("ok", t("study.notes.toast_page_deleted"));
     } catch (e) {
       showToast("err", e instanceof Error ? e.message : String(e));
     }
@@ -361,58 +361,58 @@
           <button
             class="btn ghost sm"
             onclick={() => (coverManagerOpen = true)}
-            title="Definir capa da página"
+            title={$t("study.notes.btn_set_cover_title")}
           >
-            {coverUrl ? "Capa ✓" : "+ Capa"}
+            {coverUrl ? $t("study.notes.btn_cover_has") : $t("study.notes.btn_cover_set")}
           </button>
           <button
             class="btn ghost sm"
             onclick={() => (historyOpen = true)}
             disabled={firstBlockId === null}
-            title="Ver histórico do bloco principal desta página"
+            title={$t("study.notes.btn_history_title")}
           >
-            🕐 Histórico
+            🕐 {$t("study.notes.btn_history")}
           </button>
           <button
             class="btn ghost sm"
             onclick={undoLastOp}
-            title="Desfazer última operação estrutural (Cmd+Alt+Z)"
+            title={$t("study.notes.btn_undo_title")}
           >
             ↶
           </button>
           <button
             class="btn ghost sm"
             onclick={redoLastOp}
-            title="Refazer (Cmd+Shift+Z)"
+            title={$t("study.notes.btn_redo_title")}
           >
             ↷
           </button>
           <a
             class="btn ghost sm"
             href="/study/notes/shortcuts"
-            title="Atalhos do editor"
+            title={$t("study.notes.btn_shortcuts_title")}
           >
             ?
           </a>
           <button
             class="btn ghost sm"
             onclick={() => window.print()}
-            title="Imprimir / Salvar PDF (Ctrl+P)"
+            title={$t("study.notes.btn_print_title")}
           >
-            Imprimir/PDF
+            {$t("study.notes.btn_print")}
           </button>
           <button
             class="btn ghost sm danger"
             onclick={() => (confirmDeletePageOpen = true)}
           >
-            Excluir página
+            {$t("study.notes.btn_delete_page")}
           </button>
         </div>
       </header>
 
       <div class="page-meta-bar">
         <label class="meta-field">
-          <span>Tags</span>
+          <span>{$t("study.notes.meta_tags")}</span>
           <input
             type="text"
             placeholder="comma, separated"
@@ -436,8 +436,7 @@
       {@const firstBlock = blockTree.length > 0 ? blockTree[0] : null}
       {#if blockTree.length > 1}
         <p class="editor-banner">
-          Esta página tem múltiplos blocos antigos. C1 edita só o primeiro;
-          os demais ficam preservados no DB e voltam visíveis em C1.5.
+          {$t("study.notes.editor_banner_multi_blocks")}
         </p>
       {/if}
       <Editor
@@ -469,7 +468,7 @@
   blockId={firstBlockId}
   onRestored={() => {
     void reloadTree();
-    showToast("ok", "Versão restaurada");
+    showToast("ok", t("study.notes.toast_version_restored"));
   }}
   onClose={() => (historyOpen = false)}
 />
@@ -489,11 +488,11 @@
 
 <ConfirmDialog
   bind:open={confirmDeletePageOpen}
-  title="Excluir página"
+  title={$t("study.notes.confirm_delete_title")}
   message={currentPage
-    ? `"${currentPage.title ?? currentPage.name}" e todos os seus blocos serão removidos. Esta ação não pode ser desfeita.`
+    ? $t("study.notes.confirm_delete_message", { page: currentPage.title ?? currentPage.name })
     : ""}
-  confirmLabel="Excluir"
+  confirmLabel={$t("study.notes.confirm_delete_label")}
   variant="danger"
   onConfirm={deletePage}
 />

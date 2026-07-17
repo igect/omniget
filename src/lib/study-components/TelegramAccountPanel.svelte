@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/i18n";
   import { showToast } from "$lib/stores/toast-store.svelte";
   import {
     telegramGetSelf,
@@ -113,7 +114,7 @@
       await telegramAccountsRestore({ id: confirmRestoreId });
       showToast(
         "info",
-        "Sessão ativada. Reinicie o app pra entrar nesta conta.",
+        t("study.telegram.account.activated"),
       );
       confirmRestoreId = null;
       await load();
@@ -177,13 +178,13 @@
     onclick={(e) => { if (e.target === e.currentTarget) close(); }}
     onkeydown={(e) => { if (e.key === "Escape") close(); }}
   >
-    <aside class="panel" role="dialog" aria-modal="true" aria-label="Gerenciar contas">
+    <aside class="panel" role="dialog" aria-modal="true" aria-label={$t("study.telegram.account.manage_accounts")}>
       <header class="panel-header">
         <div>
-          <h2>Contas Telegram</h2>
-          <p class="subtitle">Salve e alterne entre múltiplas sessões.</p>
+          <h2>{$t("study.telegram.account.title")}</h2>
+          <p class="subtitle">{$t("study.telegram.account.subtitle")}</p>
         </div>
-        <button type="button" class="icon-btn" onclick={close} aria-label="Fechar">
+        <button type="button" class="icon-btn" onclick={close} aria-label={$t("study.telegram.account.close")}>
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M18 6L6 18" />
             <path d="M6 6l12 12" />
@@ -208,7 +209,7 @@
                   {#if me}
                     {me.first_name}{me.last_name ? " " + me.last_name : ""}
                   {:else}
-                    {sessionPhone || "Sessão local"}
+                    {sessionPhone || $t("study.telegram.account.local_session")}
                   {/if}
                 </span>
                 <span class="active-meta">
@@ -239,9 +240,9 @@
             </div>
             {#if profiles.length === 0}
               <div class="empty-state">
-                <p class="empty-title">Nenhum perfil salvo ainda.</p>
+                <p class="empty-title">{$t("study.telegram.account.no_profiles")}</p>
                 <p class="empty-desc">
-                  Salve sua sessão atual antes de fazer logout — assim você consegue voltar pra ela depois sem refazer login.
+                  {$t("study.telegram.account.save_hint")}
                 </p>
               </div>
             {:else}
@@ -298,11 +299,11 @@
             <div class="section-row">
               <span class="section-label">Backups</span>
               <button type="button" class="ghost-btn" onclick={backupNow} disabled={actionBusy || (!sessionPhone && !me)}>
-                Criar backup agora
+                {$t("study.telegram.account.backup_now")}
               </button>
             </div>
             {#if backups.length === 0}
-              <p class="empty-text">Nenhum backup. Faça um antes de mudanças importantes na sessão.</p>
+              <p class="empty-text">{$t("study.telegram.account.no_backups")}</p>
             {:else}
               <ul class="backup-list">
                 {#each backups as b (b.name)}
@@ -359,14 +360,14 @@
       onkeydown={() => {}}
     >
       <div class="dialog" role="dialog" aria-modal="true">
-        <h3>Ativar perfil "{p?.label}"?</h3>
+        <h3>{$t("study.telegram.account.activate_title", { label: p?.label })}</h3>
         <p>
-          Sua sessão atual será preservada como backup automático. O app precisa ser reiniciado para concluir a troca.
+          {$t("study.telegram.account.activate_desc")}
         </p>
         <div class="dialog-actions">
-          <button type="button" class="ghost-btn" onclick={() => (confirmRestoreId = null)} disabled={actionBusy}>Cancelar</button>
+          <button type="button" class="ghost-btn" onclick={() => (confirmRestoreId = null)} disabled={actionBusy}>{$t("study.telegram.account.cancel")}</button>
           <button type="button" class="primary-btn" onclick={commitRestore} disabled={actionBusy}>
-            {actionBusy ? "Ativando..." : "Ativar e reiniciar"}
+            {actionBusy ? $t("study.telegram.account.activating") : $t("study.telegram.account.activate_restart")}
           </button>
         </div>
       </div>
@@ -382,14 +383,14 @@
       onkeydown={() => {}}
     >
       <div class="dialog" role="dialog" aria-modal="true">
-        <h3>Remover perfil "{p?.label}"?</h3>
+        <h3>{$t("study.telegram.account.remove_title", { label: p?.label })}</h3>
         <p class="warn">
-          A sessão deste perfil será apagada permanentemente. Você precisará refazer login pra acessar essa conta novamente.
+          {$t("study.telegram.account.remove_desc")}
         </p>
         <div class="dialog-actions">
-          <button type="button" class="ghost-btn" onclick={() => (confirmDeleteId = null)} disabled={actionBusy}>Cancelar</button>
+          <button type="button" class="ghost-btn" onclick={() => (confirmDeleteId = null)} disabled={actionBusy}>{$t("study.telegram.account.cancel")}</button>
           <button type="button" class="danger-btn" onclick={commitDelete} disabled={actionBusy}>
-            {actionBusy ? "Removendo..." : "Remover perfil"}
+            {actionBusy ? $t("study.telegram.account.removing") : $t("study.telegram.account.remove")}
           </button>
         </div>
       </div>

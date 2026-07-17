@@ -1,6 +1,7 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
   import { pluginInvoke } from "$lib/plugin-invoke";
+  import { t } from "$lib/i18n";
   import PageHero from "$lib/study-components/PageHero.svelte";
 
   type SearchResult = {
@@ -65,7 +66,7 @@
         "study",
         "study:read:search:rebuild",
       );
-      showToast("ok", "Índice reconstruído");
+      showToast("ok", t("study.read.search_rebuilt"));
       if (query.trim()) await runSearch();
     } catch (e) {
       showToast("err", e instanceof Error ? e.message : String(e));
@@ -101,8 +102,8 @@
 
 <section class="study-page">
   <PageHero
-    title="Buscar nas anotações"
-    subtitle="Encontre highlights, notas e marcações em todos os livros"
+    title={$t("study.read.search_page_title")}
+    subtitle={$t("study.read.search_page_subtitle")}
   />
 
   {#if toast}
@@ -115,7 +116,7 @@
     <input
       type="search"
       class="search-input"
-      placeholder="Texto, palavra-chave ou frase…"
+      placeholder={$t("study.read.search_input_placeholder")}
       bind:value={query}
       autofocus
     />
@@ -124,36 +125,36 @@
       class="btn ghost"
       onclick={rebuildIndex}
       disabled={rebuilding}
-      title="Reconstruir índice se busca estiver retornando resultados desatualizados"
+      title={$t("study.read.search_rebuild_title")}
     >
-      {rebuilding ? "Reindexando…" : "Reindexar"}
+      {rebuilding ? $t("study.read.search_rebuilding") : $t("study.read.search_rebuild_btn")}
     </button>
   </div>
 
   {#if error}
     <div class="state err">{error}</div>
   {:else if searching}
-    <div class="state">Buscando…</div>
+    <div class="state">{$t("study.read.search_searching")}</div>
   {:else if !searched}
     <div class="empty">
-      <p>Digite uma palavra ou frase pra buscar.</p>
+      <p>{$t("study.read.search_empty_hint")}</p>
       <p class="hint">
-        A busca cobre highlights, notas e o texto dos livros indexados.
+        {$t("study.read.search_empty_sub")}
       </p>
     </div>
   {:else if results.length === 0}
     <div class="empty">
-      <p>Nada encontrado pra "{query}".</p>
+      <p>{$t("study.read.search_no_results", { query })}</p>
       <p class="hint">
-        Se você tem certeza que o texto existe, tente
+        {$t("study.read.search_no_results_hint")}
         <button type="button" class="btn-link" onclick={rebuildIndex}>
-          reindexar
+          {$t("study.read.search_reindex_link")}
         </button>.
       </p>
     </div>
   {:else}
     <p class="result-count">
-      {results.length === 1 ? "1 resultado" : `${results.length} resultados`}
+      {results.length === 1 ? $t("study.read.search_result_count_one") : $t("study.read.search_result_count_many", { count: results.length })}
     </p>
     <ul class="result-list">
       {#each results as r (r.annotation_id)}
@@ -165,7 +166,7 @@
           >
             <div class="result-head">
               <span class="result-book">
-                {r.book_title ?? "(sem título)"}
+                {r.book_title ?? $t("study.read.search_untitled")}
               </span>
               {#if r.page_index != null}
                 <span class="result-page">p. {r.page_index + 1}</span>

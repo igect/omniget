@@ -1,5 +1,6 @@
 <script lang="ts">
   import { page as routePage } from "$app/stores";
+  import { t } from "$lib/i18n";
   import {
     notesPagesListByTag,
     notesPagesGetByName,
@@ -102,31 +103,31 @@
 
 <div class="tag-shell" data-surface="notes">
   <header class="head">
-    <a href="/study/notes" class="back">← Notas</a>
+    <a href="/study/notes" class="back">← {$t("study.notes.tag.back_to_notes")}</a>
     <h1 class="page-title"><span class="hash">#</span>{tagName}</h1>
     {#if tagInfo}
       <span class="meta">
-        {tagInfo.ref_count} ref · {tagInfo.block_count} bloco{tagInfo.block_count === 1 ? "" : "s"}
+        {$t("study.notes.tag.meta", { refs: tagInfo.ref_count, blocks: tagInfo.block_count })}
       </span>
     {/if}
   </header>
 
   {#if loading}
-    <p class="state">Carregando…</p>
+    <p class="state">{$t("study.notes.tag.loading")}</p>
   {:else if error}
     <p class="state err">{error}</p>
   {:else}
     {#if descriptionPage}
       <section class="description">
         <header class="section-head">
-          <h2>Sobre esta tag</h2>
+          <h2>{$t("study.notes.tag.about_title")}</h2>
           <a
             class="btn ghost sm"
             href={`/study/notes?page=${encodeURIComponent(descriptionPage.name)}`}
-          >Editar →</a>
+          >{$t("study.notes.tag.edit_link")} →</a>
         </header>
         {#if descriptionBlocks.length === 0}
-          <p class="muted">Página de descrição existe mas está vazia.</p>
+          <p class="muted">{$t("study.notes.tag.desc_empty")}</p>
         {:else}
           <ul class="snippet-list">
             {#each flattenFirst(descriptionBlocks, 5) as n (n.id)}
@@ -137,10 +138,9 @@
       </section>
     {:else}
       <section class="description description-empty">
-        <h2>Sobre esta tag</h2>
+        <h2>{$t("study.notes.tag.about_title")}</h2>
         <p class="muted">
-          Não há página descritiva para <code>#{tagName}</code>. Crie uma para
-          documentar o conceito da tag.
+          {$t("study.notes.tag.no_desc", { tag: tagName })}
         </p>
         <button
           type="button"
@@ -148,14 +148,14 @@
           onclick={createDescription}
           disabled={creatingDescription}
         >
-          {creatingDescription ? "Criando…" : `Criar página #${tagName}`}
+          {creatingDescription ? $t("study.notes.tag.creating") : $t("study.notes.tag.create_page", { tag: tagName })}
         </button>
       </section>
     {/if}
 
     {#if pages.length > 0}
       <section class="pages">
-        <h2>Páginas com esta tag</h2>
+        <h2>{$t("study.notes.tag.pages_title")}</h2>
         <ul>
           {#each pages as p (p.id)}
             <li>
@@ -163,7 +163,7 @@
                 <span class="title">{p.title ?? p.name}</span>
                 <span class="path">{p.name}</span>
                 <span class="meta-line">
-                  {p.block_count} bloco{p.block_count === 1 ? "" : "s"} · atualizado {fmtDay(p.updated_at)}
+                  {$t("study.notes.tag.page_meta", { blocks: p.block_count, date: fmtDay(p.updated_at) })}
                 </span>
               </a>
             </li>
@@ -174,7 +174,7 @@
 
     {#if blocksTagged.length > 0}
       <section class="blocks">
-        <h2>Blocos referenciando esta tag ({blocksTagged.length})</h2>
+        <h2>{$t("study.notes.tag.blocks_title", { count: blocksTagged.length })}</h2>
         <ul>
           {#each blocksTagged.slice(0, 50) as r (r.block_id)}
             <li>
@@ -186,13 +186,13 @@
           {/each}
         </ul>
         {#if blocksTagged.length > 50}
-          <p class="muted">Mostrando 50 de {blocksTagged.length}.</p>
+          <p class="muted">{$t("study.notes.tag.showing_50", { total: blocksTagged.length })}</p>
         {/if}
       </section>
     {/if}
 
     {#if pages.length === 0 && blocksTagged.length === 0}
-      <p class="state">Sem páginas ou blocos com tag <code>#{tagName}</code>.</p>
+      <p class="state">{$t("study.notes.tag.empty", { tag: tagName })}</p>
     {/if}
   {/if}
 </div>

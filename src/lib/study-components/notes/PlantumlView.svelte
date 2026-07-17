@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/i18n";
   import { onDestroy } from "svelte";
 
   type Props = {
@@ -76,7 +77,7 @@
       const svg = lib.convert(trimmed);
       if (token !== renderToken) return;
       if (!host) {
-        renderState = { kind: "error", message: "container ausente" };
+        renderState = { kind: "error", message: t("study.notes.plantuml_container_missing") };
         return;
       }
       host.innerHTML = svg;
@@ -116,7 +117,7 @@
       CompressionStream?: new (format: string) => GenericTransformStream;
     };
     if (!G.CompressionStream) {
-      throw new Error("CompressionStream indisponível neste runtime");
+      throw new Error(t("study.notes.puml_compression_unavailable"));
     }
     const ds = new G.CompressionStream("deflate-raw");
     const stream = new Blob([text]).stream().pipeThrough(ds);
@@ -144,7 +145,7 @@
       const svg = await resp.text();
       if (token !== renderToken) return;
       if (!host) {
-        renderState = { kind: "error", message: "container ausente" };
+        renderState = { kind: "error", message: t("study.notes.plantuml_container_missing") };
         return;
       }
       host.innerHTML = svg;
@@ -202,15 +203,15 @@
 <div class="puml-block" data-plantuml data-mode={mode}>
   <header class="puml-head" contenteditable="false">
     <span class="puml-icon" aria-hidden="true">⚙</span>
-    <span class="puml-label">plantuml</span>
+    <span class="puml-label">{t("study.notes.puml_label")}</span>
     {#if renderState.kind === "remote-rendered"}
-      <span class="puml-remote-badge" title="renderizado via plantuml.com">via plantuml.com</span>
+      <span class="puml-remote-badge" title={t("study.notes.puml_remote_title")}>{t("study.notes.puml_remote_badge")}</span>
     {/if}
     <button
       type="button"
       class="puml-toggle"
       onclick={toggleMode}
-      title={mode === "render" ? "Editar source" : "Voltar pro diagrama"}
+      title={mode === "render" ? t("study.notes.edit_source") : t("study.notes.back_to_diagram")}
     >
       {mode === "render" ? "‹/›" : "▶"}
     </button>
@@ -224,28 +225,28 @@
       onblur={onSourceBlur}
       spellcheck="false"
       rows={Math.max(6, editingValue.split("\n").length)}
-      aria-label="Source do diagrama PlantUML"
+      aria-label={t("study.notes.puml_source_aria")}
     ></textarea>
   {:else if renderState.kind === "idle"}
-    <p class="puml-state">Sem source. Clique em ‹/› para editar.</p>
+    <p class="puml-state">{t("study.notes.puml_no_source")}</p>
   {:else if renderState.kind === "loading"}
-    <p class="puml-state">renderizando…</p>
+    <p class="puml-state">{t("study.notes.rendering")}</p>
   {:else if renderState.kind === "remote-rendering"}
-    <p class="puml-state">enviando a plantuml.com…</p>
+    <p class="puml-state">{t("study.notes.puml_sending")}</p>
   {:else if renderState.kind === "error"}
     <div class="puml-error">
-      <p class="puml-error-msg">erro local: {renderState.message}</p>
+      <p class="puml-error-msg">{t("study.notes.error_prefix")}{renderState.message}</p>
       <div class="puml-error-actions">
         <button
           type="button"
           class="puml-edit-btn"
-          onclick={toggleMode}>Editar source</button>
+          onclick={toggleMode}        >{t("study.notes.edit_source")}</button>
         <button
           type="button"
           class="puml-remote-btn"
           onclick={() => void renderRemote(source)}
-          title="Envia o diagrama pra plantuml.com (terceiro pode logar)"
-        >Render via plantuml.com</button>
+          title={t("study.notes.puml_remote_render_title")}
+        >{t("study.notes.puml_remote_render")}</button>
       </div>
     </div>
   {/if}

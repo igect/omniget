@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/i18n";
   import { notebooksStore } from "$lib/study-notes/notebooks-store.svelte";
 
   type Props = {
@@ -31,7 +32,7 @@
     if (trimmed.length > 0) {
       const n = Number.parseInt(trimmed, 10);
       if (!Number.isFinite(n) || n <= 0) {
-        error = "ID precisa ser inteiro positivo";
+        error = t("study.notes.shell.cover_error_id");
         return;
       }
       asset = n;
@@ -42,7 +43,7 @@
       await notebooksStore.setCover(notebookId, asset);
       onClose();
     } catch (e) {
-      error = String(e ?? "falha ao aplicar capa");
+      error = String(e ?? t("study.notes.shell.cover_error_apply"));
     } finally {
       busy = false;
     }
@@ -83,26 +84,22 @@
       class="dialog"
       role="dialog"
       aria-modal="true"
-      aria-label="Capa do notebook"
+      aria-label={t("study.notes.shell.cover_dialog_label")}
       data-modal="true"
     >
       <header>
-        <h3>Capa de {current?.name ?? "notebook"}</h3>
-        <button type="button" class="x" onclick={onClose} aria-label="Fechar">×</button>
+        <h3>{t("study.notes.shell.cover_of", { name: current?.name ?? t("study.notes.shell.notebook") })}</h3>
+        <button type="button" class="x" onclick={onClose} aria-label={t("study.notes.shell.close")}>×</button>
       </header>
 
-      <p class="hint">
-        Use o ID de um asset já registrado em <code>note_assets</code>.
-        Para fazer upload de uma nova imagem, use o gerenciador de capas
-        de uma página primeiro e depois aponte o ID aqui.
-      </p>
+      <p class="hint">{t("study.notes.shell.cover_hint")}</p>
 
       <label class="field">
-        <span>Asset ID</span>
+        <span>{t("study.notes.shell.cover_asset_id")}</span>
         <input
           type="text"
           inputmode="numeric"
-          placeholder="ex: 42"
+          placeholder={t("study.notes.shell.cover_placeholder")}
           bind:value={assetIdDraft}
         />
       </label>
@@ -118,15 +115,15 @@
           onclick={clear}
           disabled={busy || current?.cover_asset_id == null}
         >
-          Remover capa
+          {t("study.notes.shell.cover_remove")}
         </button>
         <span class="spacer"></span>
         <button type="button" class="btn ghost" onclick={onClose} disabled={busy}>
-          Cancelar
-        </button>
-        <button type="button" class="btn primary" onclick={apply} disabled={busy}>
-          Aplicar
-        </button>
+      {t("study.notes.shell.cancel")}
+    </button>
+    <button type="button" class="btn primary" onclick={() => void confirm()}>
+      {t("study.notes.shell.apply")}
+    </button>
       </footer>
     </div>
   </div>

@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { t } from "$lib/i18n";
+
   type Props = {
     open: boolean;
     onClose: () => void;
@@ -6,51 +8,51 @@
 
   let { open, onClose }: Props = $props();
 
-  type Shortcut = { keys: string[]; label: string };
-  type Group = { title: string; items: Shortcut[] };
+  type Shortcut = { keys: string[]; labelKey: string };
+  type Group = { titleKey: string; items: Shortcut[] };
 
   const groups: Group[] = [
     {
-      title: "Reprodução",
+      titleKey: "player.keyboard.playback",
       items: [
-        { keys: ["Espaço"], label: "Play / Pausar" },
-        { keys: ["F"], label: "Tela cheia" },
-        { keys: ["M"], label: "Mutar / Desmutar" },
-        { keys: ["T"], label: "Modo cinema" },
-        { keys: ["Esc"], label: "Sair do fullscreen / Fechar" },
+        { keys: ["Space"], labelKey: "player.keyboard.play_pause" },
+        { keys: ["F"], labelKey: "player.keyboard.fullscreen" },
+        { keys: ["M"], labelKey: "player.keyboard.mute" },
+        { keys: ["T"], labelKey: "player.keyboard.theater" },
+        { keys: ["Esc"], labelKey: "player.keyboard.exit_fullscreen" },
       ],
     },
     {
-      title: "Navegação",
+      titleKey: "player.keyboard.navigation",
       items: [
-        { keys: ["←", "J"], label: "Voltar 10s" },
-        { keys: ["→", "L", "K"], label: "Avançar 10s" },
-        { keys: ["Shift", "+", "J"], label: "Voltar 3s (fine seek)" },
-        { keys: ["Shift", "+", "L"], label: "Avançar 3s (fine seek)" },
-        { keys: [","], label: "Frame anterior (pausado)" },
-        { keys: ["."], label: "Próximo frame (pausado)" },
-        { keys: ["0", "—", "9"], label: "Pular pra 0%, 10%, … 90%" },
+        { keys: ["←", "J"], labelKey: "player.keyboard.seek_back" },
+        { keys: ["→", "L", "K"], labelKey: "player.keyboard.seek_forward" },
+        { keys: ["Shift", "+", "J"], labelKey: "player.keyboard.fine_seek_back" },
+        { keys: ["Shift", "+", "L"], labelKey: "player.keyboard.fine_seek_forward" },
+        { keys: [","], labelKey: "player.keyboard.prev_frame" },
+        { keys: ["."], labelKey: "player.keyboard.next_frame" },
+        { keys: ["0", "—", "9"], labelKey: "player.keyboard.seek_percent" },
       ],
     },
     {
-      title: "Velocidade",
+      titleKey: "player.keyboard.speed",
       items: [
-        { keys: ["["], label: "Diminuir velocidade" },
-        { keys: ["]"], label: "Aumentar velocidade" },
+        { keys: ["["], labelKey: "player.keyboard.speed_down" },
+        { keys: ["]"], labelKey: "player.keyboard.speed_up" },
       ],
     },
     {
-      title: "Legendas / Notas",
+      titleKey: "player.keyboard.subtitles_notes",
       items: [
-        { keys: ["C"], label: "Próxima legenda (cycle)" },
-        { keys: ["N"], label: "Adicionar nota no timestamp" },
+        { keys: ["C"], labelKey: "player.keyboard.next_subtitle" },
+        { keys: ["N"], labelKey: "player.keyboard.add_note" },
       ],
     },
     {
-      title: "Geral",
+      titleKey: "player.keyboard.general",
       items: [
-        { keys: ["?"], label: "Mostrar este painel" },
-        { keys: ["/"], label: "Buscar (em qualquer rota)" },
+        { keys: ["?"], labelKey: "player.keyboard.show_panel" },
+        { keys: ["/"], labelKey: "player.keyboard.search" },
       ],
     },
   ];
@@ -68,20 +70,20 @@
     class="overlay"
     role="dialog"
     aria-modal="true"
-    aria-label="Atalhos de teclado"
+    aria-label={$t("player.keyboard.title")}
     tabindex="-1"
     onkeydown={onBackdropKey}
   >
-    <button type="button" class="bg-btn" aria-label="Fechar" onclick={onClose}></button>
+    <button type="button" class="bg-btn" aria-label={$t("player.keyboard.close")} onclick={onClose}></button>
     <div class="modal" role="document">
       <header class="head">
-        <h2>Atalhos de teclado</h2>
-        <button type="button" class="close" aria-label="Fechar" onclick={onClose}>×</button>
+        <h2>{$t("player.keyboard.title")}</h2>
+        <button type="button" class="close" aria-label={$t("player.keyboard.close")} onclick={onClose}>×</button>
       </header>
       <div class="body">
-        {#each groups as g (g.title)}
+        {#each groups as g (g.titleKey)}
           <section class="group">
-            <h3>{g.title}</h3>
+            <h3>{$t(g.titleKey)}</h3>
             <ul>
               {#each g.items as s, i (i)}
                 <li>
@@ -94,7 +96,7 @@
                       {/if}
                     {/each}
                   </span>
-                  <span class="label">{s.label}</span>
+                  <span class="label">{$t(s.labelKey)}</span>
                 </li>
               {/each}
             </ul>
@@ -102,7 +104,7 @@
         {/each}
       </div>
       <footer class="foot">
-        Pressione <kbd>?</kbd> ou <kbd>Esc</kbd> para fechar
+        {@html $t("player.keyboard.press_to_close").replace("?", "<kbd>?</kbd>").replace("Esc", "<kbd>Esc</kbd>")}
       </footer>
     </div>
   </div>

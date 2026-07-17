@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/i18n";
   import type { WndNode } from "$lib/notes-bridge";
   import { tabsStore } from "$lib/study-notes/tabs-store.svelte";
   import NbTabStrip from "./NbTabStrip.svelte";
@@ -52,7 +53,7 @@
     </div>
   </div>
 {:else}
-  <div class="nb-wnd-empty">Layout inválido</div>
+  <div class="nb-wnd-empty">{t("study.notes.shell.invalid_layout")}</div>
 {/if}
 
 <style>

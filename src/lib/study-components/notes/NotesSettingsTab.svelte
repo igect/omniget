@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/i18n";
   import { onMount } from "svelte";
   import {
     notesSettingsGet,
@@ -138,28 +139,28 @@
 <section class="tab">
   <header class="tab-head">
     <div>
-      <h2>Notas</h2>
-      <p class="hint">Aparência, sidebar, editor, journal, refs, manutenção.</p>
+      <h2>{t("study.notes.settings_title")}</h2>
+      <p class="hint">{t("study.notes.settings_hint")}</p>
     </div>
     <div class="status">
       {#if loading}
-        <span class="muted">Carregando…</span>
+        <span class="muted">{t("study.notes.loading")}</span>
       {:else if savingState === "saving"}
         <span class="dot saving" aria-hidden="true"></span>
-        <span>Salvando…</span>
+        <span>{t("study.notes.saving")}</span>
       {:else if savingState === "saved"}
         <span class="dot saved" aria-hidden="true"></span>
-        <span>Salvo</span>
+        <span>{t("study.notes.saved")}</span>
       {/if}
     </div>
   </header>
 
   {#if !loading}
     <article class="card">
-      <h3>Aparência</h3>
+      <h3>{t("study.notes.settings_appearance")}</h3>
       <div class="rows">
         <label class="row">
-          <span>Escala de fonte</span>
+          <span>{t("study.notes.settings_font_scale")}</span>
           <select
             value={String(settings.appearance_font_scale)}
             onchange={(e) =>
@@ -169,13 +170,13 @@
               )}
           >
             <option value="0.95">95%</option>
-            <option value="1">100% (padrão)</option>
+            <option value="1">{t("study.notes.settings_font_scale_default")}</option>
             <option value="1.05">105%</option>
             <option value="1.1">110%</option>
           </select>
         </label>
         <label class="row">
-          <span>Largura de leitura</span>
+          <span>{t("study.notes.settings_reading_width")}</span>
           <select
             value={settings.appearance_reading_width}
             onchange={(e) =>
@@ -184,19 +185,19 @@
                 (e.currentTarget as HTMLSelectElement).value as Settings["appearance_reading_width"],
               )}
           >
-            <option value="compact">Compacta (640px)</option>
-            <option value="normal">Normal (760px)</option>
-            <option value="wide">Larga (920px)</option>
+            <option value="compact">{t("study.notes.settings_reading_compact")}</option>
+            <option value="normal">{t("study.notes.settings_reading_normal")}</option>
+            <option value="wide">{t("study.notes.settings_reading_wide")}</option>
           </select>
         </label>
       </div>
     </article>
 
     <article class="card">
-      <h3>Sidebar</h3>
+      <h3>{t("study.notes.settings_sidebar")}</h3>
       <div class="rows">
         <label class="row">
-          <span>Largura padrão (px)</span>
+          <span>{t("study.notes.settings_sidebar_width")}</span>
           <select
             value={String(settings.sidebar_width)}
             onchange={(e) =>
@@ -218,7 +219,7 @@
             onchange={(e) =>
               patch("sidebar_show_recents", (e.currentTarget as HTMLInputElement).checked)}
           />
-          <span>Mostrar seção "Recentes"</span>
+          <span>{t("study.notes.settings_sidebar_recents")}</span>
         </label>
         <label class="row check">
           <input
@@ -227,7 +228,7 @@
             onchange={(e) =>
               patch("sidebar_show_favorites", (e.currentTarget as HTMLInputElement).checked)}
           />
-          <span>Mostrar seção "Favoritas"</span>
+          <span>{t("study.notes.settings_sidebar_favorites")}</span>
         </label>
         <label class="row check">
           <input
@@ -236,13 +237,13 @@
             onchange={(e) =>
               patch("sidebar_show_today", (e.currentTarget as HTMLInputElement).checked)}
           />
-          <span>Mostrar seção "Hoje"</span>
+          <span>{t("study.notes.settings_sidebar_today")}</span>
         </label>
       </div>
     </article>
 
     <article class="card">
-      <h3>Editor</h3>
+      <h3>{t("study.notes.settings_editor")}</h3>
       <div class="rows">
         <label class="row check">
           <input
@@ -251,7 +252,7 @@
             onchange={(e) =>
               patch("editor_slash_menu", (e.currentTarget as HTMLInputElement).checked)}
           />
-          <span>Slash menu (digite "/" pra abrir comandos)</span>
+          <span>{t("study.notes.settings_slash_menu")}</span>
         </label>
         <label class="row check">
           <input
@@ -260,10 +261,10 @@
             onchange={(e) =>
               patch("editor_drag_handle", (e.currentTarget as HTMLInputElement).checked)}
           />
-          <span>Drag handle visível ao passar o mouse</span>
+          <span>{t("study.notes.settings_drag_handle")}</span>
         </label>
         <label class="row">
-          <span>Atraso de auto-save</span>
+          <span>{t("study.notes.settings_autosave_delay")}</span>
           <select
             value={String(settings.editor_autosave_delay_ms)}
             onchange={(e) =>
@@ -272,19 +273,19 @@
                 parseInt((e.currentTarget as HTMLSelectElement).value, 10),
               )}
           >
-            <option value="250">250ms (rápido)</option>
-            <option value="500">500ms (padrão)</option>
-            <option value="1000">1000ms (econômico)</option>
+            <option value="250">{t("study.notes.settings_autosave_fast")}</option>
+            <option value="500">{t("study.notes.settings_autosave_default")}</option>
+            <option value="1000">{t("study.notes.settings_autosave_economy")}</option>
           </select>
         </label>
       </div>
     </article>
 
     <article class="card">
-      <h3>Daily journal</h3>
+      <h3>{t("study.notes.settings_journal")}</h3>
       <div class="rows">
         <label class="row">
-          <span>Template padrão ao criar journal</span>
+          <span>{t("study.notes.settings_journal_template")}</span>
           <select
             value={settings.journal_default_template}
             onchange={(e) =>
@@ -293,7 +294,7 @@
                 (e.currentTarget as HTMLSelectElement).value as Settings["journal_default_template"],
               )}
           >
-            <option value="none">Nenhum (página vazia)</option>
+            <option value="none">{t("study.notes.settings_journal_template_none")}</option>
             <option value="daily-journal">Daily Journal</option>
             <option value="weekly-review">Weekly Review</option>
             <option value="concept-page">Concept Page</option>
@@ -306,16 +307,16 @@
             onchange={(e) =>
               patch("journal_global_shortcut", (e.currentTarget as HTMLInputElement).checked)}
           />
-          <span>Atalho global Ctrl+J abre o journal de hoje</span>
+          <span>{t("study.notes.settings_journal_shortcut")}</span>
         </label>
       </div>
     </article>
 
     <article class="card">
-      <h3>Refs &amp; backlinks</h3>
+      <h3>{t("study.notes.settings_refs")}</h3>
       <div class="rows">
         <label class="row">
-          <span>Atraso ao passar o mouse em [[link]]</span>
+          <span>{t("study.notes.settings_refs_hover_delay")}</span>
           <select
             value={String(settings.refs_hover_delay_ms)}
             onchange={(e) =>
@@ -324,13 +325,13 @@
                 parseInt((e.currentTarget as HTMLSelectElement).value, 10),
               )}
           >
-            <option value="200">200ms (rápido)</option>
-            <option value="400">400ms (padrão)</option>
-            <option value="600">600ms (paciente)</option>
+            <option value="200">{t("study.notes.settings_refs_hover_fast")}</option>
+            <option value="400">{t("study.notes.settings_refs_hover_default")}</option>
+            <option value="600">{t("study.notes.settings_refs_hover_patient")}</option>
           </select>
         </label>
         <label class="row">
-          <span>Blocos preview no popover</span>
+          <span>{t("study.notes.settings_preview_count")}</span>
           <select
             value={String(settings.refs_preview_count)}
             onchange={(e) =>
@@ -340,7 +341,7 @@
               )}
           >
             <option value="3">3</option>
-            <option value="5">5 (padrão)</option>
+            <option value="5">{t("study.notes.settings_refs_preview_default")}</option>
             <option value="10">10</option>
           </select>
         </label>
@@ -348,7 +349,7 @@
     </article>
 
     <article class="card">
-      <h3>Avançado</h3>
+      <h3>{t("study.notes.settings_advanced")}</h3>
       <div class="rows">
         <label class="row check">
           <input
@@ -357,7 +358,7 @@
             onchange={(e) =>
               patch("advanced_op_log_enabled", (e.currentTarget as HTMLInputElement).checked)}
           />
-          <span>Gravar op-log (necessário pra Ctrl+Z global e auditoria)</span>
+          <span>{t("study.notes.settings_op_log")}</span>
         </label>
         <label class="row check">
           <input
@@ -366,7 +367,7 @@
             onchange={(e) =>
               patch("advanced_debug_mode", (e.currentTarget as HTMLInputElement).checked)}
           />
-          <span>Modo debug (logs detalhados em devtools)</span>
+          <span>{t("study.notes.settings_debug_mode")}</span>
         </label>
       </div>
     </article>

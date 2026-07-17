@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/i18n";
   import { studyPlayerSeekHeatmap, type SeekHeatmap } from "$lib/study-bridge";
 
   type Props = {
@@ -41,16 +42,16 @@
 </script>
 
 {#if !loading && !error && showPanel && heatmap}
-  <section class="heat" aria-label="Análise de seeks na aula">
+  <section class="heat" aria-label={$t("player.heatmap.aria_label")}>
     <header class="head">
-      <span class="eyebrow">Análise</span>
-      <h3>Distribuição de retornos</h3>
+      <span class="eyebrow">{$t("player.heatmap.eyebrow")}</span>
+      <h3>{$t("player.heatmap.title")}</h3>
       <span class="count">{heatmap.total_seeks} seeks</span>
     </header>
     <p class="hint">
-      Cada barra representa 10 segundos. Barras altas indicam onde você (ou outros) voltaram mais — provavelmente trecho mais difícil.
+      {$t("player.heatmap.hint")}
     </p>
-    <div class="track" role="img" aria-label="Heatmap de seeks">
+    <div class="track" role="img" aria-label={$t("player.heatmap.heatmap_aria")}>
       <svg viewBox="0 0 {Math.max(heatmap.buckets.length, 1)} 40" preserveAspectRatio="none" width="100%" height="40">
         {#each heatmap.buckets as v, i (i)}
           {@const ratio = maxBucket > 0 ? v / maxBucket : 0}

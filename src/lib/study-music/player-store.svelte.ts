@@ -1,3 +1,4 @@
+import { t } from "$lib/i18n";
 import { convertFileSrc } from "@tauri-apps/api/core";
 import { pluginInvoke } from "$lib/plugin-invoke";
 import { dominantColorFromPath, palettePathOrUrl, type RGB } from "./dominant-color";
@@ -401,15 +402,15 @@ class MusicPlayerStore {
     });
     audio.addEventListener("error", () => {
       const err = audio.error;
-      let msg = "Erro ao carregar áudio";
+      let msg = t("study.music.player.media_error_generic");
       let code: number | undefined;
       if (err) {
         code = err.code;
         const codeMap: Record<number, string> = {
-          1: "abortado",
-          2: "rede falhou",
-          3: "decodificação falhou",
-          4: "formato não suportado",
+          1: t("study.music.player.media_error_aborted"),
+          2: t("study.music.player.media_error_network"),
+          3: t("study.music.player.media_error_decode"),
+          4: t("study.music.player.media_error_format"),
         };
         const reason = codeMap[err.code] ?? `code ${err.code}`;
         msg = `${reason}${err.message ? ` (${err.message})` : ""}`;
@@ -889,7 +890,7 @@ class MusicPlayerStore {
     const track = this.currentTrack;
     if (!track) return null;
     const source: TrackSource = track.source ?? "local";
-    const title = (track.title ?? "").trim() || "Música";
+    const title = (track.title ?? "").trim() || t("study.music.player.track_fallback");
     const artist = (track.artist ?? "").trim();
     const album = (track.album ?? "").trim();
     const duration = Math.max(
@@ -1469,7 +1470,7 @@ class MusicPlayerStore {
       .then((mod) =>
         mod.studyMusicHistoryAdd({
           source: source as "local" | "spotify" | "youtube" | "soundcloud",
-          title: track.title ?? "Música",
+          title: track.title ?? t("study.music.player.track_fallback"),
           externalId: externalId ?? undefined,
           trackId: track.id,
           artist: track.artist ?? undefined,
@@ -1517,7 +1518,7 @@ class MusicPlayerStore {
     if (!this.soundcloudResolver) {
       this.setError(
         classifyPlayerError(
-          "soundcloud resolver não configurado",
+          t("study.music.player.soundcloud_no_resolver"),
           "soundcloud",
           track.id,
         ),

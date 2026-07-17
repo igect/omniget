@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/i18n";
   type DiffLine = { type: " " | "+" | "-"; line: string };
 
   type Props = {
@@ -71,16 +72,16 @@
   });
 </script>
 
-<div class="diff-view" role="region" aria-label="Comparação de versões">
+<div class="diff-view" role="region" aria-label={t("study.notes.diff_aria")}>
   <header class="diff-head">
     <span class="stat added">+{stats.added}</span>
     <span class="stat removed">−{stats.removed}</span>
     {#if truncated}
-      <span class="trunc">truncado a {maxLines} linhas</span>
+      <span class="trunc">{t("study.notes.diff_truncated", { max: maxLines })}</span>
     {/if}
   </header>
   {#if diff.length === 0}
-    <p class="empty">Sem diferenças.</p>
+    <p class="empty">{t("study.notes.diff_no_differences")}</p>
   {:else}
     <pre class="diff-body"><code>{#each diff as d (d.type + ":" + d.line)}<span
             class="line {d.type === '+' ? 'add' : d.type === '-' ? 'rem' : 'eq'}"

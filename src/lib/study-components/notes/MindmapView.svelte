@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/i18n";
   import { onDestroy } from "svelte";
 
   type Props = {
@@ -98,7 +99,7 @@
       await Promise.resolve();
       if (token !== renderToken) return;
       if (!svgHost) {
-        renderState = { kind: "error", message: "container ausente" };
+        renderState = { kind: "error", message: t("study.notes.mm_no_container") };
         return;
       }
       svgHost.innerHTML = "";
@@ -159,12 +160,12 @@
 <div class="mindmap-block" data-mindmap data-mode={mode}>
   <header class="mindmap-head" contenteditable="false">
     <span class="mindmap-icon" aria-hidden="true">⌘</span>
-    <span class="mindmap-label">mindmap</span>
+    <span class="mindmap-label">{t("study.notes.mm_label")}</span>
     <button
       type="button"
       class="mindmap-toggle"
       onclick={toggleMode}
-      title={mode === "render" ? "Editar source" : "Voltar pro mapa"}
+      title={mode === "render" ? t("study.notes.edit_source") : t("study.notes.back_to_map")}
     >
       {mode === "render" ? "‹/›" : "▶"}
     </button>
@@ -178,17 +179,17 @@
       onblur={onSourceBlur}
       spellcheck="false"
       rows={Math.max(4, editingValue.split("\n").length)}
-      aria-label="Source do mindmap (markdown indentado)"
+      aria-label={t("study.notes.mm_source_aria")}
     ></textarea>
   {:else if renderState.kind === "idle"}
-    <p class="mindmap-state">Sem source. Clique em ‹/› para editar.</p>
+    <p class="mindmap-state">{t("study.notes.mm_no_source")}</p>
   {:else if renderState.kind === "loading"}
-    <p class="mindmap-state">renderizando…</p>
+    <p class="mindmap-state">{t("study.notes.rendering")}</p>
   {:else if renderState.kind === "error"}
     <div class="mindmap-error">
-      <p class="mindmap-error-msg">erro: {renderState.message}</p>
+      <p class="mindmap-error-msg">{t("study.notes.error_prefix")}{renderState.message}</p>
       <button type="button" class="mindmap-edit-btn" onclick={toggleMode}
-        >Editar source</button>
+        >{t("study.notes.edit_source")}</button>
     </div>
   {/if}
 

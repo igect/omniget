@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/i18n";
   import { onMount } from "svelte";
   import { convertFileSrc } from "@tauri-apps/api/core";
   import SkipGapsButton from "./SkipGapsButton.svelte";
@@ -362,7 +363,7 @@
   onmousemove={onMouseMove}
   onmouseleave={onMouseLeaveShell}
   role="region"
-  aria-label="Reprodutor de vídeo"
+  aria-label={$t("player.shell.region_label")}
 >
   {#key videoSrc}
     <!-- svelte-ignore a11y_media_has_caption -->
@@ -391,7 +392,7 @@
           kind="captions"
           src={subtitleResolved}
           srclang={selectedSubtitleLang ?? undefined}
-          label={subtitles.find((s) => s.lang === selectedSubtitleLang)?.label ?? "Legenda"}
+          label={subtitles.find((s) => s.lang === selectedSubtitleLang)?.label ?? $t("player.shell.subtitle_fallback")}
           default
         />
       {/if}
@@ -405,7 +406,7 @@
   {/if}
 
   {#if paused && !isLoading}
-    <button type="button" class="big-play" onclick={togglePlay} aria-label="Reproduzir">
+    <button type="button" class="big-play" onclick={togglePlay} aria-label={$t("player.shell.play")}>
       <svg viewBox="0 0 24 24" width="32" height="32" fill="currentColor" aria-hidden="true">
         <polygon points="6,4 20,12 6,20" />
       </svg>
@@ -429,10 +430,10 @@
   />
 
   {#if chapters.length > 0 && chaptersOpen}
-    <aside class="chapters-drawer" aria-label="Capítulos">
+    <aside class="chapters-drawer" aria-label={$t("player.shell.chapters")}>
       <header class="chapters-drawer__header">
-        <span>Capítulos</span>
-        <button type="button" class="icon-btn" onclick={() => (chaptersOpen = false)} aria-label="Fechar capítulos">
+        <span>{$t("player.shell.chapters")}</span>
+        <button type="button" class="icon-btn" onclick={() => (chaptersOpen = false)} aria-label={$t("player.shell.close_chapters")}>
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <line x1="18" y1="6" x2="6" y2="18" />
             <line x1="6" y1="6" x2="18" y2="18" />
@@ -452,7 +453,7 @@
   {/if}
 
   <header class="top-bar">
-    <a class="back" href={backHref} aria-label="Voltar">
+    <a class="back" href={backHref} aria-label={$t("player.shell.back")}>
       <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <line x1="19" y1="12" x2="5" y2="12" />
         <polyline points="12 19 5 12 12 5" />
@@ -462,7 +463,7 @@
       <span class="course-title">{courseTitle}</span>
       <span class="lesson-title">{title}</span>
     </div>
-    <button type="button" class="icon-btn" onclick={onClose} aria-label="Fechar">
+    <button type="button" class="icon-btn" onclick={onClose} aria-label={$t("player.shell.close")}>
       <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <line x1="18" y1="6" x2="6" y2="18" />
         <line x1="6" y1="6" x2="18" y2="18" />
@@ -483,7 +484,7 @@
       onmouseleave={() => (progressHovering = false)}
       role="slider"
       tabindex="-1"
-      aria-label="Progresso"
+      aria-label={$t("player.shell.progress")}
       aria-valuemin="0"
       aria-valuemax={duration}
       aria-valuenow={currentTime}
@@ -503,7 +504,7 @@
             class="gap-marker outro"
             style:left="{outroMarker.startPct}%"
             style:width="{outroMarker.widthPct}%"
-            title="Créditos"
+            title={$t("player.shell.outro_credits")}
           ></div>
         {/if}
         <div class="progress-fill" style:width="{progressPct}%"></div>
@@ -520,7 +521,7 @@
 
     <div class="controls">
       <div class="left-group">
-        <button type="button" class="icon-btn primary" onclick={togglePlay} aria-label={paused ? "Reproduzir" : "Pausar"}>
+        <button type="button" class="icon-btn primary" onclick={togglePlay} aria-label={paused ? $t("player.shell.play") : $t("player.shell.pause")}>
           {#if paused}
             <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true">
               <polygon points="6,4 20,12 6,20" />
@@ -532,13 +533,13 @@
             </svg>
           {/if}
         </button>
-        <button type="button" class="icon-btn" onclick={() => skipBy(-10)} aria-label="Voltar 10s">
+        <button type="button" class="icon-btn" onclick={() => skipBy(-10)} aria-label={$t("player.shell.seek_back_10s")}>
           <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <polyline points="11 17 6 12 11 7" />
             <path d="M6 12h12a3 3 0 0 1 0 6h-3" />
           </svg>
         </button>
-        <button type="button" class="icon-btn" onclick={() => skipBy(10)} aria-label="Avançar 10s">
+        <button type="button" class="icon-btn" onclick={() => skipBy(10)} aria-label={$t("player.shell.seek_forward_10s")}>
           <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <polyline points="13 17 18 12 13 7" />
             <path d="M18 12H6a3 3 0 0 0 0 6h3" />
@@ -547,7 +548,7 @@
         <div
           class="volume-wrap"
           role="group"
-          aria-label="Volume"
+          aria-label={$t("player.shell.volume")}
           onmouseenter={openVolumePop}
           onmouseleave={() => scheduleCloseVolumePop()}
         >
@@ -555,7 +556,7 @@
             type="button"
             class="icon-btn"
             onclick={toggleMute}
-            aria-label={muted ? "Ativar som" : "Mutar"}
+            aria-label={muted ? $t("player.shell.unmute") : $t("player.shell.mute")}
           >
             {#if muted || volume === 0}
               <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -579,7 +580,7 @@
                 step="0.05"
                 value={muted ? 0 : volume}
                 oninput={(e) => setVolume(Number((e.target as HTMLInputElement).value))}
-                aria-label="Volume"
+                aria-label={$t("player.shell.volume")}
               />
             </div>
           {/if}
@@ -596,7 +597,7 @@
             class="icon-btn"
             class:active={toolbarPickerOpen === "subs"}
             onclick={(e) => { e.stopPropagation(); pickerToggle("subs"); }}
-            aria-label="Legendas"
+            aria-label={$t("player.shell.subtitles")}
           >
             <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <rect x="3" y="5" width="18" height="14" rx="2" />
@@ -610,7 +611,7 @@
             class="icon-btn"
             class:active={toolbarPickerOpen === "audio"}
             onclick={(e) => { e.stopPropagation(); pickerToggle("audio"); }}
-            aria-label="Áudio"
+            aria-label={$t("player.shell.audio")}
           >
             <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="M11 5L6 9H2v6h4l5 4z" />
@@ -623,7 +624,7 @@
             class="icon-btn"
             class:active={chaptersOpen}
             onclick={(e) => { e.stopPropagation(); chaptersOpen = !chaptersOpen; }}
-            aria-label="Capítulos"
+            aria-label={$t("player.shell.chapters")}
           >
             <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <line x1="8" y1="6" x2="21" y2="6" />
@@ -640,7 +641,7 @@
           class="icon-btn speed-trigger"
           class:active={toolbarPickerOpen === "speed"}
           onclick={(e) => { e.stopPropagation(); pickerToggle("speed"); }}
-          aria-label="Velocidade ({initialPlaybackSpeed}×)"
+          aria-label={$t("player.shell.speed", { speed: initialPlaybackSpeed })}
         >
           <span class="speed-label">{fmtSpeed(initialPlaybackSpeed)}</span>
         </button>
@@ -649,13 +650,13 @@
           class="icon-btn"
           class:active={theaterMode}
           onclick={onTheaterToggle}
-          aria-label="Modo cinema"
+          aria-label={$t("player.shell.theater_mode")}
         >
           <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
             <rect x="3" y="6" width="18" height="12" rx="1" />
           </svg>
         </button>
-        <button type="button" class="icon-btn" onclick={toggleFullscreen} aria-label="Tela cheia">
+        <button type="button" class="icon-btn" onclick={toggleFullscreen} aria-label={$t("player.shell.fullscreen")}>
           {#if isFullscreen}
             <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="M8 3v3a2 2 0 0 1-2 2H3M21 8h-3a2 2 0 0 1-2-2V3M3 16h3a2 2 0 0 1 2 2v3M16 21v-3a2 2 0 0 1 2-2h3" />
@@ -671,7 +672,7 @@
   </footer>
 
   {#if toolbarPickerOpen === "subs"}
-    <div class="picker-pop subs-pop" role="listbox" aria-label="Legendas">
+    <div class="picker-pop subs-pop" role="listbox" aria-label={$t("player.shell.subtitles")}>
       <button
         type="button"
         role="option"
@@ -681,7 +682,7 @@
         onclick={() => pickSubtitle(null)}
       >
         <span class="pop-check">{selectedSubtitleLang == null ? "✓" : ""}</span>
-        <span>Off</span>
+        <span>{$t("player.shell.subtitle_off")}</span>
       </button>
       <div class="pop-divider"></div>
       {#each subtitles as t (t.lang + t.path)}
@@ -702,7 +703,7 @@
     </div>
   {/if}
   {#if toolbarPickerOpen === "audio"}
-    <div class="picker-pop audio-pop" role="listbox" aria-label="Áudio">
+    <div class="picker-pop audio-pop" role="listbox" aria-label={$t("player.shell.audio")}>
       {#each audioTracks as t (t.lang + t.path)}
         {@const sel = t.lang === selectedAudioLang}
         <button
@@ -721,7 +722,7 @@
     </div>
   {/if}
   {#if toolbarPickerOpen === "speed"}
-    <div class="picker-pop speed-pop" role="listbox" aria-label="Velocidade">
+    <div class="picker-pop speed-pop" role="listbox" aria-label={$t("player.shell.speed_popup")}>
       {#each SPEED_OPTIONS as o (o)}
         {@const sel = Math.abs(o - initialPlaybackSpeed) < 0.001}
         <button

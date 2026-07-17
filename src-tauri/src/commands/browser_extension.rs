@@ -62,7 +62,7 @@ pub async fn browser_extension_status(
             supported: true,
             bundled_version: chrome_v,
             installable: true,
-            install_hint: "chrome://extensions → Modo do desenvolvedor → \"Carregar sem compactação\" → selecionar a pasta extraída.".into(),
+            install_hint: "chrome://extensions → Developer mode → \"Load unpacked\" → select the extracted folder.".into(),
             store_url: None,
         },
         BrowserExtensionStatus {
@@ -70,7 +70,7 @@ pub async fn browser_extension_status(
             supported: true,
             bundled_version: firefox_v,
             installable: true,
-            install_hint: "about:debugging#/runtime/this-firefox → \"Carregar complemento temporário\" → selecionar manifest.json da pasta extraída. (Reinstalação necessária a cada reinício do Firefox enquanto não publicado na AMO.)".into(),
+            install_hint: "about:debugging#/runtime/this-firefox → \"Load Temporary Add-on\" → select manifest.json from the extracted folder. (Reinstallation required each restart until published on AMO.)".into(),
             store_url: None,
         },
         BrowserExtensionStatus {
@@ -78,7 +78,7 @@ pub async fn browser_extension_status(
             supported: false,
             bundled_version: None,
             installable: false,
-            install_hint: "Safari só aceita extensões via Mac App Store desde Safari 14. Versão Safari da OmniGet ainda não publicada.".into(),
+            install_hint: "Safari only accepts extensions via the Mac App Store since Safari 14. Safari version of OmniGet not yet published.".into(),
             store_url: None,
         },
     ])
@@ -97,7 +97,7 @@ pub async fn browser_extension_export(
     browser: String,
 ) -> Result<ExtensionExportResult, String> {
     if browser != "chrome" && browser != "firefox" {
-        return Err(format!("browser '{}' não suportado pra export", browser));
+        return Err(format!("browser '{}' not supported for export", browser));
     }
     let resource = format!("browser-extension/{}", browser);
     let src = app

@@ -1,3 +1,4 @@
+import { t } from "$lib/i18n";
 import { pluginInvoke } from "$lib/plugin-invoke";
 import { musicPlayer, type MusicTrack } from "./player-store.svelte";
 import { spotifySdk } from "./spotify-sdk.svelte";
@@ -152,7 +153,7 @@ async function resolveSpotifyToYoutube(track: MusicTrack): Promise<string> {
     score: res.score,
     url_preview: res.youtube_url?.slice(0, 100),
   });
-  if (!res.youtube_url) throw new Error("YouTube não retornou URL");
+  if (!res.youtube_url) throw new Error(t("study.music.spotify.no_youtube_url"));
   return res.youtube_url;
 }
 

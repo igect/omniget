@@ -157,7 +157,7 @@
       <p>{$t("study.music.artists_empty")}</p>
     </div>
   {:else}
-    <p class="result-count">{filtered.length} artista(s)</p>
+    <p class="result-count">{$t("study.music.artists_count", { count: filtered.length })}</p>
     <div class="artist-grid">
       {#each filtered as a (a.name)}
         <div
@@ -178,7 +178,7 @@
           </div>
           <h3 class="artist-name">{a.name}</h3>
           <p class="artist-meta">
-            {a.album_count} álbum(ns) · {a.track_count} faixa(s)
+            {$t("study.music.artist_meta", { albums: a.album_count, tracks: a.track_count })}
           </p>
         </div>
       {/each}
@@ -188,7 +188,7 @@
   {#if filteredScArtists.length > 0}
     <section class="spotify-block">
       <header class="block-head">
-        <h2><span style="color: #ff5500">●</span> Seguindo no SoundCloud ({filteredScArtists.length})</h2>
+        <h2><span style="color: #ff5500">●</span> {$t("study.music.soundcloud_following", { count: filteredScArtists.length })}</h2>
       </header>
       <div class="artist-grid">
         {#each filteredScArtists as u (u.id)}
@@ -201,7 +201,7 @@
               {/if}
             </div>
             <h3 class="artist-name">{u.username}</h3>
-            {#if u.followers_count}<p class="artist-meta">{u.followers_count.toLocaleString("pt-BR")} seguidores</p>{/if}
+            {#if u.followers_count}<p class="artist-meta">{$t("study.music.followers", { count: u.followers_count })}</p>{/if}
           </a>
         {/each}
       </div>
@@ -215,7 +215,7 @@
           <span class="spotify-mark" aria-hidden="true">
             <svg viewBox="0 0 168 168" width="14" height="14"><circle cx="84" cy="84" r="84" fill="#1db954"/><path fill="#000" d="M119.6 110.6c-1.5 2.5-4.7 3.3-7.2 1.8-19.7-12-44.5-14.7-73.7-8-2.8.6-5.6-1.1-6.3-3.9-.6-2.8 1.1-5.6 3.9-6.3 31.9-7.3 59.4-4.2 81.5 9.2 2.5 1.5 3.3 4.7 1.8 7.2zm9.5-21.2c-1.9 3.1-5.9 4.1-9 2.2-22.6-13.9-57-17.9-83.8-9.8-3.5 1.1-7.1-.9-8.2-4.3-1.1-3.5.9-7.1 4.3-8.2 30.6-9.3 68.5-4.8 94.5 11.1 3.1 1.9 4.1 5.9 2.2 9zm.8-22c-27-16-71.6-17.5-97.4-9.7-4.1 1.2-8.4-1.1-9.6-5.2-1.2-4.1 1.1-8.4 5.2-9.6 29.6-9 78.7-7.2 109.8 11.3 3.7 2.2 4.9 7 2.7 10.7-2.2 3.7-7 4.9-10.7 2.5z"/></svg>
           </span>
-          Artistas do Spotify ({filteredSpotifyArtists.length})
+          {$t("study.music.spotify_artists", { count: filteredSpotifyArtists.length })}
         </h2>
       </header>
       <div class="artist-grid">

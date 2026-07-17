@@ -268,7 +268,7 @@
           <a
             class="xp-pill"
             href="/study/achievements"
-            title={`${gamification.xp.toLocaleString()} XP · ${gamification.level_progress_pct}% para nível ${gamification.level + 1}`}
+            title={$t("study.common.xp_pill", { xp: gamification.xp.toLocaleString(), pct: gamification.level_progress_pct, level: gamification.level + 1 })}
           >
             <span class="xp-level">L{gamification.level}</span>
             <span class="xp-bar-mini">
@@ -368,8 +368,8 @@
       {#if recentCourses.length > 0}
         <section class="recents-widget">
           <header class="recents-head">
-            <h2>Continuar de onde parou</h2>
-            <a href="/study/library" class="see-all">Ver todos →</a>
+            <h2>{$t("study.hub.recent_title")}</h2>
+            <a href="/study/library" class="see-all">{$t("study.hub.see_all")} →</a>
           </header>
           <ul class="recents-list">
             {#each recentCourses.slice(0, 6) as r (r.course_id)}

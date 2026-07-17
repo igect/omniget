@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/i18n";
   import { tabsStore } from "$lib/study-notes/tabs-store.svelte";
   import type { TabSummary } from "$lib/notes-bridge";
 
@@ -57,18 +58,18 @@
   role="menu"
 >
   <button class="item" role="menuitem" onclick={close}>
-    Fechar
+    {t("study.notes.shell.close")}
     <span class="shortcut">Ctrl+W</span>
   </button>
-  <button class="item" role="menuitem" onclick={closeOthers}>Fechar outras</button>
-  <button class="item" role="menuitem" onclick={closeRight}>Fechar à direita</button>
+  <button class="item" role="menuitem" onclick={closeOthers}>{t("study.notes.shell.close_others")}</button>
+  <button class="item" role="menuitem" onclick={closeRight}>{t("study.notes.shell.close_right")}</button>
   <div class="sep"></div>
   <button class="item" role="menuitem" onclick={togglePin}>
-    {tab.pinned ? "Desafixar" : "Fixar"}
+    {tab.pinned ? t("study.notes.shell.unpin") : t("study.notes.shell.pin")}
   </button>
   <div class="sep"></div>
-  <button class="item" role="menuitem" onclick={moveNewSplitRight}>Mover pra novo split à direita</button>
-  <button class="item" role="menuitem" onclick={moveNewSplitDown}>Mover pra novo split abaixo</button>
+  <button class="item" role="menuitem" onclick={moveNewSplitRight}>{t("study.notes.shell.move_split_right")}</button>
+  <button class="item" role="menuitem" onclick={moveNewSplitDown}>{t("study.notes.shell.move_split_below")}</button>
 </div>
 
 <style>

@@ -2,6 +2,7 @@
   import { onMount } from "svelte";
   import { pluginInvoke } from "$lib/plugin-invoke";
   import PageHero from "$lib/study-components/PageHero.svelte";
+  import { t } from "$lib/i18n";
 
   type TagTreeNode = {
     name: string;
@@ -106,11 +107,7 @@
       );
       showToast(
         "ok",
-        r.updated === 0
-          ? "Tag renomeada"
-          : r.updated === 1
-            ? "Tag renomeada · 1 nota atualizada"
-            : `Tag renomeada · ${r.updated} notas atualizadas`,
+        t("study.anki.tags.toast_renamed", { count: r.updated }),
       );
       renameTarget = null;
       await load();
@@ -142,11 +139,7 @@
       );
       showToast(
         "ok",
-        r.updated === 0
-          ? "Tag movida"
-          : r.updated === 1
-            ? "Tag movida · 1 nota atualizada"
-            : `Tag movida · ${r.updated} notas atualizadas`,
+        t("study.anki.tags.toast_moved", { count: r.updated }),
       );
       reparentTarget = null;
       await load();
@@ -166,11 +159,7 @@
       );
       showToast(
         "ok",
-        r.removed === 0
-          ? "Nenhuma tag não usada"
-          : r.removed === 1
-            ? "1 tag removida"
-            : `${r.removed} tags removidas`,
+        t("study.anki.tags.toast_cleaned", { count: r.removed }),
       );
       if (r.removed > 0) await load();
     } catch (e) {
@@ -206,12 +195,8 @@
 
 <section class="study-page">
   <PageHero
-    title="Tags"
-    subtitle={totalTags === 0
-      ? "Gerencie as tags da coleção"
-      : totalTags === 1
-        ? "1 tag · " + (unusedCount === 1 ? "1 sem uso" : `${unusedCount} sem uso`)
-        : `${totalTags} tags · ${unusedCount === 1 ? "1 sem uso" : `${unusedCount} sem uso`}`}
+    title={$t("study.anki.tags.title")}
+    subtitle={$t("study.anki.tags.subtitle", { total: totalTags, unused: unusedCount })}
   />
 
   {#if toast}
@@ -224,7 +209,7 @@
     <input
       class="filter"
       type="search"
-      placeholder="Filtrar tags…"
+      placeholder={$t("study.anki.tags.filter_placeholder")}
       bind:value={filter}
     />
     <button
@@ -232,23 +217,23 @@
       onclick={clearUnused}
       disabled={cleanupBusy || unusedCount === 0}
     >
-      {cleanupBusy ? "Limpando…" : "Limpar não usadas"}
+      {cleanupBusy ? $t("study.anki.tags.cleaning") : $t("study.anki.tags.clear_unused")}
     </button>
   </div>
 
   {#if loading}
-    <div class="state">Carregando tags…</div>
+    <div class="state">{$t("study.anki.tags.loading")}</div>
   {:else if error}
     <div class="state err">{error}</div>
-    <button class="btn ghost" onclick={load}>Tentar de novo</button>
+    <button class="btn ghost" onclick={load}>{$t("study.anki.tags.retry_btn")}</button>
   {:else if tree.length === 0}
     <div class="empty">
-      <p>Nenhuma tag ainda.</p>
-      <p class="hint">Tags são criadas quando você adiciona uma a uma nota.</p>
+      <p>{$t("study.anki.tags.empty_title")}</p>
+      <p class="hint">{$t("study.anki.tags.empty_hint")}</p>
     </div>
   {:else if visibleTree.length === 0}
     <div class="empty">
-      <p>Nenhuma tag combina com "{filter}".</p>
+      <p>{$t("study.anki.tags.no_filter_match", { filter })}</p>
     </div>
   {:else}
     <ul class="tree">
@@ -267,7 +252,7 @@
           type="button"
           class="caret"
           aria-expanded={!node.collapsed}
-          aria-label={node.collapsed ? "Expandir" : "Recolher"}
+          aria-label={node.collapsed ? $t("study.anki.tags.expand") : $t("study.anki.tags.collapse")}
           onclick={() => toggleCollapse(node)}
         >
           <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -292,14 +277,14 @@
           class="btn ghost xs"
           onclick={() => askRename(node)}
         >
-          Renomear
+          {$t("study.anki.tags.rename_btn")}
         </button>
         <button
           type="button"
           class="btn ghost xs"
           onclick={() => askReparent(node)}
         >
-          Mover
+          {$t("study.anki.tags.move_btn")}
         </button>
       </div>
     </div>
@@ -330,9 +315,9 @@
       onclick={(e) => e.stopPropagation()}
       onkeydown={(e) => { if (e.key === "Escape") { e.stopPropagation(); renameTarget = null; } }}
     >
-      <h3 id="rename-title">Renomear tag</h3>
+      <h3 id="rename-title">{$t("study.anki.tags.rename_title")}</h3>
       <p class="modal-hint">
-        Use <code>::</code> para hierarquia (ex: <code>livro::cap1</code>).
+        {@html $t("study.anki.tags.rename_hint")}
       </p>
       <input
         class="modal-input"
@@ -348,7 +333,7 @@
           onclick={() => (renameTarget = null)}
           disabled={renameBusy}
         >
-          Cancelar
+          {$t("study.anki.tags.edit_cancel")}
         </button>
         <button
           type="button"
@@ -356,7 +341,7 @@
           onclick={confirmRename}
           disabled={renameBusy || !renameNewValue.trim() || renameNewValue.trim() === renameTarget.full_name}
         >
-          {renameBusy ? "Renomeando…" : "Renomear"}
+          {renameBusy ? $t("study.anki.tags.renaming") : $t("study.anki.tags.rename_btn")}
         </button>
       </footer>
     </div>
@@ -379,16 +364,15 @@
       onclick={(e) => e.stopPropagation()}
       onkeydown={(e) => { if (e.key === "Escape") { e.stopPropagation(); reparentTarget = null; } }}
     >
-      <h3 id="reparent-title">Mover <code>{reparentTarget.full_name}</code></h3>
+      <h3 id="reparent-title">{$t("study.anki.tags.move_title", { name: reparentTarget.full_name })}</h3>
       <p class="modal-hint">
-        Novo parent (deixe vazio para mover pra raiz). Use <code>::</code> para
-        encadear níveis.
+        {@html $t("study.anki.tags.move_hint")}
       </p>
       <input
         class="modal-input"
         type="text"
         bind:value={reparentNewParent}
-        placeholder="(raiz)"
+        placeholder={$t("study.anki.tags.move_placeholder")}
         onkeydown={(e) => { if (e.key === "Enter") confirmReparent(); }}
       />
       <footer class="modal-foot">
@@ -398,7 +382,7 @@
           onclick={() => (reparentTarget = null)}
           disabled={reparentBusy}
         >
-          Cancelar
+          {$t("study.anki.tags.edit_cancel")}
         </button>
         <button
           type="button"
@@ -406,7 +390,7 @@
           onclick={confirmReparent}
           disabled={reparentBusy}
         >
-          {reparentBusy ? "Movendo…" : "Mover"}
+          {reparentBusy ? $t("study.anki.tags.moving") : $t("study.anki.tags.move_btn")}
         </button>
       </footer>
     </div>

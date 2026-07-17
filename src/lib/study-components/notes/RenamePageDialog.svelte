@@ -40,15 +40,12 @@
           else if (e.key === "Escape") onClose();
         }}
       />
-      <p class="hint">
-        Backlinks <code>[[Old]]</code> e tags <code>#old</code> em outros blocos
-        serão atualizados automaticamente.
-      </p>
+      <p class="hint">{t("study.notes.rename_hint")}</p>
       <footer>
         <button class="btn ghost" onclick={onClose}>
-          Cancelar
+          {t("study.notes.rename_cancel")}
         </button>
-        <button class="btn primary" onclick={submit}>Renomear</button>
+        <button class="btn primary" onclick={submit}>{t("study.notes.rename_confirm")}</button>
       </footer>
     </div>
   </div>

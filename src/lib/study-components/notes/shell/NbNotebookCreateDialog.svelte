@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/i18n";
   import { untrack } from "svelte";
   import {
     NOTEBOOK_LUCIDE_OPTIONS,
@@ -26,8 +27,8 @@
     initialName = "",
     initialColor = null,
     initialIcon = "book",
-    title = "Novo notebook",
-    confirmLabel = "Criar",
+    title = t("study.notes.shell.new_notebook"),
+    confirmLabel = t("study.notes.shell.create"),
     onConfirm,
     onClose,
   }: Props = $props();
@@ -94,23 +95,23 @@
           type="button"
           class="x"
           onclick={onClose}
-          aria-label="Fechar"
+          aria-label={t("study.notes.shell.close")}
         >×</button>
       </header>
 
       <label class="field">
-        <span>Nome</span>
+        <span>{t("study.notes.shell.name")}</span>
         <input
           bind:this={inputRef}
           bind:value={name}
           type="text"
           maxlength="60"
-          placeholder="Pessoal, Trabalho, Estudos…"
+          placeholder={t("study.notes.shell.create_notebook_placeholder")}
         />
       </label>
 
       <div class="field">
-        <span>Ícone</span>
+        <span>{t("study.notes.shell.icon")}</span>
         <div class="grid icons">
           {#each NOTEBOOK_LUCIDE_OPTIONS as opt (opt)}
             <button
@@ -128,14 +129,14 @@
       </div>
 
       <div class="field">
-        <span>Cor</span>
+        <span>{t("study.notes.shell.color")}</span>
         <div class="grid swatches">
           <button
             type="button"
             class="swatch none"
             class:active={color === null}
             aria-pressed={color === null}
-            title="Sem cor"
+            title={t("study.notes.shell.no_color")}
             onclick={() => (color = null)}
           >∅</button>
           {#each NOTEBOOK_COLOR_SWATCHES as sw (sw)}
@@ -154,7 +155,7 @@
 
       <footer>
         <button type="button" class="btn ghost" onclick={onClose}>
-          Cancelar
+          {t("study.notes.shell.cancel")}
         </button>
         <button
           type="button"

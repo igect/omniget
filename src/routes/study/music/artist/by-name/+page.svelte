@@ -68,7 +68,7 @@
 
 <section class="artist-page">
   {#if !artistName}
-    <p class="muted">Artista não especificado.</p>
+    <p class="muted">{$t("study.music.artist_not_specified")}</p>
   {:else if loading}
     <p class="muted">{$t("study.common.loading")}</p>
   {:else}
@@ -78,9 +78,9 @@
         <span class="eyebrow">{$t("study.music.eyebrow_artist")}</span>
         <h1>{artistName}</h1>
         <div class="info">
-          <span>{albums.length} álbum(ns)</span>
+          <span>{$t("study.music.albums_count", { count: albums.length })}</span>
           <span class="dot" aria-hidden="true">·</span>
-          <span>{totalTracks} faixa(s)</span>
+          <span>{$t("study.music.tracks_count", { count: totalTracks })}</span>
         </div>
         {#if topTracks.length > 0}
           <button type="button" class="play-big" onclick={playAll}>

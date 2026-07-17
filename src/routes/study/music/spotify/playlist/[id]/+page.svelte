@@ -2,6 +2,7 @@
   import { onMount } from "svelte";
   import { page } from "$app/stores";
   import { goto } from "$app/navigation";
+  import { t } from "$lib/i18n";
   import { showToast } from "$lib/stores/toast-store.svelte";
   import {
     spotifyStore,
@@ -40,8 +41,7 @@
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       if (msg.includes("403") || msg.toLowerCase().includes("forbidden")) {
-        error =
-          "Esta playlist é restrita pelo Spotify para apps de terceiros (geralmente é uma playlist curada pelo Spotify, como Discover Weekly ou Daily Mix).";
+        error = t("study.music.spotify_playlist_restricted");
       } else {
         error = msg;
       }
@@ -64,7 +64,7 @@
         reordered,
       );
       if (mode === "youtube") {
-        showToast("info", "Tocando via YouTube (modo Free)");
+        showToast("info", t("study.music.spotify_play_via_yt"));
       }
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
@@ -89,7 +89,7 @@
     <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
       <polyline points="15 18 9 12 15 6"/>
     </svg>
-    Voltar
+    {$t("study.music.back")}
   </button>
 
   {#if playlist}
@@ -108,26 +108,26 @@
         {/if}
       </div>
       <div class="hero-info">
-        <span class="eyebrow">Playlist</span>
+        <span class="eyebrow">{$t("study.music.eyebrow_playlist")}</span>
         <h1>{playlist.name}</h1>
         {#if playlist.description}
           <p class="desc">{playlist.description}</p>
         {/if}
         <p class="meta">
-          {playlist.owner_name ?? ""} · {playlist.tracks_total} faixas
+          {playlist.owner_name ?? ""} · {$t("study.music.tracks_count", { count: playlist.tracks_total })}
         </p>
         <button type="button" class="play-btn" onclick={() => playFromIndex(0)}>
           <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true">
             <path d="M8 5v14l11-7z"/>
           </svg>
-          Tocar
+          {$t("study.music.play")}
         </button>
       </div>
     </header>
   {/if}
 
   {#if loading}
-    <p class="muted">Carregando faixas…</p>
+    <p class="muted">{$t("study.music.loading_tracks")}</p>
   {:else if error}
     <p class="error">{error}</p>
   {:else}

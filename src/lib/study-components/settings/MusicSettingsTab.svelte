@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/i18n";
   import SettingsField from "./SettingsField.svelte";
   import SettingsToggle from "./SettingsToggle.svelte";
   import type { StudySettings } from "$lib/study-bridge";
@@ -11,14 +12,14 @@
   let { settings, onPatch }: Props = $props();
 
   const ALL_CATEGORIES = [
-    { key: "sponsor", label: "Patrocinado" },
-    { key: "selfpromo", label: "Auto-promoção" },
-    { key: "intro", label: "Intro" },
-    { key: "outro", label: "Encerramento" },
-    { key: "interaction", label: "Pedido de interação" },
-    { key: "preview", label: "Prévia" },
-    { key: "music_offtopic", label: "Trecho não-musical" },
-    { key: "filler", label: "Enrolação" },
+    { key: "sponsor", label: t("study.settings.music.cat_sponsor") },
+    { key: "selfpromo", label: t("study.settings.music.cat_selfpromo") },
+    { key: "intro", label: t("study.settings.music.cat_intro") },
+    { key: "outro", label: t("study.settings.music.cat_outro") },
+    { key: "interaction", label: t("study.settings.music.cat_interaction") },
+    { key: "preview", label: t("study.settings.music.cat_preview") },
+    { key: "music_offtopic", label: t("study.settings.music.cat_music_offtopic") },
+    { key: "filler", label: t("study.settings.music.cat_filler") },
   ];
 
   const music = $derived(((settings as unknown as { music?: Record<string, unknown> }).music ?? {}) as Record<string, unknown>);
@@ -45,31 +46,31 @@
 
 <section class="tab">
   <SettingsField
-    label="SponsorBlock"
-    description="Pula trechos patrocinados detectados pela comunidade. A request usa hash-prefix do video ID, preservando privacidade."
+    label={$t("study.settings.music.sponsorblock_label")}
+    description={$t("study.settings.music.sponsorblock_desc")}
   >
     <SettingsToggle
       value={enabled}
       onChange={(v) => setMusic("sponsorblock_enabled", v)}
-      ariaLabel="SponsorBlock"
+      ariaLabel={$t("study.settings.music.sponsorblock_aria")}
     />
   </SettingsField>
 
   {#if enabled}
     <SettingsField
-      label="Pular automaticamente"
-      description="Quando ativo, segmentos são pulados sem pedir confirmação. Recomendado: deixar desligado para respeitar criadores."
+      label={$t("study.settings.music.auto_skip_label")}
+      description={$t("study.settings.music.auto_skip_desc")}
     >
       <SettingsToggle
         value={autoSkip}
         onChange={(v) => setMusic("sponsorblock_auto_skip", v)}
-        ariaLabel="Pular automaticamente"
+        ariaLabel={$t("study.settings.music.auto_skip_aria")}
       />
     </SettingsField>
 
     <SettingsField
-      label="Categorias monitoradas"
-      description="Tipos de segmento que mostram o botão de pular"
+      label={$t("study.settings.music.categories_label")}
+      description={$t("study.settings.music.categories_desc")}
     >
       <div class="categories">
         {#each ALL_CATEGORIES as cat (cat.key)}

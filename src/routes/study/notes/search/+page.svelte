@@ -3,6 +3,7 @@
   import { goto } from "$app/navigation";
   import { page as routePage } from "$app/stores";
   import { pluginInvoke } from "$lib/plugin-invoke";
+  import { t } from "$lib/i18n";
 
   type SearchHit = {
     block_id: number;
@@ -84,7 +85,7 @@
         "study",
         "study:notes:search:rebuild",
       );
-      showToast("ok", `Index reconstruída — ${r.indexed} blocos`);
+      showToast("ok", t("study.notes.search.toast_rebuilt", { count: r.indexed }));
     } catch (e) {
       showToast("err", e instanceof Error ? e.message : String(e));
     }
@@ -111,10 +112,10 @@
 
 <section class="search-page">
   <header class="head">
-    <a href="/study/notes" class="back">← Notas</a>
-    <h1>Buscar em notas</h1>
+    <a href="/study/notes" class="back">← {$t("study.notes.search.back_to_notes")}</a>
+    <h1>{$t("study.notes.search.title")}</h1>
     <p class="hint">
-      Busca FTS5 (full-text) sobre conteúdo dos blocos. Suporta operadores
+      {$t("study.notes.search.hint")}
       <code>palavra*</code>, <code>"frase exata"</code>,
       <code>palavra1 OR palavra2</code>.
     </p>
@@ -123,7 +124,7 @@
   <div class="search-bar">
     <input
       type="search"
-      placeholder="Digite para buscar… (acentos ignorados)"
+      placeholder={$t("study.notes.search.placeholder")}
       bind:this={inputRef}
       bind:value={query}
     />
@@ -132,7 +133,7 @@
     {:else if query}
       <button class="btn ghost sm" onclick={() => (query = "")}>×</button>
     {/if}
-    <button class="btn ghost sm" onclick={rebuildIndex} title="Reconstruir índice FTS">
+    <button class="btn ghost sm" onclick={rebuildIndex} title={$t("study.notes.search.rebuild_title")}>
       ⟳
     </button>
   </div>
@@ -145,27 +146,26 @@
 
   {#if !query}
     <div class="empty-state">
-      <h2>Comece a digitar</h2>
+      <h2>{$t("study.notes.search.empty_title")}</h2>
       <p>
-        Pesquise por blocos e páginas. Use <code>*</code> para wildcards e
-        <code>"frase"</code> para busca exata.
+        {$t("study.notes.search.empty_hint")}
       </p>
     </div>
   {:else}
     <div class="results">
       {#if pageHits.length > 0}
         <section>
-          <h2>
-            Páginas
-            <span class="count">{pageHits.length}</span>
-          </h2>
+            <h2>
+              {$t("study.notes.search.section_pages")}
+              <span class="count">{pageHits.length}</span>
+            </h2>
           <ul>
             {#each pageHits as p (p.id)}
               <li>
                 <button class="row page" onclick={() => gotoPage(p.name)}>
                   <strong>{p.title ?? p.name}</strong>
                   <span class="meta">
-                    {p.name} · {p.block_count} blocos · {fmtDate(p.updated_at)}
+                    {$t("study.notes.search.page_meta", { name: p.name, count: p.block_count, date: fmtDate(p.updated_at) })}
                   </span>
                 </button>
               </li>
@@ -176,17 +176,17 @@
 
       {#if blockHits.length > 0}
         <section>
-          <h2>
-            Blocos
-            <span class="count">{blockHits.length}</span>
-          </h2>
+            <h2>
+              {$t("study.notes.search.section_blocks")}
+              <span class="count">{blockHits.length}</span>
+            </h2>
           <ul>
             {#each blockHits as h (h.block_id)}
               <li>
                 <button class="row block" onclick={() => gotoPage(h.page_name)}>
                   <span class="snippet">{@html highlightSnippet(h.snippet)}</span>
                   <span class="meta">
-                    em <code>{h.page_name}</code> · {fmtDate(h.updated_at)}
+                    {$t("study.notes.search.block_meta", { page: h.page_name, date: fmtDate(h.updated_at) })}
                   </span>
                 </button>
               </li>
@@ -197,7 +197,7 @@
 
       {#if !searching && pageHits.length === 0 && blockHits.length === 0}
         <div class="empty-state">
-          <p>Nenhum resultado para "<strong>{query}</strong>".</p>
+          <p>{$t("study.notes.search.no_results", { query })}</p>
         </div>
       {/if}
     </div>

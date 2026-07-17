@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/i18n";
   import type { JournalSummary } from "$lib/notes-bridge";
 
   type Props = {
@@ -94,18 +95,18 @@
 
 <div class="heatmap-host">
   <header class="heatmap-head">
-    <h3>Atividade — 90 dias</h3>
+    <h3>{t("study.notes.heatmap_title")}</h3>
     <span class="legend">
-      <span class="legend-label">menos</span>
+      <span class="legend-label">{t("study.notes.less")}</span>
       <span class="lvl lvl-0"></span>
       <span class="lvl lvl-1"></span>
       <span class="lvl lvl-2"></span>
       <span class="lvl lvl-3"></span>
       <span class="lvl lvl-4"></span>
-      <span class="legend-label">mais</span>
+      <span class="legend-label">{t("study.notes.more")}</span>
     </span>
   </header>
-  <div class="heatmap" role="img" aria-label="Atividade nos últimos 90 dias">
+  <div class="heatmap" role="img" aria-label={t("study.notes.heatmap_aria")}>
     {#each grid as col, ci (ci)}
       <div class="col">
         {#each col as cell (cell.day)}
@@ -114,7 +115,7 @@
             class="cell lvl-{cell.level}"
             class:future={cell.isFuture}
             disabled={cell.isFuture}
-            aria-label="{cell.count} blocos em {fmtDayBR(cell.day)}"
+            aria-label={t("study.notes.blocks_on", { count: cell.count, date: fmtDayBR(cell.day) })}
             onmouseenter={(e) => {
               hoverCell = cell;
               const r = (e.target as HTMLElement).getBoundingClientRect();
@@ -134,7 +135,7 @@
       style:top={`${hoverPos.y}px`}
       role="status"
     >
-      {hoverCell.count} bloco{hoverCell.count === 1 ? "" : "s"} · {fmtDayBR(hoverCell.day)}
+      {t("study.notes.tooltip_blocks", { count: hoverCell.count, date: fmtDayBR(hoverCell.day) })}
     </div>
   {/if}
 </div>

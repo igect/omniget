@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/i18n";
   import type { SkipGaps } from "$lib/study-bridge";
 
   type Props = {
@@ -54,7 +55,7 @@
 
 {#if isInIntro}
   <button type="button" class="skip-btn" onclick={skipIntro}>
-    <span>Pular intro</span>
+    <span>{$t("study.player.skip_intro")}</span>
     <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
       <polyline points="13 17 18 12 13 7" />
       <polyline points="6 17 11 12 6 7" />
@@ -62,7 +63,7 @@
   </button>
 {:else if isInOutro}
   <button type="button" class="skip-btn" onclick={skipOutro}>
-    <span>Pular créditos</span>
+    <span>{$t("study.player.skip_credits")}</span>
     <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
       <polyline points="13 17 18 12 13 7" />
       <polyline points="6 17 11 12 6 7" />

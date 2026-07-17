@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount, onDestroy } from "svelte";
+  import { t } from "$lib/i18n";
   import { notesShell } from "$lib/study-notes/shell-store.svelte";
   import NbActiveNotebookBadge from "./NbActiveNotebookBadge.svelte";
 
@@ -30,8 +31,8 @@
 
   const pageLabel = $derived(notesShell.currentPageTitle ?? notesShell.currentPageName ?? "—");
 
-  const wordsLabel = $derived(`${notesShell.wordCount.toLocaleString("pt-BR")} palavras`);
-  const charsLabel = $derived(`${notesShell.charCount.toLocaleString("pt-BR")} chars`);
+  const wordsLabel = $derived(t("study.notes.words_label", { count: notesShell.wordCount.toLocaleString("pt-BR") }));
+  const charsLabel = $derived(t("study.notes.chars_label", { count: notesShell.charCount.toLocaleString("pt-BR") }));
 </script>
 
 <div class="nb-status-bar" role="status" aria-live="polite">
@@ -53,7 +54,7 @@
   </span>
   <span class="seg saving" class:on={notesShell.saving}>
     <span class="dot-mark" aria-hidden="true"></span>
-    <span class="value">{notesShell.saving ? "Salvando…" : "Salvo"}</span>
+    <span class="value">{notesShell.saving ? t("study.notes.shell.saving") : t("study.notes.shell.saved")}</span>
   </span>
   <span class="spacer"></span>
   <span class="seg clock">

@@ -4,6 +4,7 @@
   import PageHero from "$lib/study-components/PageHero.svelte";
   import StatCard from "$lib/study-components/StatCard.svelte";
   import SegmentedControl from "$lib/study-components/SegmentedControl.svelte";
+  import { t } from "$lib/i18n";
 
   type HeatmapEntry = { date: string; count: number };
   type BucketEntry = { bucket: string; count: number };
@@ -36,11 +37,11 @@
   let data = $state<GraphsResponse | null>(null);
 
   const periodOptions = [
-    { value: "1m", label: "1 mês" },
-    { value: "3m", label: "3 meses" },
-    { value: "6m", label: "6 meses" },
-    { value: "1y", label: "1 ano" },
-    { value: "all", label: "Tudo" },
+    { value: "1m", label: t("study.anki.stats.period_1m") },
+    { value: "3m", label: t("study.anki.stats.period_3m") },
+    { value: "6m", label: t("study.anki.stats.period_6m") },
+    { value: "1y", label: t("study.anki.stats.period_1y") },
+    { value: "all", label: t("study.anki.stats.period_all") },
   ];
 
   async function load() {
@@ -131,60 +132,60 @@
 </script>
 
 <section class="study-page">
-  <PageHero title="Estatísticas" />
+  <PageHero title={$t("study.anki.stats.title")} />
 
   <div class="period-row">
     <SegmentedControl
       options={periodOptions}
       bind:value={period}
-      ariaLabel="Período"
+      ariaLabel={$t("study.anki.stats.aria_label_period")}
     />
-    <a href="/study/anki/stats/revlog" class="advanced-link">Revlog detalhado →</a>
+    <a href="/study/anki/stats/revlog" class="advanced-link">{$t("study.anki.stats.link_revlog")}</a>
   </div>
 
   {#if loading}
-    <p class="muted">Carregando…</p>
+    <p class="muted">{$t("study.anki.stats.loading")}</p>
   {:else if error}
     <p class="error">{error}</p>
   {:else if data}
     <div class="kpi-grid">
-      <StatCard label="Revisões" value={fmtNumber(totalReviews)} hint="no período" />
-      <StatCard label="Tempo total" value={fmtHours(totalHours)} hint="estudando" />
+      <StatCard label={$t("study.anki.stats.kpi_reviews_label")} value={fmtNumber(totalReviews)} hint={$t("study.anki.stats.kpi_reviews_hint")} />
+      <StatCard label={$t("study.anki.stats.kpi_total_time_label")} value={fmtHours(totalHours)} hint={$t("study.anki.stats.kpi_total_time_hint")} />
       <StatCard
-        label="Tempo médio"
+        label={$t("study.anki.stats.kpi_avg_time_label")}
         value={`${avgSecs.toFixed(1)}s`}
-        hint="por revisão"
+        hint={$t("study.anki.stats.kpi_avg_time_hint")}
       />
       <StatCard
-        label="Carga diária"
+        label={$t("study.anki.stats.kpi_daily_load_label")}
         value={dailyLoad.toFixed(1)}
-        hint="próximos 30 dias"
+        hint={$t("study.anki.stats.kpi_daily_load_hint")}
       />
     </div>
 
     <section class="card heatmap-card">
       <header class="card-head">
-        <h2>Atividade (últimos 12 meses)</h2>
+        <h2>{$t("study.anki.stats.heatmap_title")}</h2>
         <div class="legend">
-          <span>menos</span>
+          <span>{$t("study.anki.stats.heatmap_less")}</span>
           <span class="cell level-0" aria-hidden="true"></span>
           <span class="cell level-1" aria-hidden="true"></span>
           <span class="cell level-2" aria-hidden="true"></span>
           <span class="cell level-3" aria-hidden="true"></span>
           <span class="cell level-4" aria-hidden="true"></span>
-          <span>mais</span>
+          <span>{$t("study.anki.stats.heatmap_more")}</span>
         </div>
       </header>
       {#if heatmap.weeks.length === 0}
-        <p class="muted small">Sem revisões no período.</p>
+        <p class="muted small">{$t("study.anki.stats.heatmap_empty")}</p>
       {:else}
-        <div class="heatmap" role="img" aria-label="Heatmap de revisões diárias">
+        <div class="heatmap" role="img" aria-label={$t("study.anki.stats.heatmap_aria")}>
           {#each heatmap.weeks as week, i (i)}
             <div class="week">
               {#each week as day (day.date)}
                 <span
                   class="cell level-{day.level}"
-                  title="{day.date}: {day.count} {day.count === 1 ? 'revisão' : 'revisões'}"
+                  title={$t("study.anki.stats.heatmap_cell_title", { date: day.date, count: day.count })}
                 ></span>
               {/each}
             </div>
@@ -196,32 +197,32 @@
     <div class="grid-2">
       <section class="card">
         <header class="card-head">
-          <h2>Distribuição de intervalos</h2>
-          <small class="muted">Cards em revisão</small>
+          <h2>{$t("study.anki.stats.chart_interval_title")}</h2>
+          <small class="muted">{$t("study.anki.stats.chart_interval_subtitle")}</small>
         </header>
         {@render barChart(data.interval_distribution)}
       </section>
 
       <section class="card">
         <header class="card-head">
-          <h2>Distribuição de ease</h2>
-          <small class="muted">Cards em revisão</small>
+          <h2>{$t("study.anki.stats.chart_ease_title")}</h2>
+          <small class="muted">{$t("study.anki.stats.chart_ease_subtitle")}</small>
         </header>
         {@render barChart(data.ease_distribution)}
       </section>
 
       <section class="card">
         <header class="card-head">
-          <h2>Carga futura</h2>
-          <small class="muted">Próximos 30 dias</small>
+          <h2>{$t("study.anki.stats.chart_future_title")}</h2>
+          <small class="muted">{$t("study.anki.stats.chart_future_subtitle")}</small>
         </header>
         {@render futureChart(data.future_due)}
       </section>
 
       <section class="card">
         <header class="card-head">
-          <h2>Curva de retenção</h2>
-          <small class="muted">% de acertos por dia</small>
+          <h2>{$t("study.anki.stats.chart_retention_title")}</h2>
+          <small class="muted">{$t("study.anki.stats.chart_retention_subtitle")}</small>
         </header>
         {@render retentionChart(data.retention_curve)}
       </section>
@@ -230,14 +231,14 @@
     {#if data.notetype_stats.length > 0}
       <section class="card">
         <header class="card-head">
-          <h2>Por modelo</h2>
+          <h2>{$t("study.anki.stats.by_notetype_title")}</h2>
         </header>
         <table class="nt-table">
           <thead>
             <tr>
-              <th>Modelo</th>
-              <th class="num">Cards</th>
-              <th class="num">Intervalo médio (d)</th>
+              <th>{$t("study.anki.stats.by_notetype_th_notetype")}</th>
+              <th class="num">{$t("study.anki.stats.by_notetype_th_cards")}</th>
+              <th class="num">{$t("study.anki.stats.by_notetype_th_avg_interval")}</th>
             </tr>
           </thead>
           <tbody>
@@ -258,7 +259,7 @@
 {#snippet barChart(rows: BucketEntry[])}
   {@const max = maxCount(rows)}
   {#if rows.length === 0 || max === 0}
-    <p class="muted small">Sem dados</p>
+    <p class="muted small">{$t("study.anki.stats.chart_empty")}</p>
   {:else}
     <ul class="bar-list">
       {#each rows as r (r.bucket)}
@@ -284,31 +285,31 @@
   })()}
   {@const max = filled.reduce((m, r) => (r.count > m ? r.count : m), 0)}
   {#if max === 0}
-    <p class="muted small">Nenhum card programado.</p>
+    <p class="muted small">{$t("study.anki.stats.future_empty")}</p>
   {:else}
-    <div class="vbar" role="img" aria-label="Distribuição de cards por dia">
+    <div class="vbar" role="img" aria-label={$t("study.anki.stats.future_aria")}>
       {#each filled as f (f.day)}
         {@const h = max === 0 ? 0 : (f.count / max) * 100}
         <span
           class="vbar-col"
           style="--h: {h}%"
-          title="Dia +{f.day}: {f.count} cards"
+          title={$t("study.anki.stats.future_tooltip", { day: f.day, count: f.count })}
         >
           <span class="vbar-fill"></span>
         </span>
       {/each}
     </div>
     <div class="vbar-axis">
-      <span>hoje</span>
-      <span>+15d</span>
-      <span>+30d</span>
+      <span>{$t("study.anki.stats.future_today")}</span>
+      <span>{$t("study.anki.stats.future_axis_15d")}</span>
+      <span>{$t("study.anki.stats.future_axis_30d")}</span>
     </div>
   {/if}
 {/snippet}
 
 {#snippet retentionChart(rows: RetentionEntry[])}
   {#if rows.length < 2}
-    <p class="muted small">Mínimo de 2 dias com revisões necessário.</p>
+    <p class="muted small">{$t("study.anki.stats.retention_empty")}</p>
   {:else}
     {@const w = 360}
     {@const h = 120}

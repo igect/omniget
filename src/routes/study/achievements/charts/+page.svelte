@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { pluginInvoke } from "$lib/plugin-invoke";
+  import { t } from "$lib/i18n";
   import PageHero from "$lib/study-components/PageHero.svelte";
   import SegmentedControl from "$lib/study-components/SegmentedControl.svelte";
 
@@ -32,11 +33,11 @@
   let period = $state("30");
 
   const periodOptions = [
-    { value: "7", label: "7d" },
-    { value: "30", label: "30d" },
-    { value: "90", label: "90d" },
-    { value: "365", label: "1a" },
-    { value: "all", label: "Todos" },
+    { value: "7", label: t("study.achievements.charts_period_7d") },
+    { value: "30", label: t("study.achievements.charts_period_30d") },
+    { value: "90", label: t("study.achievements.charts_period_90d") },
+    { value: "365", label: t("study.achievements.charts_period_1y") },
+    { value: "all", label: t("study.achievements.charts_period_all") },
   ];
 
   function periodCutoff(p: string): number | null {
@@ -256,38 +257,37 @@
 
 <section class="charts-page">
   <PageHero
-    title="Charts de progressão"
-    subtitle="XP, levels, streak, unlocks ao longo do tempo"
+    title={$t("study.achievements.charts_page_title")}
+    subtitle={$t("study.achievements.charts_page_subtitle")}
   />
 
   <div class="period-bar">
     <SegmentedControl
       options={periodOptions}
       bind:value={period}
-      ariaLabel="Período"
+      ariaLabel={$t("study.achievements.charts_period_aria")}
     />
     <button class="back-btn" onclick={() => history.back()}>
-      ← Voltar
+      {$t("study.achievements.charts_back_btn")}
     </button>
   </div>
 
   {#if loading}
-    <div class="state">Carregando…</div>
+    <div class="state">{$t("study.achievements.charts_loading")}</div>
   {:else if error}
     <div class="state err">{error}</div>
   {:else if entries.length === 0}
     <div class="empty">
-      <p>Sem histórico de XP no período selecionado.</p>
-      <p class="muted">Estude um pouco e volte aqui pra ver charts.</p>
+      <p>{$t("study.achievements.charts_empty_history")}</p>
+      <p class="muted">{$t("study.achievements.charts_empty_hint")}</p>
     </div>
   {:else}
     <div class="grid">
       <article class="card">
         <header class="card-head">
-          <h3>XP por dia</h3>
+          <h3>{$t("study.achievements.charts_xp_heading")}</h3>
           <span class="meta">
-            {xpPlot.count} dia{xpPlot.count === 1 ? "" : "s"} ·
-            pico {xpPlot.maxVal} XP
+            {$t("study.achievements.charts_xp_meta", { count: xpPlot.count, max: xpPlot.maxVal })}
           </span>
         </header>
         {#if xpPlot.points.length > 0}
@@ -295,7 +295,7 @@
             viewBox="0 0 {CHART_W} {CHART_H}"
             class="chart"
             role="img"
-            aria-label="XP por dia"
+            aria-label={$t("study.achievements.charts_xp_aria")}
             onmousemove={(e) => {
               const rect = (e.currentTarget as SVGElement).getBoundingClientRect();
               const x = ((e.clientX - rect.left) / rect.width) * CHART_W;
@@ -338,9 +338,9 @@
 
       <article class="card">
         <header class="card-head">
-          <h3>Level ao longo do tempo</h3>
+          <h3>{$t("study.achievements.charts_level_heading")}</h3>
           <span class="meta">
-            {levelPlot.count} level-up{levelPlot.count === 1 ? "" : "s"} no período
+            {$t("study.achievements.charts_level_meta", { count: levelPlot.count })}
           </span>
         </header>
         {#if levelPlot.points.length > 0}
@@ -348,7 +348,7 @@
             viewBox="0 0 {CHART_W} {CHART_H}"
             class="chart"
             role="img"
-            aria-label="Level ao longo do tempo"
+            aria-label={$t("study.achievements.charts_level_aria")}
             onmousemove={(e) => {
               const rect = (e.currentTarget as SVGElement).getBoundingClientRect();
               const x = ((e.clientX - rect.left) / rect.width) * CHART_W;
@@ -383,15 +383,15 @@
             </p>
           {/if}
         {:else}
-          <p class="muted small">Nenhum level-up no período</p>
+          <p class="muted small">{$t("study.achievements.charts_level_empty")}</p>
         {/if}
       </article>
 
       <article class="card">
         <header class="card-head">
-          <h3>Streak (dias consecutivos)</h3>
+          <h3>{$t("study.achievements.charts_streak_heading")}</h3>
           <span class="meta">
-            pico {streakPlot.maxVal} dia{streakPlot.maxVal === 1 ? "" : "s"}
+            {$t("study.achievements.charts_streak_meta", { max: streakPlot.maxVal })}
           </span>
         </header>
         {#if streakPlot.points.length > 0}
@@ -399,7 +399,7 @@
             viewBox="0 0 {CHART_W} {CHART_H}"
             class="chart"
             role="img"
-            aria-label="Streak ao longo do tempo"
+            aria-label={$t("study.achievements.charts_streak_aria")}
             onmousemove={(e) => {
               const rect = (e.currentTarget as SVGElement).getBoundingClientRect();
               const x = ((e.clientX - rect.left) / rect.width) * CHART_W;
@@ -430,9 +430,9 @@
 
       <article class="card">
         <header class="card-head">
-          <h3>Unlocks por dia</h3>
+          <h3>{$t("study.achievements.charts_unlocks_heading")}</h3>
           <span class="meta">
-            {filteredAchievements.length} unlock{filteredAchievements.length === 1 ? "" : "s"} no período
+            {$t("study.achievements.charts_unlocks_meta", { count: filteredAchievements.length })}
           </span>
         </header>
         {#if unlocksPlot.points.length > 0}
@@ -440,7 +440,7 @@
             viewBox="0 0 {CHART_W} {CHART_H}"
             class="chart"
             role="img"
-            aria-label="Unlocks por dia"
+            aria-label={$t("study.achievements.charts_unlocks_aria")}
             onmousemove={(e) => {
               const rect = (e.currentTarget as SVGElement).getBoundingClientRect();
               const x = ((e.clientX - rect.left) / rect.width) * CHART_W;
@@ -479,7 +479,7 @@
             </p>
           {/if}
         {:else}
-          <p class="muted small">Nenhum unlock no período</p>
+          <p class="muted small">{$t("study.achievements.charts_unlocks_empty")}</p>
         {/if}
       </article>
     </div>

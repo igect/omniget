@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { t } from "$lib/i18n";
+
   type TransferRecord = {
     id: number;
     fileName: string;
@@ -48,13 +50,13 @@
     onclick={(e) => { if (e.target === e.currentTarget) close(); }}
     onkeydown={(e) => { if (e.key === "Escape") close(); }}
   >
-    <aside class="drawer" role="dialog" aria-modal="true" aria-label="Transferências">
+    <aside class="drawer" role="dialog" aria-modal="true" aria-label={$t("study.telegram.transfer.transfers")}>
       <header class="drawer-header">
         <div>
-          <h2>Transferências</h2>
-          <p class="subtitle">{active.length} ativa{active.length === 1 ? "" : "s"} · {history.length} no histórico</p>
+          <h2>{$t("study.telegram.transfer.title")}</h2>
+          <p class="subtitle">{$t("study.telegram.transfer.status", { active: active.length, history: history.length })}</p>
         </div>
-        <button type="button" class="icon-btn" onclick={close} aria-label="Fechar">
+        <button type="button" class="icon-btn" onclick={close} aria-label={$t("study.telegram.account.close")}>
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M18 6L6 18" />
             <path d="M6 6l12 12" />
@@ -64,19 +66,19 @@
 
       <div class="drawer-body">
         <section>
-          <span class="section-label">Em andamento</span>
+          <span class="section-label">{$t("study.telegram.transfer.in_progress")}</span>
           {#if active.length === 0}
-            <p class="empty-text">Nenhum download ativo.</p>
+            <p class="empty-text">{$t("study.telegram.transfer.no_active")}</p>
           {:else}
             <ul class="transfer-list">
-              {#each active as t (t.id)}
+              {#each active as item (item.id)}
                 <li class="transfer-item">
                   <div class="transfer-info">
-                    <span class="transfer-name">{t.fileName}</span>
-                    <span class="transfer-meta">{fmtSize(t.sizeBytes)} · {Math.round(t.percent)}%</span>
+                    <span class="transfer-name">{item.fileName}</span>
+                    <span class="transfer-meta">{fmtSize(item.sizeBytes)} · {Math.round(item.percent)}%</span>
                   </div>
                   <div class="progress-outer">
-                    <div class="progress-inner" style="width: {Math.max(2, Math.min(100, t.percent))}%"></div>
+                    <div class="progress-inner" style="width: {Math.max(2, Math.min(100, item.percent))}%"></div>
                   </div>
                 </li>
               {/each}
@@ -86,26 +88,26 @@
 
         <section>
           <div class="section-row">
-            <span class="section-label">Histórico</span>
+            <span class="section-label">{$t("study.telegram.transfer.history")}</span>
             {#if history.length > 0 && onClearHistory}
-              <button type="button" class="ghost-btn" onclick={onClearHistory}>Limpar</button>
+              <button type="button" class="ghost-btn" onclick={onClearHistory}>{$t("study.telegram.transfer.clear")}</button>
             {/if}
           </div>
           {#if history.length === 0}
-            <p class="empty-text">Sem transferências recentes.</p>
+            <p class="empty-text">{$t("study.telegram.transfer.no_history")}</p>
           {:else}
             <ul class="transfer-list">
-              {#each history as t (t.id)}
+              {#each history as item (item.id)}
                 <li class="transfer-item history-item">
-                  <span class="status-dot" class:status-error={t.status === "error"} class:status-done={t.status === "done"}></span>
+                  <span class="status-dot" class:status-error={item.status === "error"} class:status-done={item.status === "done"}></span>
                   <div class="transfer-info">
-                    <span class="transfer-name">{t.fileName}</span>
+                    <span class="transfer-name">{item.fileName}</span>
                     <span class="transfer-meta">
-                      {t.status === "done" ? "Concluído" : "Erro"}
-                      · {fmtSize(t.sizeBytes)}
-                      {#if t.completedAt}· {fmtTime(t.completedAt)}{/if}
+                      {item.status === "done" ? $t("study.telegram.transfer.done") : $t("study.telegram.transfer.error")}
+                      · {fmtSize(item.sizeBytes)}
+                      {#if item.completedAt}· {fmtTime(item.completedAt)}{/if}
                     </span>
-                    {#if t.error}<span class="transfer-error">{t.error}</span>{/if}
+                    {#if item.error}<span class="transfer-error">{item.error}</span>{/if}
                   </div>
                 </li>
               {/each}

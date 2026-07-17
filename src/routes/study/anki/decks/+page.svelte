@@ -3,6 +3,7 @@
   import { pluginInvoke } from "$lib/plugin-invoke";
   import PageHero from "$lib/study-components/PageHero.svelte";
   import ConfirmDialog from "$lib/study-components/ConfirmDialog.svelte";
+  import { t } from "$lib/i18n";
 
   type DeckTreeNode = {
     deck_id: number;
@@ -297,21 +298,21 @@
 </script>
 
 <section class="study-page">
-  <PageHero title="Decks" />
+  <PageHero title={$t("study.anki.decks.title")} />
 
   {#if loading}
-    <p class="muted">Carregando árvore…</p>
+    <p class="muted">{$t("study.anki.decks.loading")}</p>
   {:else if error}
     <p class="error">{error}</p>
   {:else}
     <div class="toolbar">
       <button type="button" class="btn-primary" onclick={() => openCreate(null)}>
-        + Novo deck
+        {$t("study.anki.decks.btn_new_deck")}
       </button>
-      <a href="/study/anki/decks/filtered" class="advanced-link">Decks filtrados →</a>
-      <a href="/study/anki/decks/presets" class="advanced-link">Presets →</a>
+      <a href="/study/anki/decks/filtered" class="advanced-link">{$t("study.anki.decks.link_filtered")}</a>
+      <a href="/study/anki/decks/presets" class="advanced-link">{$t("study.anki.decks.link_presets")}</a>
       <span class="hint">
-        Use <code>::</code> no nome pra criar sub-deck (ex: <code>Idiomas::Espanhol</code>)
+        {@html $t("study.anki.decks.hint_subdeck")}
       </span>
     </div>
 
@@ -343,7 +344,7 @@
               type="button"
               class="name-btn"
               onclick={() => startRename(node)}
-              aria-label="Renomear {node.name}"
+              aria-label={$t("study.anki.decks.aria_rename", { name: node.name })}
             >
               <span class="name">{node.name}</span>
               {#if node.filtered}
@@ -351,44 +352,44 @@
               {/if}
             </button>
           {/if}
-          <span class="count" title="{count} cards">{count}</span>
+          <span class="count" title={$t("study.anki.decks.count_title", { count })}>{count}</span>
         </div>
         <div class="actions">
-          <a class="action study" href="/study/anki/study/{node.deck_id}">Estudar</a>
+          <a class="action study" href="/study/anki/study/{node.deck_id}">{$t("study.anki.decks.btn_study")}</a>
           <button
             type="button"
             class="action"
             onclick={() => openCreate(node.deck_id)}
-            title="Criar sub-deck"
+            title={$t("study.anki.decks.title_create_subdeck")}
           >
-            + sub
+            {$t("study.anki.decks.btn_sub")}
           </button>
           <button
             type="button"
             class="action"
             onclick={() => openReparent(node)}
-            title="Mover deck"
+            title={$t("study.anki.decks.title_move")}
             disabled={node.deck_id === 1}
           >
-            mover
+            {$t("study.anki.decks.btn_move")}
           </button>
           <button
             type="button"
             class="action"
             onclick={() => openConfig(node.deck_id)}
-            title="Configurar deck"
+            title={$t("study.anki.decks.title_configure")}
             disabled={node.filtered}
           >
-            config
+            {$t("study.anki.decks.btn_config")}
           </button>
           <button
             type="button"
             class="action danger"
             onclick={() => askDelete(node)}
-            title="Excluir deck"
+            title={$t("study.anki.decks.title_delete")}
             disabled={node.deck_id === 1}
           >
-            excluir
+            {$t("study.anki.decks.btn_delete")}
           </button>
         </div>
       </div>
@@ -403,11 +404,9 @@
 
 <ConfirmDialog
   bind:open={confirmOpen}
-  title="Excluir deck"
-  message={pendingDelete
-    ? `"${pendingDelete.name}" e todos os subdecks serão removidos. Cards retornarão ao deck pai (Default se na raiz). Esta ação não pode ser desfeita.`
-    : ""}
-  confirmLabel="Excluir"
+  title={$t("study.anki.decks.confirm_delete_title")}
+  message={pendingDelete ? $t("study.anki.decks.confirm_delete_msg", { name: pendingDelete.name }) : ""}
+  confirmLabel={$t("study.anki.decks.confirm_delete_confirm")}
   variant="danger"
   onConfirm={confirmDelete}
 />
@@ -421,11 +420,11 @@
     }}
   >
     <div class="modal" role="dialog" aria-modal="true">
-      <h3>Mover "{reparentDeck.name}"</h3>
+      <h3>{$t("study.anki.decks.reparent_title", { name: reparentDeck.name })}</h3>
       <label>
-        <span>Novo deck pai</span>
+        <span>{$t("study.anki.decks.reparent_label")}</span>
         <select bind:value={reparentTarget}>
-          <option value={null}>(raiz)</option>
+          <option value={null}>{$t("study.anki.decks.reparent_root")}</option>
           {#each reparentOptions as d (d.id)}
             <option value={d.id}>{d.name}</option>
           {/each}
@@ -433,10 +432,10 @@
       </label>
       <div class="modal-actions">
         <button type="button" class="btn-secondary" onclick={closeReparent}>
-          Cancelar
+          {$t("study.anki.decks.edit_cancel")}
         </button>
         <button type="button" class="btn-primary" onclick={commitReparent}>
-          Mover
+          {$t("study.anki.decks.reparent_btn")}
         </button>
       </div>
     </div>
@@ -452,21 +451,21 @@
     }}
   >
     <div class="modal" role="dialog" aria-modal="true">
-      <h3>Novo deck</h3>
+      <h3>{$t("study.anki.decks.create_title")}</h3>
       {#if createParentId != null}
         {@const parent = allDecks.find((d) => d.id === createParentId)}
         {#if parent}
           <p class="muted small">
-            Será criado dentro de <code>{parent.name}</code>
+            {@html $t("study.anki.decks.create_inside", { name: parent.name })}
           </p>
         {/if}
       {/if}
       <label>
-        <span>Nome</span>
+        <span>{$t("study.anki.decks.create_name_label")}</span>
         <input
           type="text"
           bind:value={createName}
-          placeholder="Espanhol"
+          placeholder={$t("study.anki.decks.create_placeholder")}
           onkeydown={(e) => {
             if (e.key === "Enter") commitCreate();
           }}
@@ -475,7 +474,7 @@
       </label>
       <div class="modal-actions">
         <button type="button" class="btn-secondary" onclick={closeCreate}>
-          Cancelar
+          {$t("study.anki.decks.edit_cancel")}
         </button>
         <button
           type="button"
@@ -483,7 +482,7 @@
           onclick={commitCreate}
           disabled={createBusy || !createName.trim()}
         >
-          {createBusy ? "Criando…" : "Criar"}
+          {createBusy ? $t("study.anki.decks.create_creating") : $t("study.anki.decks.create_btn")}
         </button>
       </div>
     </div>
@@ -500,7 +499,7 @@
   >
     <div class="modal config-modal" role="dialog" aria-modal="true">
       <header class="modal-head">
-        <h3>Configuração de deck</h3>
+        <h3>{$t("study.anki.decks.config_title")}</h3>
         {#if configData}
           <small class="muted">{configData.name}</small>
         {/if}
@@ -509,11 +508,11 @@
         <p class="error small">{configError}</p>
       {/if}
       {#if !configData}
-        <p class="muted">Carregando…</p>
+        <p class="muted">{$t("study.anki.decks.config_loading")}</p>
       {:else}
         <div class="config-grid">
           <label>
-            <span>Cards novos por dia</span>
+            <span>{$t("study.anki.decks.config_new_per_day")}</span>
             <input
               type="number"
               min="0"
@@ -521,7 +520,7 @@
             />
           </label>
           <label>
-            <span>Revisões por dia</span>
+            <span>{$t("study.anki.decks.config_reviews_per_day")}</span>
             <input
               type="number"
               min="0"
@@ -529,7 +528,7 @@
             />
           </label>
           <label>
-            <span>Limite de leech</span>
+            <span>{$t("study.anki.decks.config_leech_limit")}</span>
             <input
               type="number"
               min="0"
@@ -537,7 +536,7 @@
             />
           </label>
           <label>
-            <span>Retenção desejada</span>
+            <span>{$t("study.anki.decks.config_desired_retention")}</span>
             <input
               type="number"
               min="0.5"
@@ -547,7 +546,7 @@
             />
           </label>
           <label>
-            <span>Ease inicial</span>
+            <span>{$t("study.anki.decks.config_initial_ease")}</span>
             <input
               type="number"
               min="1.3"
@@ -556,7 +555,7 @@
             />
           </label>
           <label class="span-2">
-            <span>Learning steps (minutos, separados por espaço)</span>
+            <span>{$t("study.anki.decks.config_learn_steps")}</span>
             <input
               type="text"
               value={fmtSteps(configData.config.learn_steps)}
@@ -564,11 +563,11 @@
                 const v = (e.target as HTMLInputElement).value;
                 if (configData) configData.config.learn_steps = parseSteps(v);
               }}
-              placeholder="1 10"
+              placeholder={$t("study.anki.decks.config_learn_steps_ph")}
             />
           </label>
           <label class="span-2">
-            <span>Relearning steps (minutos)</span>
+            <span>{$t("study.anki.decks.config_relearn_steps")}</span>
             <input
               type="text"
               value={fmtSteps(configData.config.relearn_steps)}
@@ -576,14 +575,14 @@
                 const v = (e.target as HTMLInputElement).value;
                 if (configData) configData.config.relearn_steps = parseSteps(v);
               }}
-              placeholder="10"
+              placeholder={$t("study.anki.decks.config_relearn_steps_ph")}
             />
           </label>
         </div>
       {/if}
       <div class="modal-actions">
         <button type="button" class="btn-secondary" onclick={closeConfig}>
-          Cancelar
+          {$t("study.anki.decks.edit_cancel")}
         </button>
         <button
           type="button"
@@ -591,7 +590,7 @@
           onclick={saveConfig}
           disabled={configBusy || !configData}
         >
-          {configBusy ? "Salvando…" : "Salvar"}
+          {configBusy ? $t("study.anki.decks.config_saving") : $t("study.anki.decks.config_save")}
         </button>
       </div>
     </div>

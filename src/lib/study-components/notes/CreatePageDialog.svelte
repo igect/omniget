@@ -33,7 +33,7 @@
       <h3>{$t("study.library.notes_new_page")}</h3>
       <input
         type="text"
-        placeholder="Nome da página"
+        placeholder={t("study.notes.page_name_placeholder")}
         bind:value
         onkeydown={(e) => {
           if (e.key === "Enter") submit();
@@ -42,9 +42,9 @@
       />
       <footer>
         <button class="btn ghost" onclick={onClose}>
-          Cancelar
+          {t("study.notes.page_cancel")}
         </button>
-        <button class="btn primary" onclick={submit}>Criar</button>
+        <button class="btn primary" onclick={submit}>{t("study.notes.page_create")}</button>
       </footer>
     </div>
   </div>

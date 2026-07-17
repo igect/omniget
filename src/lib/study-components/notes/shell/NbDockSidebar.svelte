@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/i18n";
   import { docksStore, DOCK_META, type DockIconKey } from "$lib/study-notes/docks-store.svelte";
   import type { DockPosition } from "$lib/notes-bridge";
 
@@ -50,7 +51,7 @@
       class="icon-btn"
       class:active={isVisible(item.id)}
       onclick={() => toggle(item.id)}
-      title="{item.label} ({isVisible(item.id) ? 'visível' : 'oculto'})"
+      title="{item.label} ({isVisible(item.id) ? t('study.notes.shell.visible') : t('study.notes.shell.hidden')})"
       aria-pressed={isVisible(item.id)}
       aria-label={item.label}
     >

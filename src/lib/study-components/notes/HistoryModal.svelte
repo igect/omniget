@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/i18n";
   import {
     notesUndoHistory,
     notesUndoRestoreTo,
@@ -101,7 +102,7 @@
 
   function preview(text: string): string {
     const first = text.split("\n").find((l) => l.trim().length > 0) ?? "";
-    return first.length > 80 ? first.slice(0, 80) + "…" : first || "(vazio)";
+    return first.length > 80 ? first.slice(0, 80) + "…" : first || t("study.notes.empty_expr");
   }
 </script>
 
@@ -113,26 +114,25 @@
       if (e.target === e.currentTarget) onClose();
     }}
   >
-    <div class="modal" role="dialog" aria-label="Histórico do bloco" aria-modal="true">
+    <div class="modal" role="dialog" aria-label={t("study.notes.history_aria")} aria-modal="true">
       <header class="head">
-        <h3>Histórico do bloco</h3>
+        <h3>{t("study.notes.history_title")}</h3>
         <button type="button" class="btn ghost sm" onclick={onClose}>×</button>
       </header>
 
       {#if loading}
-        <div class="state muted">Carregando…</div>
+        <div class="state muted">{t("study.notes.history_loading")}</div>
       {:else if blockId === null}
-        <div class="state muted">Selecione um bloco para ver seu histórico.</div>
+        <div class="state muted">{t("study.notes.history_select_block")}</div>
       {:else if error}
         <div class="state err">{error}</div>
       {:else if snapshots.length === 0}
         <div class="state muted">
-          Nenhum snapshot ainda. O backend grava snapshots automaticamente
-          em edições; abra esta página em sessões diferentes para acumular versões.
+          {t("study.notes.history_no_snapshots")}
         </div>
       {:else}
         <div class="layout">
-          <ul class="list" role="listbox" aria-label="Versões">
+          <ul class="list" role="listbox" aria-label={t("study.notes.history_versions")}>
             {#each snapshots as s, i (s.id)}
               <li>
                 <button
@@ -144,7 +144,7 @@
                   <span class="when">{fmtTime(s.created_at)}</span>
                   <span class="prev">{preview(s.content)}</span>
                   {#if i === 0}
-                    <span class="badge latest">mais recente</span>
+                    <span class="badge latest">{t("study.notes.history_latest")}</span>
                   {/if}
                 </button>
               </li>
@@ -154,11 +154,11 @@
           <div class="detail">
             {#if selected}
               <div class="detail-meta">
-                Diff: snapshot ({fmtTime(selected.created_at)}) → atual
+                {t("study.notes.history_diff_label", { time: fmtTime(selected.created_at) })}
               </div>
               <DiffView oldText={selected.content} newText={currentContent} />
             {:else}
-              <div class="state muted">Escolha uma versão.</div>
+              <div class="state muted">{t("study.notes.history_choose_version")}</div>
             {/if}
           </div>
         </div>
@@ -172,12 +172,12 @@
             onclick={() => (confirmClearOpen = true)}
             disabled={restoring}
           >
-            Limpar histórico ({snapshots.length})
+            {t("study.notes.history_clear", { count: String(snapshots.length) })}
           </button>
         {/if}
         <span class="spacer"></span>
         <button type="button" class="btn ghost" onclick={onClose} disabled={restoring}>
-          Fechar
+          {t("study.notes.history_close")}
         </button>
         <button
           type="button"
@@ -185,7 +185,7 @@
           onclick={restoreSelected}
           disabled={!selected || restoring || blockId === null}
         >
-          {restoring ? "Restaurando…" : "Restaurar esta versão"}
+          {restoring ? t("study.notes.history_restoring") : t("study.notes.history_restore")}
         </button>
       </footer>
     </div>
@@ -200,12 +200,12 @@
       if (e.target === e.currentTarget) confirmClearOpen = false;
     }}
   >
-    <div class="modal small" role="dialog" aria-label="Limpar histórico" aria-modal="true">
-      <h3>Limpar histórico?</h3>
+    <div class="modal small" role="dialog" aria-label={t("study.notes.history_clear_aria")} aria-modal="true">
+      <h3>{t("study.notes.history_clear_confirm_title")}</h3>
       <p class="warn">
         {snapshots.length === 1
-          ? "Isso apaga o snapshot deste bloco. Não dá pra desfazer."
-          : `Isso apaga ${snapshots.length} snapshots deste bloco. Não dá pra desfazer.`}
+          ? t("study.notes.history_clear_single")
+          : t("study.notes.history_clear_multi", { count: String(snapshots.length) })}
       </p>
       <footer class="foot">
         <span class="spacer"></span>
@@ -215,7 +215,7 @@
           onclick={() => (confirmClearOpen = false)}
           disabled={clearing}
         >
-          Cancelar
+          {t("study.notes.history_clear_cancel")}
         </button>
         <button
           type="button"
@@ -223,7 +223,7 @@
           onclick={clearAll}
           disabled={clearing}
         >
-          {clearing ? "Apagando…" : "Apagar tudo"}
+          {clearing ? t("study.notes.history_clear_clearing") : t("study.notes.history_clear_confirm_clear")}
         </button>
       </footer>
     </div>

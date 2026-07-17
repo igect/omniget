@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/i18n";
   import { onMount } from "svelte";
   import CreatePageDialog from "../CreatePageDialog.svelte";
   import NbNotebookCreateDialog from "./NbNotebookCreateDialog.svelte";
@@ -166,17 +167,17 @@
     const nb = notebooksStore.byId(notebookId);
     if (!nb) return;
     if (nb.id === 1) {
-      window.alert("Notebook 'Pessoal' não pode ser excluído.");
+      window.alert(t("study.notes.shell.cannot_delete_personal"));
       return;
     }
     if (nb.page_count > 0) {
       const ok = window.confirm(
-        `Excluir "${nb.name}" remove ${nb.page_count} página${nb.page_count === 1 ? "" : "s"} para sempre. Continuar?`,
+        t("study.notes.shell.confirm_delete_notebook", { name: nb.name, count: nb.page_count, pages: nb.page_count === 1 ? "" : "s" }),
       );
       if (!ok) return;
       const r = await notebooksStore.delete(notebookId, true);
       if (!r.deleted) {
-        window.alert("Falha ao excluir notebook.");
+        window.alert(t("study.notes.shell.delete_notebook_failed"));
       } else {
         await reloadPages();
       }
@@ -194,7 +195,7 @@
   async function pickColor(notebookId: number) {
     closeContext();
     const swatch = window.prompt(
-      "Cor (hex ou var, ex: #f97316). Vazio = sem cor.",
+      t("study.notes.shell.prompt_color"),
       notebooksStore.byId(notebookId)?.color ?? "",
     );
     if (swatch == null) return;
@@ -207,7 +208,7 @@
   async function pickIcon(notebookId: number) {
     closeContext();
     const icon = window.prompt(
-      "Ícone (lucide name, ex: book, briefcase). Vazio = sem ícone.",
+      t("study.notes.shell.prompt_icon"),
       notebooksStore.byId(notebookId)?.icon_lucide ?? "",
     );
     if (icon == null) return;
@@ -229,7 +230,7 @@
       d.getFullYear() === today.getFullYear() &&
       d.getMonth() === today.getMonth() &&
       d.getDate() === today.getDate();
-    if (same) return "hoje";
+    if (same) return t("study.notes.shell.today");
     return d.toLocaleDateString();
   }
 
@@ -255,13 +256,13 @@
 
 <div class="nb-dock-files">
   <header class="dock-head">
-    <h2>Notebooks</h2>
+    <h2>{t("study.notes.shell.files_title")}</h2>
     <button
       class="head-btn"
       type="button"
       onclick={() => void openJournalToday()}
-      title="Journal de hoje"
-      aria-label="Journal de hoje"
+      title={t("study.notes.shell.journal_today")}
+      aria-label={t("study.notes.shell.journal_today")}
     >
       <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <rect x="3" y="4" width="18" height="18" rx="2" />
@@ -272,7 +273,7 @@
 
   <input
     class="search"
-    placeholder="Filtrar páginas…"
+    placeholder={t("study.notes.shell.filter_pages")}
     bind:value={search}
   />
 
@@ -322,16 +323,16 @@
                 </button>
               </li>
             {:else}
-              <li class="empty">— vazio —</li>
+              <li class="empty">{t("study.notes.shell.empty_notebook")}</li>
             {/each}
             <li>
               <button
                 type="button"
                 class="page-row add-page"
                 onclick={() => startCreatePage(nb.id)}
-                title="Nova página neste notebook"
+                title={t("study.notes.shell.new_page_in_notebook")}
               >
-                <span class="page-name">+ Nova página</span>
+                <span class="page-name">{t("study.notes.shell.new_page")}</span>
               </button>
             </li>
           </ul>
@@ -358,7 +359,7 @@
                   class="closed-row"
                   oncontextmenu={(e) => openContext(e, nb.id)}
                   onclick={() => void doReopen(nb.id)}
-                  title="Reabrir notebook"
+                  title={t("study.notes.shell.reopen_notebook")}
                 >
                   {#if nb.color}
                     <span class="dot" style:background={nb.color}></span>
@@ -381,10 +382,10 @@
       type="button"
       class="new-nb"
       onclick={() => (createNotebookOpen = true)}
-      title="Novo notebook (Ctrl+Shift+N)"
+      title={t("study.notes.shell.new_notebook_title")}
     >
       <span aria-hidden="true">＋</span>
-      <span>Novo notebook</span>
+      <span>{t("study.notes.shell.new_notebook")}</span>
     </button>
   </footer>
 </div>
@@ -402,32 +403,32 @@
       onmousedown={(e) => e.stopPropagation()}
     >
       <button class="ctx-item" onclick={() => void activate(nb.id)}>
-        Tornar ativo
+        {t("study.notes.shell.make_active")}
       </button>
       <button class="ctx-item" onclick={() => startRename(nb.id)}>
-        Renomear
+        {t("study.notes.shell.rename")}
       </button>
       <button class="ctx-item" onclick={() => openCover(nb.id)}>
-        Capa…
+        {t("study.notes.shell.cover")}
       </button>
       <button class="ctx-item" onclick={() => void pickColor(nb.id)}>
-        Cor…
+        {t("study.notes.shell.color")}
       </button>
       <button class="ctx-item" onclick={() => void pickIcon(nb.id)}>
-        Ícone…
+        {t("study.notes.shell.icon")}
       </button>
       <hr />
       {#if nb.closed}
         <button class="ctx-item" onclick={() => void doReopen(nb.id)}>
-          Reabrir
+          {t("study.notes.shell.reopen")}
         </button>
       {:else}
         <button class="ctx-item" onclick={() => void doClose(nb.id)}>
-          Fechar
+          {t("study.notes.shell.close")}
         </button>
       {/if}
       <button class="ctx-item danger" onclick={() => void doDelete(nb.id)}>
-        Excluir…
+        {t("study.notes.shell.delete")}
       </button>
     </div>
   {/if}
@@ -446,7 +447,7 @@
   >
     <div class="rename-card">
       <label>
-        <span>Renomear notebook</span>
+        <span>{t("study.notes.shell.rename_notebook")}</span>
         <input
           type="text"
           bind:value={renameDraft}
@@ -463,10 +464,10 @@
       </label>
       <div class="rename-actions">
         <button type="button" class="btn ghost" onclick={() => (renameTarget = null)}>
-          Cancelar
+          {t("study.notes.shell.cancel")}
         </button>
         <button type="button" class="btn primary" onclick={() => void commitRename()}>
-          Salvar
+          {t("study.notes.shell.save")}
         </button>
       </div>
     </div>

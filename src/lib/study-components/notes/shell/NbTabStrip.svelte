@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/i18n";
   import { tabsStore } from "$lib/study-notes/tabs-store.svelte";
   import {
     notesPagesList,
@@ -129,14 +130,14 @@
 
   function tabLabel(tab: TabSummary): string {
     if (tab.view_kind === "editor") {
-      return tab.page_title || tab.page_name || "Sem nome";
+      return tab.page_title || tab.page_name || t("study.notes.shell.unnamed");
     }
     switch (tab.view_kind) {
-      case "graph": return "Graph";
-      case "search": return "Buscar";
-      case "journal": return "Journal";
-      case "templates": return "Templates";
-      case "settings": return "Settings";
+      case "graph": return t("study.notes.shell.view_graph");
+      case "search": return t("study.notes.shell.view_search");
+      case "journal": return t("study.notes.shell.view_journal");
+      case "templates": return t("study.notes.shell.view_templates");
+      case "settings": return t("study.notes.shell.view_settings");
     }
   }
 
@@ -226,12 +227,12 @@
       </svg>
       <span class="label">{tabLabel(tab)}</span>
       {#if tab.pinned}
-        <span class="pin-dot" aria-label="Tab fixada">●</span>
+        <span class="pin-dot" aria-label={t("study.notes.shell.pinned_tab")}>●</span>
       {:else}
         <button
           type="button"
           class="close"
-          aria-label="Fechar tab"
+          aria-label={t("study.notes.shell.close_tab")}
           onclick={(e) => closeTab(e, tab.id)}
         >
           ×
@@ -244,8 +245,8 @@
     class="add"
     type="button"
     onclick={openPicker}
-    aria-label="Nova tab"
-    title="Nova tab (Ctrl+T)"
+    aria-label={t("study.notes.shell.new_tab")}
+    title={t("study.notes.shell.new_tab_title")}
   >
     +
   </button>
@@ -263,18 +264,18 @@
     }}
     role="presentation"
   >
-    <div class="picker" role="dialog" aria-label="Abrir página em nova tab">
+    <div class="picker" role="dialog" aria-label={t("study.notes.shell.picker_label")}>
       <input
         bind:this={pickerInputEl}
         bind:value={pickerQuery}
         onkeydown={onPickerKey}
         type="text"
-        placeholder="Buscar ou criar página…"
+        placeholder={t("study.notes.shell.picker_placeholder")}
         class="picker-input"
       />
       <div class="picker-list">
         {#if pickerLoading}
-          <div class="picker-empty">Carregando…</div>
+          <div class="picker-empty">{t("study.notes.shell.loading")}</div>
         {:else if filteredPages.length === 0}
           <button
             class="picker-item create"
@@ -282,8 +283,8 @@
             onclick={createNewPage}
             disabled={!pickerQuery.trim()}
           >
-            <span class="prefix">+ Criar:</span>
-            <span class="value">{pickerQuery || "(digite um nome)"}</span>
+            <span class="prefix">{t("study.notes.shell.create_prefix")}</span>
+            <span class="value">{pickerQuery || t("study.notes.shell.picker_type_name")}</span>
           </button>
         {:else}
           {#each filteredPages as p (p.id)}
@@ -302,7 +303,7 @@
               type="button"
               onclick={createNewPage}
             >
-              <span class="prefix">+ Criar:</span>
+              <span class="prefix">{t("study.notes.shell.create_prefix")}</span>
               <span class="value">{pickerQuery}</span>
             </button>
           {/if}

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/i18n";
   import { onMount } from "svelte";
   import { notesQueryRun, type QuerySort } from "$lib/notes-bridge";
 
@@ -178,7 +179,7 @@
             exprDraft = expr;
           }}
           disabled={!onEdit}
-        >{expr || "(vazio)"}</button>
+        >{expr || t("study.notes.db_empty_expr")}</button>
       {/if}
       <span class="expr-label">{`}}`}</span>
     </div>
@@ -190,26 +191,26 @@
   </header>
 
   {#if qState.kind === "loading"}
-    <div class="db-qState">executando query…</div>
+    <div class="db-qState">{t("study.notes.db_query_running")}</div>
   {:else if qState.kind === "error"}
-    <div class="db-qState err">erro: {qState.message}</div>
+    <div class="db-qState err">{t("study.notes.db_query_error", { msg: qState.message })}</div>
   {:else if qState.kind === "ok"}
     {#if qState.rows.length === 0}
-      <div class="db-qState">sem resultados</div>
+      <div class="db-qState">{t("study.notes.db_no_results")}</div>
     {:else}
       <table class="db-table">
         <thead>
           <tr>
-            <th>conteúdo</th>
+            <th>{t("study.notes.db_header_content")}</th>
             <th class="th-narrow">
               <button
                 type="button"
                 class="sort-btn"
                 class:active={sort === "status"}
                 onclick={() => changeSort("status")}
-              >status {sort === "status" ? "↓" : ""}</button>
+              >{t("study.notes.db_status")} {sort === "status" ? "↓" : ""}</button>
             </th>
-            <th class="th-narrow">deadline</th>
+            <th class="th-narrow">{t("study.notes.db_deadline")}</th>
             <th class="th-narrow">
               <button
                 type="button"
@@ -218,7 +219,7 @@
                 onclick={() =>
                   changeSort(sort === "updated-desc" ? "updated-asc" : "updated-desc")}
               >
-                atualizado
+                {t("study.notes.db_updated")}
                 {sort === "updated-desc" ? "↓" : sort === "updated-asc" ? "↑" : ""}
               </button>
             </th>
@@ -255,13 +256,13 @@
           class="page-btn"
           onclick={prevPage}
           disabled={qState.offset === 0}
-        >‹ anterior</button>
+        >{t("study.notes.db_prev")}</button>
         <button
           type="button"
           class="page-btn"
           onclick={nextPage}
           disabled={!qState.has_more}
-        >próximo ›</button>
+        >{t("study.notes.db_next")}</button>
       </footer>
     {/if}
   {/if}

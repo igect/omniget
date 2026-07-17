@@ -613,7 +613,7 @@
             <PlayerShell
               videoSrc={videoSrc}
               title={currentName}
-              courseTitle="Pasta local"
+              courseTitle={$t("study.library.local_folder")}
               backHref={returnUrl}
               durationMs={null}
               initialSeconds={0}
@@ -623,7 +623,7 @@
                     {
                       path: currentSubtitle,
                       lang: "default",
-                      label: "Padrão",
+                      label: t("study.library.subtitle_default"),
                       format: "vtt",
                       default: true,
                     },

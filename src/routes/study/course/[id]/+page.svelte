@@ -223,14 +223,14 @@
         showToast(
           "ok",
           r.probed === 1
-            ? "1 duração detectada"
-            : `${r.probed} durações detectadas`,
+            ? t("study.course.probe_duration_one")
+            : t("study.course.probe_duration_many", { count: r.probed }),
         );
         await load();
       } else if (r.failed > 0 && r.probed === 0) {
-        showToast("err", "ffprobe falhou — verifique se está instalado");
+        showToast("err", t("study.course.probe_failed"));
       } else {
-        showToast("ok", "Tudo já tinha duração");
+        showToast("ok", t("study.course.probe_all_ok"));
       }
     } catch (e) {
       showToast("err", e instanceof Error ? e.message : String(e));
@@ -354,12 +354,11 @@
           loose_lessons: detail.loose_lessons.map(update),
         };
       }
-      const status = completed ? "completas" : "incompletas";
       showToast(
         "ok",
         ids.length === 1
-          ? `1 aula marcada como ${completed ? "completa" : "incompleta"}`
-          : `${ids.length} aulas marcadas como ${status}`,
+          ? t("study.course.bulk_mark_one", { status: completed ? t("study.course.complete") : t("study.course.incomplete") })
+          : t("study.course.bulk_mark_many", { count: ids.length, status: completed ? t("study.course.complete_plural") : t("study.course.incomplete_plural") }),
       );
       clearSelection();
     } catch (e) {
@@ -441,14 +440,14 @@
                 type="button"
                 class="chip-x"
                 onclick={() => removeTag(tag)}
-                aria-label={`Remover tag ${tag}`}
+                aria-label={$t("study.course.remove_tag_aria", { tag })}
               >×</button>
             </span>
           {/each}
           <input
             type="text"
             class="chip-input"
-            placeholder="adicionar tag…"
+            placeholder={$t("study.course.add_tag_placeholder")}
             bind:this={tagInputRef}
             bind:value={newTag}
             onkeydown={onTagKey}
@@ -457,7 +456,7 @@
         </div>
         {#if tagSuggestions.length > 0 && newTag.length === 0}
           <div class="suggestions">
-            <span class="sug-label">populares:</span>
+            <span class="sug-label">{$t("study.course.popular_tags")}:</span>
             {#each tagSuggestions as s (s.tag)}
               <button
                 type="button"
@@ -473,7 +472,7 @@
       </section>
 
       <section class="meta-subjects">
-        <h3>Matérias</h3>
+        <h3>{$t("study.course.subjects")}</h3>
         <div class="chip-row">
           {#each courseSubjects as subj (subj.id)}
             <span
@@ -489,13 +488,13 @@
             class="subj-edit"
             onclick={() => (subjectsModalOpen = true)}
           >
-            {courseSubjects.length === 0 ? "+ Atribuir matérias" : "Editar"}
+            {courseSubjects.length === 0 ? $t("study.course.assign_subjects") : $t("study.course.edit_subjects")}
           </button>
         </div>
       </section>
 
       <section class="meta-actions">
-        <h3>Ações</h3>
+        <h3>{$t("study.course.actions")}</h3>
         <div class="action-row">
           <button
             type="button"
@@ -505,19 +504,21 @@
           >
             <span aria-hidden="true">⏱</span>
             <span>
-              {probing ? "Detectando…" : "Detectar durações (ffprobe)"}
+              {probing ? $t("study.course.probing") : $t("study.course.probe_btn")}
             </span>
             {#if totalDurationMs > 0}
-              <span class="action-meta">total: {fmtDuration(totalDurationMs)}</span>
+              <span class="action-meta">{$t("study.course.total_duration")}: {fmtDuration(totalDurationMs)}</span>
             {/if}
           </button>
         </div>
         {#if probeReport}
           <p class="report">
-            ✓ {probeReport.probed} probadas
-            · {probeReport.skipped} já tinham
-            · {probeReport.failed} falharam
-            (de {probeReport.total_lessons} aulas)
+            {$t("study.course.probe_report", {
+              probed: probeReport.probed,
+              skipped: probeReport.skipped,
+              failed: probeReport.failed,
+              total: probeReport.total_lessons,
+            })}
           </p>
         {/if}
       </section>
@@ -535,7 +536,7 @@
           class="expand-toggle"
           onclick={() => (descriptionExpanded = !descriptionExpanded)}
         >
-          {descriptionExpanded ? "Mostrar menos" : "Mostrar mais"}
+          {descriptionExpanded ? $t("study.course.show_less") : $t("study.course.show_more")}
         </button>
       </section>
     {/if}
@@ -579,7 +580,7 @@
                     class="lesson-check"
                     checked={sel}
                     onclick={(e) => toggleSelection(l, e as MouseEvent)}
-                    aria-label="Selecionar aula"
+                    aria-label={$t("study.course.select_lesson_aria")}
                   />
                   <button
                     type="button"
@@ -637,7 +638,7 @@
                     class="lesson-check"
                     checked={sel}
                     onclick={(e) => toggleSelection(l, e as MouseEvent)}
-                    aria-label="Selecionar aula"
+                    aria-label={$t("study.course.select_lesson_aria")}
                   />
                   <button
                     type="button"
@@ -681,7 +682,7 @@
     onClose={() => (subjectsModalOpen = false)}
     onSaved={() => {
       void loadCourseSubjects();
-      showToast("ok", "Matérias atualizadas");
+      showToast("ok", t("study.course.subjects_updated"));
     }}
   />
 
@@ -692,24 +693,24 @@
   {/if}
 
   {#if selectedLessons.size > 0}
-    <div class="selection-bar" role="toolbar" aria-label="Ações em massa">
+    <div class="selection-bar" role="toolbar" aria-label={$t("study.course.bulk_actions_aria")}>
       <span class="sel-count">
         <strong>{selectedLessons.size}</strong>
-        {selectedLessons.size === 1 ? "selecionada" : "selecionadas"}
+        {selectedLessons.size === 1 ? $t("study.course.selected_one") : $t("study.course.selected_many")}
       </span>
       <button class="sel-btn" onclick={selectAllVisible}>
-        Selecionar todas
+        {$t("study.course.select_all")}
       </button>
       <span class="sel-divider"></span>
       <button class="sel-btn primary" onclick={() => bulkMark(true)}>
-        ✓ Marcar como completas
+        {$t("study.course.mark_complete_plural")}
       </button>
       <button class="sel-btn" onclick={() => bulkMark(false)}>
-        ○ Marcar como incompletas
+        {$t("study.course.mark_incomplete_plural")}
       </button>
       <span class="sel-divider"></span>
       <button class="sel-btn ghost" onclick={clearSelection}>
-        Limpar
+        {$t("study.course.clear_selection")}
       </button>
     </div>
   {/if}

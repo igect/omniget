@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/i18n";
   import { onDestroy } from "svelte";
   import {
     notesPagesGetByName,
@@ -52,7 +53,7 @@
         const p = await notesPagesGetByName(pageName);
         if (cancelled) return;
         if (!p) {
-          error = "página não encontrada";
+          error = t("study.notes.popover_page_not_found");
           loading = false;
           return;
         }
@@ -83,10 +84,10 @@
   style:left={`${position.x}px`}
   style:top={`${position.y}px`}
   role="dialog"
-  aria-label="Preview da página {pageName}"
+   aria-label={t("study.notes.popover_aria", { name: pageName })}
 >
   {#if loading}
-    <div class="state">carregando…</div>
+    <div class="state">{t("study.notes.popover_loading")}</div>
   {:else if error}
     <div class="state err">{error}</div>
   {:else if page}
@@ -104,7 +105,7 @@
       </button>
     </header>
     {#if snippets.length === 0}
-      <p class="empty">Página vazia</p>
+      <p class="empty">{t("study.notes.popover_empty")}</p>
     {:else}
       <ul class="blocks">
         {#each snippets as s, i (i)}

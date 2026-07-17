@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/i18n";
   import SettingsField from "./SettingsField.svelte";
   import SettingsSlider from "./SettingsSlider.svelte";
   import SettingsToggle from "./SettingsToggle.svelte";
@@ -22,19 +23,19 @@
 
 <section class="tab">
   <SettingsField
-    label="Auto-play da próxima aula"
-    description="Quando você termina uma aula, a próxima começa automaticamente após countdown"
+    label={$t("study.settings.behavior.binge_watching_label")}
+    description={$t("study.settings.behavior.binge_watching_desc")}
   >
     <SettingsToggle
       value={player.binge_watching ?? true}
       onChange={(v) => setPlayer("binge_watching", v)}
-      ariaLabel="Auto-play"
+      ariaLabel={$t("study.settings.behavior.binge_watching_aria")}
     />
   </SettingsField>
 
   <SettingsField
-    label="Tempo do countdown"
-    description="Quantos segundos o aviso de auto-play aparece antes de pular"
+    label={$t("study.settings.behavior.countdown_label")}
+    description={$t("study.settings.behavior.countdown_desc")}
     valueDisplay={`${(player.next_video_notification_ms ?? 5000) / 1000}s`}
   >
     <SettingsSlider
@@ -47,13 +48,13 @@
   </SettingsField>
 
   <SettingsField
-    label="Coletar histórico de seeks"
-    description="Registra onde você volta para gerar heatmap de dificuldade. Local apenas — nada sai da máquina"
+    label={$t("study.settings.behavior.seek_history_label")}
+    description={$t("study.settings.behavior.seek_history_desc")}
   >
     <SettingsToggle
       value={player.collect_seek_logs ?? true}
       onChange={(v) => setPlayer("collect_seek_logs", v)}
-      ariaLabel="Coletar histórico"
+      ariaLabel={$t("study.settings.behavior.seek_history_aria")}
     />
   </SettingsField>
 </section>

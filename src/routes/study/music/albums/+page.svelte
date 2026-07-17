@@ -136,7 +136,7 @@
       <p>{$t("study.music.albums_empty")}</p>
     </div>
   {:else}
-    <p class="result-count">{filtered.length} álbum(ns)</p>
+    <p class="result-count">{$t("study.music.albums_count", { count: filtered.length })}</p>
     <div class="album-grid">
       {#each filtered as album (album.name + (album.artist ?? ""))}
         <div
@@ -159,7 +159,7 @@
               type="button"
               class="album-card-play"
               onclick={(e) => { e.stopPropagation(); openAlbum(album); }}
-              aria-label="Abrir álbum"
+              aria-label={$t("study.music.open_album_aria")}
             >
               <svg viewBox="0 0 24 24" width="11" height="11" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
             </button>
@@ -169,7 +169,7 @@
             <p class="album-card-sub">{album.artist}</p>
           {/if}
           <p class="album-card-meta">
-            {album.track_count} faixa(s){album.year ? ` · ${album.year}` : ""}
+            {$t("study.music.tracks_count", { count: album.track_count })}{album.year ? ` · ${album.year}` : ""}
           </p>
         </div>
       {/each}
@@ -183,7 +183,7 @@
           <span class="spotify-mark" aria-hidden="true">
             <svg viewBox="0 0 168 168" width="14" height="14"><circle cx="84" cy="84" r="84" fill="#1db954"/><path fill="#000" d="M119.6 110.6c-1.5 2.5-4.7 3.3-7.2 1.8-19.7-12-44.5-14.7-73.7-8-2.8.6-5.6-1.1-6.3-3.9-.6-2.8 1.1-5.6 3.9-6.3 31.9-7.3 59.4-4.2 81.5 9.2 2.5 1.5 3.3 4.7 1.8 7.2zm9.5-21.2c-1.9 3.1-5.9 4.1-9 2.2-22.6-13.9-57-17.9-83.8-9.8-3.5 1.1-7.1-.9-8.2-4.3-1.1-3.5.9-7.1 4.3-8.2 30.6-9.3 68.5-4.8 94.5 11.1 3.1 1.9 4.1 5.9 2.2 9zm.8-22c-27-16-71.6-17.5-97.4-9.7-4.1 1.2-8.4-1.1-9.6-5.2-1.2-4.1 1.1-8.4 5.2-9.6 29.6-9 78.7-7.2 109.8 11.3 3.7 2.2 4.9 7 2.7 10.7-2.2 3.7-7 4.9-10.7 2.5z"/></svg>
           </span>
-          Seus álbuns Spotify
+          {$t("study.music.your_spotify_albums")}
         </h2>
       </header>
       <div class="album-grid">
@@ -208,7 +208,7 @@
               <p class="album-card-sub">{album.artists.map((a) => a.name).join(", ")}</p>
             {/if}
             <p class="album-card-meta">
-              {album.total_tracks} faixa(s){album.release_date ? ` · ${album.release_date.slice(0, 4)}` : ""}
+              {$t("study.music.tracks_count", { count: album.total_tracks })}{album.release_date ? ` · ${album.release_date.slice(0, 4)}` : ""}
             </p>
           </button>
         {/each}

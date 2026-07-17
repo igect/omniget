@@ -2,6 +2,7 @@
   import { onMount } from "svelte";
   import { pluginInvoke } from "$lib/plugin-invoke";
   import PageHero from "$lib/study-components/PageHero.svelte";
+  import { t } from "$lib/i18n";
 
   type RevlogEntry = {
     id: number;
@@ -63,7 +64,7 @@
       let res: RevlogEntry[] = [];
       if (mode === "card") {
         if (cardId === "" || !Number.isFinite(Number(cardId))) {
-          error = "Informe um cardId numérico";
+          error = t("study.anki.revlog.error_card_id");
           entries = [];
           return;
         }
@@ -88,7 +89,7 @@
         );
       } else if (mode === "tag") {
         if (!tag.trim()) {
-          error = "Informe uma tag";
+          error = t("study.anki.revlog.error_tag");
           entries = [];
           return;
         }
@@ -127,7 +128,7 @@
   }
 
   function easeLabel(ease: number): string {
-    return ["?", "Errei", "Difícil", "Bom", "Fácil"][ease] ?? `?${ease}`;
+    return ["?", t("study.anki.revlog.ease_wrong"), t("study.anki.revlog.ease_hard"), t("study.anki.revlog.ease_good"), t("study.anki.revlog.ease_easy")][ease] ?? `?${ease}`;
   }
 
   function easeClass(ease: number): string {
@@ -157,57 +158,57 @@
 
 <section class="study-page">
   <PageHero
-    title="Revlog"
-    subtitle="Histórico bruto de respostas para análise"
+    title={$t("study.anki.revlog.title")}
+    subtitle={$t("study.anki.revlog.subtitle")}
   />
 
   <div class="toolbar">
-    <a href="/study/anki/stats" class="back-link">← Estatísticas</a>
+    <a href="/study/anki/stats" class="back-link">{$t("study.anki.revlog.back_link")}</a>
   </div>
 
   <div class="filter-card">
-    <div class="mode-tabs" role="tablist" aria-label="Filtro">
+    <div class="mode-tabs" role="tablist" aria-label={$t("study.anki.revlog.filter_aria")}>
       <button
         type="button"
         class="mode-tab"
         class:active={mode === "range"}
         role="tab"
         onclick={() => (mode = "range")}
-      >Período</button>
+      >{$t("study.anki.revlog.tab_range")}</button>
       <button
         type="button"
         class="mode-tab"
         class:active={mode === "deck"}
         role="tab"
         onclick={() => (mode = "deck")}
-      >Deck</button>
+      >{$t("study.anki.revlog.tab_deck")}</button>
       <button
         type="button"
         class="mode-tab"
         class:active={mode === "notetype"}
         role="tab"
         onclick={() => (mode = "notetype")}
-      >Modelo</button>
+      >{$t("study.anki.revlog.tab_notetype")}</button>
       <button
         type="button"
         class="mode-tab"
         class:active={mode === "tag"}
         role="tab"
         onclick={() => (mode = "tag")}
-      >Tag</button>
+      >{$t("study.anki.revlog.tab_tag")}</button>
       <button
         type="button"
         class="mode-tab"
         class:active={mode === "card"}
         role="tab"
         onclick={() => (mode = "card")}
-      >Card específico</button>
+      >{$t("study.anki.revlog.tab_card")}</button>
     </div>
 
     <div class="filter-body">
       {#if mode === "range"}
         <label class="field">
-          <span>Últimos N dias</span>
+          <span>{$t("study.anki.revlog.label_range_days")}</span>
           <input
             type="number"
             min="1"
@@ -217,7 +218,7 @@
         </label>
       {:else if mode === "deck"}
         <label class="field">
-          <span>Deck</span>
+          <span>{$t("study.anki.revlog.label_deck")}</span>
           <select bind:value={deckId}>
             {#each decks as d (d.id)}
               <option value={d.id}>{d.name}</option>
@@ -226,7 +227,7 @@
         </label>
       {:else if mode === "notetype"}
         <label class="field">
-          <span>Modelo</span>
+          <span>{$t("study.anki.revlog.label_notetype")}</span>
           <select bind:value={notetypeId}>
             {#each notetypes as n (n.id)}
               <option value={n.id}>{n.name}</option>
@@ -235,11 +236,11 @@
         </label>
       {:else if mode === "tag"}
         <label class="field">
-          <span>Tag</span>
+          <span>{$t("study.anki.revlog.label_tag")}</span>
           <input
             type="text"
             bind:value={tag}
-            placeholder="exemplo::tag"
+            placeholder={$t("study.anki.revlog.placeholder_tag")}
             list="tag-list"
           />
           <datalist id="tag-list">
@@ -250,18 +251,18 @@
         </label>
       {:else}
         <label class="field">
-          <span>Card ID</span>
+          <span>{$t("study.anki.revlog.label_card_id")}</span>
           <input
             type="number"
             bind:value={cardId}
-            placeholder="123456789"
+            placeholder={$t("study.anki.revlog.placeholder_card_id")}
           />
         </label>
       {/if}
 
       {#if mode !== "card"}
         <label class="field">
-          <span>Limite</span>
+          <span>{$t("study.anki.revlog.label_limit")}</span>
           <input type="number" min="1" max="5000" bind:value={limit} />
         </label>
       {/if}
@@ -272,7 +273,7 @@
         onclick={run}
         disabled={loading}
       >
-        {loading ? "Buscando…" : "Buscar"}
+        {loading ? $t("study.anki.revlog.btn_searching") : $t("study.anki.revlog.btn_search")}
       </button>
     </div>
   </div>
@@ -285,47 +286,47 @@
     <div class="summary-row">
       <div class="sum-stat">
         <span class="sum-num">{summary.total}</span>
-        <span class="sum-label">{summary.total === 1 ? "review" : "reviews"}</span>
+        <span class="sum-label">{summary.total === 1 ? $t("study.anki.revlog.summary_reviews_one") : $t("study.anki.revlog.summary_reviews_other")}</span>
       </div>
       <div class="sum-stat ease-1">
         <span class="sum-num">{summary.counts[1]}</span>
-        <span class="sum-label">errei</span>
+        <span class="sum-label">{$t("study.anki.revlog.summary_wrong")}</span>
       </div>
       <div class="sum-stat ease-2">
         <span class="sum-num">{summary.counts[2]}</span>
-        <span class="sum-label">difícil</span>
+        <span class="sum-label">{$t("study.anki.revlog.summary_hard")}</span>
       </div>
       <div class="sum-stat ease-3">
         <span class="sum-num">{summary.counts[3]}</span>
-        <span class="sum-label">bom</span>
+        <span class="sum-label">{$t("study.anki.revlog.summary_good")}</span>
       </div>
       <div class="sum-stat ease-4">
         <span class="sum-num">{summary.counts[4]}</span>
-        <span class="sum-label">fácil</span>
+        <span class="sum-label">{$t("study.anki.revlog.summary_easy")}</span>
       </div>
       <div class="sum-stat">
         <span class="sum-num">{summary.avgSec}s</span>
-        <span class="sum-label">médio</span>
+        <span class="sum-label">{$t("study.anki.revlog.summary_avg")}</span>
       </div>
     </div>
   {/if}
 
   {#if loading}
-    <p class="muted">Carregando…</p>
+    <p class="muted">{$t("study.anki.revlog.loading")}</p>
   {:else if entries.length === 0 && !error}
-    <p class="muted center">Nenhuma entrada nesse filtro.</p>
+    <p class="muted center">{$t("study.anki.revlog.empty")}</p>
   {:else if entries.length > 0}
     <div class="table-wrap">
       <table class="revlog-table">
         <thead>
           <tr>
-            <th class="when">Quando</th>
-            <th class="card-col">Card</th>
-            <th class="ease-col">Resp.</th>
-            <th class="num">Ivl</th>
-            <th class="num">→ Ivl</th>
-            <th class="num">Tempo</th>
-            <th class="kind-col">Tipo</th>
+            <th class="when">{$t("study.anki.revlog.th_when")}</th>
+            <th class="card-col">{$t("study.anki.revlog.th_card")}</th>
+            <th class="ease-col">{$t("study.anki.revlog.th_response")}</th>
+            <th class="num">{$t("study.anki.revlog.th_ivl")}</th>
+            <th class="num">{$t("study.anki.revlog.th_next_ivl")}</th>
+            <th class="num">{$t("study.anki.revlog.th_time")}</th>
+            <th class="kind-col">{$t("study.anki.revlog.th_kind")}</th>
           </tr>
         </thead>
         <tbody>

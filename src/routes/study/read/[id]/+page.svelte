@@ -325,9 +325,9 @@
   ];
 
   const DRAWERS = [
-    { key: "lighten", label: "marca-texto" },
-    { key: "underscore", label: "sublinhar" },
-    { key: "strikeout", label: "tachar" },
+    { key: "lighten", label: t("study.read.drawer_lighten") },
+    { key: "underscore", label: t("study.read.drawer_underscore") },
+    { key: "strikeout", label: t("study.read.drawer_strikeout") },
     { key: "invert", label: "invert" },
   ];
 
@@ -335,7 +335,7 @@
     { value: "outline", label: $t("study.read.panel_outline") },
     { value: "bookmarks", label: $t("study.read.panel_bookmarks") },
     { value: "highlights", label: $t("study.read.panel_highlights") },
-    { value: "notes", label: "Notas" },
+    { value: "notes", label: $t("study.read.panel_notes") },
     { value: "search", label: $t("study.read.panel_search") },
   ]);
 
@@ -698,7 +698,7 @@
 
   async function createOrphanNote() {
     if (!textRects) return;
-    const note = window.prompt("Nota da página:", "");
+    const note = window.prompt(t("study.read.note_prompt"), "");
     if (note === null) return;
     const trimmed = note.trim();
     if (trimmed === "") return;
@@ -990,7 +990,7 @@
     if (!editingHighlight || !book) return;
     const text = (editingHighlight.text ?? "").trim();
     if (!text) {
-      flashcardToast = "Highlight sem texto";
+      flashcardToast = t("study.read.highlight_no_text");
       setTimeout(() => (flashcardToast = ""), 2400);
       return;
     }
@@ -1020,8 +1020,8 @@
       const front = text.length > 500 ? text.slice(0, 497) + "…" : text;
       const back =
         note.length > 0
-          ? `${note}\n\nDe: ${book.title ?? "livro"}`
-          : `De: ${book.title ?? "livro"}`;
+          ? `${note}\n\n${t("study.read.flashcard_from", { title: book.title ?? t("study.read.book") })}`
+          : t("study.read.flashcard_from", { title: book.title ?? t("study.read.book") });
       await pluginInvoke("study", "study:anki:notes:create", {
         notetypeId: basic.id,
         deckId: 1,
@@ -1038,11 +1038,11 @@
         book_id: book.id,
         annot_id: editingHighlight.id,
       });
-      flashcardToast = "Flashcard criado no Anki";
+      flashcardToast = t("study.read.flashcard_created");
       setTimeout(() => (flashcardToast = ""), 2800);
       closeHighlightEditor();
     } catch (e) {
-      flashcardToast = `Falhou: ${e instanceof Error ? e.message : String(e)}`;
+      flashcardToast = `${t("study.read.flashcard_failed")}: ${e instanceof Error ? e.message : String(e)}`;
       setTimeout(() => (flashcardToast = ""), 4000);
     } finally {
       creatingFlashcard = false;
@@ -1425,10 +1425,10 @@
       format === "json" ? "json" : format === "pdf_burn_in" ? "pdf" : "md";
     const suffix =
       format === "md_v2"
-        ? " — anotações.v2"
+        ? t("study.read.export_suffix_md_v2")
         : format === "pdf_burn_in"
-          ? " — anotado"
-          : " — anotações";
+          ? t("study.read.export_suffix_pdf_burn")
+          : t("study.read.export_suffix_default");
     const filterName =
       format === "json"
         ? "JSON"
@@ -1592,11 +1592,11 @@
     const total = meta.page_count;
     const author = book.author?.trim();
     const stateText = author
-      ? `${author} · pág. ${currentPage}/${total}`
-      : `pág. ${currentPage}/${total}`;
+      ? `${author} · ${t("study.read.page_info", { page: currentPage, total })}`
+      : t("study.read.page_info", { page: currentPage, total });
     void rpcSetSource({
       source: "reading",
-      details: book.title ?? "Lendo",
+      details: book.title ?? t("study.read.reading"),
       state: stateText,
       duration: 0,
       position: 0,
@@ -1755,7 +1755,7 @@
       <button
         type="button"
         class="title-btn"
-        title="Editar metadados"
+        title={$t("study.read.edit_metadata")}
         onclick={openMetadataEditor}
       >
         <h1 class="title">{book.title ?? book.file_path.split(/[\\/]/).pop()}</h1>
@@ -1826,7 +1826,7 @@
                 title={c.key}
               ></button>
             {/each}
-            <label class="ink-stroke" title="Espessura">
+            <label class="ink-stroke" title={$t("study.read.ink_stroke_title")}>
               <input
                 type="range"
                 min={INK_STROKE_MIN}
@@ -1845,7 +1845,7 @@
               class="tool-btn"
               class:active={inkEraser}
               onclick={() => (inkEraser = !inkEraser)}
-              title="Borracha"
+              title={$t("study.read.ink_eraser")}
               aria-pressed={inkEraser}
             >
               <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -2056,8 +2056,7 @@
           {:else if sidebarTab === "notes"}
             {#if annotationsWithNotes.length === 0}
               <p class="muted small">
-                Nenhuma nota ainda. Selecione um trecho e tecle N pra anexar
-                uma nota, ou tecle N sem seleção pra criar uma nota solta.
+                {$t("study.read.notes_empty")}
               </p>
             {:else}
               <ul class="outline-tree">
@@ -2213,7 +2212,7 @@
                       data-drawer={h.drawer ?? "lighten"}
                       style="left: {s.left}px; top: {s.top}px; width: {s.width}px; height: {s.height}px; --hl-color: {colorCss(h.color)};"
                       onclick={(e) => openHighlightEditor(h, e)}
-                      title={h.note ? `nota: ${h.note}` : "editar"}
+                      title={h.note ? `${$t("study.read.highlight_note")}: ${h.note}` : $t("study.read.highlight_edit")}
                     >
                       {#if h.note}
                         <span class="hl-note-pin" aria-hidden="true">●</span>
@@ -2299,7 +2298,7 @@
                 class="hl-edit-popup"
                 role="dialog"
                 tabindex="-1"
-                aria-label="Editar highlight"
+                aria-label={$t("study.read.edit_highlight")}
                 style="left: {editPopupPos.x}px; top: {editPopupPos.y}px;"
                 onmousedown={(e) => e.stopPropagation()}
                 onkeydown={onEditorKey}
@@ -2310,7 +2309,7 @@
                     type="button"
                     class="ep-close"
                     onclick={closeHighlightEditor}
-                    aria-label="Fechar"
+                     aria-label={$t("study.read.close")}
                   >×</button>
                 </header>
 
@@ -2319,7 +2318,7 @@
                 {/if}
 
                 <div class="ep-section">
-                  <span class="ep-label">Cor</span>
+                  <span class="ep-label">{$t("study.read.color_label")}</span>
                   <div class="ep-colors">
                     {#each COLOR_PALETTE as c (c.key)}
                       <button
@@ -2335,7 +2334,7 @@
                 </div>
 
                 <div class="ep-section">
-                  <span class="ep-label">Estilo</span>
+                  <span class="ep-label">{$t("study.read.drawer_label")}</span>
                   <div class="ep-drawers">
                     {#each DRAWERS as d (d.key)}
                       <button
@@ -2351,11 +2350,11 @@
                 </div>
 
                 <div class="ep-section">
-                  <label class="ep-label" for="ep-note">Nota</label>
+                  <label class="ep-label" for="ep-note">{$t("study.read.note_label")}</label>
                   <textarea
                     id="ep-note"
                     class="ep-note"
-                    placeholder="adicionar nota…"
+                    placeholder={$t("study.read.note_placeholder")}
                     bind:value={editingNote}
                     onblur={saveNote}
                   ></textarea>
@@ -2371,7 +2370,7 @@
                     onclick={sendHighlightToNotes}
                     disabled={sendingToNotes}
                   >
-                    {sendingToNotes ? "Enviando…" : "→ Notas"}
+                    {sendingToNotes ? $t("study.read.sending") : $t("study.read.to_notes")}
                   </button>
                   <button
                     type="button"
@@ -2379,14 +2378,14 @@
                     onclick={createFlashcardFromHighlight}
                     disabled={creatingFlashcard}
                   >
-                    {creatingFlashcard ? "Criando…" : "→ Flashcard"}
+                    {creatingFlashcard ? $t("study.read.creating") : $t("study.read.to_flashcard")}
                   </button>
                   <button
                     type="button"
                     class="ep-btn danger"
                     onclick={deleteFromEditor}
                   >
-                    Excluir
+                    {$t("study.read.delete_highlight")}
                   </button>
                 </footer>
               </div>
@@ -2419,34 +2418,31 @@
     }}
   >
     <div class="meta-modal" role="dialog" aria-modal="true" aria-labelledby="meta-title">
-      <h3 id="meta-title">Editar metadados</h3>
-      <p class="meta-hint">
-        Atualiza apenas o registro local da biblioteca. O arquivo no disco
-        não é modificado.
-      </p>
+      <h3 id="meta-title">{$t("study.read.edit_metadata")}</h3>
+      <p class="meta-hint">{$t("study.read.metadata_hint")}</p>
 
       <label class="meta-field">
-        <span>Título</span>
+        <span>{$t("study.read.metadata_title")}</span>
         <input
           type="text"
           bind:value={metadataDraft.title}
           disabled={savingMetadata}
-          placeholder="(sem título)"
+          placeholder={$t("study.read.metadata_no_title")}
         />
       </label>
 
       <label class="meta-field">
-        <span>Autor</span>
+        <span>{$t("study.read.metadata_author")}</span>
         <input
           type="text"
           bind:value={metadataDraft.author}
           disabled={savingMetadata}
-          placeholder="(desconhecido)"
+          placeholder={$t("study.read.metadata_unknown")}
         />
       </label>
 
       <label class="meta-field">
-        <span>Editora</span>
+        <span>{$t("study.read.metadata_publisher")}</span>
         <input
           type="text"
           bind:value={metadataDraft.publisher}
@@ -2456,12 +2452,12 @@
       </label>
 
       <label class="meta-field">
-        <span>Idioma</span>
+        <span>{$t("study.read.metadata_language")}</span>
         <input
           type="text"
           bind:value={metadataDraft.language}
           disabled={savingMetadata}
-          placeholder="ex.: pt, en, fr"
+          placeholder={$t("study.read.metadata_lang_placeholder")}
         />
       </label>
 
@@ -2476,7 +2472,7 @@
           onclick={() => (metadataOpen = false)}
           disabled={savingMetadata}
         >
-          Cancelar
+          {$t("study.read.cancel")}
         </button>
         <button
           type="button"
@@ -2484,7 +2480,7 @@
           onclick={saveMetadata}
           disabled={savingMetadata}
         >
-          {savingMetadata ? "Salvando…" : "Salvar"}
+          {savingMetadata ? $t("study.read.saving") : $t("study.read.save")}
         </button>
       </footer>
     </div>

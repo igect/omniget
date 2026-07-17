@@ -15,6 +15,7 @@
   import AnkiCard from "$lib/study-components/anki/AnkiCard.svelte";
   import AnkiButton from "$lib/study-components/anki/AnkiButton.svelte";
   import { showToast } from "$lib/stores/toast-store.svelte";
+  import { t } from "$lib/i18n";
 
   type Kind = "local_folder" | "webdav" | "colpkg";
 
@@ -46,7 +47,7 @@
       pending = p;
       hydrateForm(i.provider);
     } catch (e: any) {
-      error = typeof e === "string" ? e : (e?.message ?? "Erro");
+      error = typeof e === "string" ? e : (e?.message ?? t("study.anki.sync.error_fallback"));
     } finally {
       loading = false;
     }
@@ -94,10 +95,10 @@
     try {
       const cfg = buildConfig();
       await ankiSyncProviderSave(cfg);
-      showToast("info", "Provedor salvo");
+      showToast("info", t("study.anki.sync.toast_saved"));
       await load();
     } catch (e: any) {
-      showToast("error", typeof e === "string" ? e : (e?.message ?? "Erro"));
+      showToast("error", typeof e === "string" ? e : (e?.message ?? t("study.anki.sync.error_fallback")));
     } finally {
       busy = false;
     }
@@ -108,9 +109,9 @@
     busy = true;
     try {
       await ankiSyncProviderTest(buildConfig());
-      showToast("info", "Conexão OK");
+      showToast("info", t("study.anki.sync.toast_connection_ok"));
     } catch (e: any) {
-      showToast("error", typeof e === "string" ? e : (e?.message ?? "Falhou"));
+      showToast("error", typeof e === "string" ? e : (e?.message ?? t("study.anki.sync.toast_connection_fail")));
     } finally {
       busy = false;
     }
@@ -126,14 +127,14 @@
       showToast(outcome.action === "no_provider" ? "error" : "info", outcome.message);
       await load();
     } catch (e: any) {
-      error = typeof e === "string" ? e : (e?.message ?? "Erro");
+      error = typeof e === "string" ? e : (e?.message ?? t("study.anki.sync.error_fallback"));
     } finally {
       busy = false;
     }
   }
 
   function fmtDate(secs: number): string {
-    if (!secs) return "nunca";
+    if (!secs) return t("study.anki.sync.never");
     return new Date(secs * 1000).toLocaleString();
   }
 
@@ -147,10 +148,9 @@
 
 <div class="sync-page">
   <header class="page-head">
-    <h1>Sincronização</h1>
+    <h1>{$t("study.anki.sync.title")}</h1>
     <p class="muted">
-      Sync por <strong>arquivos</strong>: collection.anki2 + media via WebDAV, pasta local ou backup .colpkg.
-      Não usa servidor AnkiWeb.
+      {@html $t("study.anki.sync.subtitle")}
     </p>
   </header>
 
@@ -159,22 +159,22 @@
   {:else if error}
     <AnkiCard variant="ghost" padding="m">
       <p class="error">{error}</p>
-      <AnkiButton onclick={load} variant="primary">Tentar novamente</AnkiButton>
+      <AnkiButton onclick={load} variant="primary">{$t("study.anki.sync.retry_btn")}</AnkiButton>
     </AnkiCard>
   {:else}
     <section class="status-row">
       <AnkiCard padding="m" variant={info && info.kind !== "none" ? "highlight" : "default"}>
         <div class="status-grid">
           <div>
-            <span class="kpi-tag">Provedor ativo</span>
+            <span class="kpi-tag">{$t("study.anki.sync.kpi_active_provider")}</span>
             <strong class="kpi">{info?.display ?? "—"}</strong>
           </div>
           <div>
-            <span class="kpi-tag">Último sync</span>
+            <span class="kpi-tag">{$t("study.anki.sync.kpi_last_sync")}</span>
             <strong class="kpi">{info ? fmtDate(info.last_sync_secs) : "—"}</strong>
           </div>
           <div>
-            <span class="kpi-tag">Mudanças locais</span>
+            <span class="kpi-tag">{$t("study.anki.sync.kpi_local_changes")}</span>
             <strong class="kpi">{pending?.total ?? 0}</strong>
           </div>
         </div>
@@ -185,7 +185,7 @@
             disabled={busy || !info || info.kind === "none"}
             onclick={run}
           >
-            {busy ? "Sincronizando…" : "☁️ Sincronizar agora"}
+            {busy ? $t("study.anki.sync.syncing") : $t("study.anki.sync.sync_now")}
           </AnkiButton>
         </div>
       </AnkiCard>
@@ -193,7 +193,7 @@
 
     {#if lastOutcome}
       <AnkiCard padding="m" variant="ghost">
-        <h3 class="card-h">Resultado</h3>
+        <h3 class="card-h">{$t("study.anki.sync.outcome_title")}</h3>
         <div class="outcome">
           <span class="ank-pill ank-pill--info">{lastOutcome.action}</span>
           <p class="outcome-msg">{lastOutcome.message}</p>
@@ -205,62 +205,60 @@
     {/if}
 
     <section class="provider-section">
-      <h2>Configurar provedor</h2>
+      <h2>{$t("study.anki.sync.config_title")}</h2>
       <div class="provider-tabs" role="tablist">
         <button class="ptab" class:active={chosen === "local_folder"} onclick={() => (chosen = "local_folder")}>
-          📁 Pasta local
+          {$t("study.anki.sync.tab_local")}
         </button>
         <button class="ptab" class:active={chosen === "webdav"} onclick={() => (chosen = "webdav")}>
-          ☁️ WebDAV
+          {$t("study.anki.sync.tab_webdav")}
         </button>
         <button class="ptab" class:active={chosen === "colpkg"} onclick={() => (chosen = "colpkg")}>
-          💾 Backup .colpkg
+          {$t("study.anki.sync.tab_colpkg")}
         </button>
       </div>
 
       <AnkiCard padding="m">
         {#if chosen === "local_folder"}
           <p class="hint">
-            Use uma pasta sincronizada por Dropbox/Google Drive/iCloud Drive. O OmniGet escreve
-            <code>collection.anki2</code> + <code>media.zip</code> + <code>manifest.json</code>.
+            {@html $t("study.anki.sync.local_hint")}
           </p>
           <label class="field">
-            <span>Caminho da pasta</span>
-            <input class="input" type="text" placeholder="C:\Users\you\Dropbox\anki" bind:value={folderPath} />
+            <span>{$t("study.anki.sync.local_path_label")}</span>
+            <input class="input" type="text" placeholder={$t("study.anki.sync.local_path_ph")} bind:value={folderPath} />
           </label>
         {:else if chosen === "webdav"}
           <p class="hint">
-            Compatível com Nextcloud, ownCloud, Synology, Apache mod_dav. Use HTTPS sempre que possível.
+            {@html $t("study.anki.sync.webdav_hint")}
           </p>
           <label class="field">
-            <span>URL</span>
-            <input class="input" type="url" placeholder="https://nuvem.exemplo.com/remote.php/dav/files/me/anki/" bind:value={webdavUrl} />
+            <span>{$t("study.anki.sync.webdav_url_label")}</span>
+            <input class="input" type="url" placeholder={$t("study.anki.sync.webdav_url_ph")} bind:value={webdavUrl} />
           </label>
           <label class="field">
-            <span>Usuário</span>
+            <span>{$t("study.anki.sync.webdav_user_label")}</span>
             <input class="input" type="text" autocomplete="username" bind:value={webdavUser} />
           </label>
           <label class="field">
-            <span>Senha (de app, recomendado)</span>
+            <span>{$t("study.anki.sync.webdav_pass_label")}</span>
             <input class="input" type="password" autocomplete="new-password" bind:value={webdavPass} />
           </label>
         {:else}
           <p class="hint">
-            Backup manual em <code>.colpkg</code>. Cada sync gera um arquivo novo timestamped.
-            Você pode importar de volta via Importar.
+            {@html $t("study.anki.sync.colpkg_hint")}
           </p>
           <label class="field">
-            <span>Pasta de destino</span>
-            <input class="input" type="text" placeholder="C:\Users\you\Documents\anki-backups" bind:value={colpkgDir} />
+            <span>{$t("study.anki.sync.colpkg_dir_label")}</span>
+            <input class="input" type="text" placeholder={$t("study.anki.sync.colpkg_dir_ph")} bind:value={colpkgDir} />
           </label>
         {/if}
 
         <div class="actions">
           <AnkiButton variant="outline" onclick={test} disabled={busy || !isFormValid()}>
-            Testar conexão
+            {$t("study.anki.sync.test_btn")}
           </AnkiButton>
           <AnkiButton variant="primary" onclick={save} disabled={busy || !isFormValid()}>
-            Salvar provedor
+            {$t("study.anki.sync.save_btn")}
           </AnkiButton>
         </div>
       </AnkiCard>

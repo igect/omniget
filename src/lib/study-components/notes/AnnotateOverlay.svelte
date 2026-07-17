@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/i18n";
   import { onMount } from "svelte";
   import { notesLessonsLink } from "$lib/notes-bridge";
 
@@ -83,17 +84,17 @@
   });
 </script>
 
-<div class="annotate-overlay" role="dialog" aria-label="Anotação de aula">
+<div class="annotate-overlay" role="dialog" aria-label={t("study.notes.annotate_overlay_aria")}>
   <header class="head">
     <div class="title-block">
-      <strong>Anotar momento</strong>
+      <strong>{t("study.notes.annotate_moment")}</strong>
       <span class="ts">@ {fmtTimestamp(pendingTimestamp)}</span>
     </div>
     <button
       type="button"
       class="close-btn"
-      aria-label="Fechar"
-      title="Fechar (Esc)"
+      aria-label={t("study.notes.close")}
+      title={t("study.notes.close_esc")}
       onclick={() => {
         void flushSave();
         onClose();
@@ -103,7 +104,7 @@
   <textarea
     bind:this={textareaEl}
     class="body"
-    placeholder="Anote algo sobre este momento da aula… (auto-salva, Esc fecha)"
+    placeholder={t("study.notes.annotate_placeholder")}
     bind:value={body}
     oninput={onInput}
     onkeydown={onKeyDown}
@@ -111,17 +112,17 @@
   ></textarea>
   <footer class="foot">
     {#if saving}
-      <span class="state">salvando…</span>
+      <span class="state">{t("study.notes.saving")}</span>
     {:else if savedAt}
-      <span class="state subtle">salvo</span>
+      <span class="state subtle">{t("study.notes.saved")}</span>
     {:else}
-      <span class="state subtle">timestamp captura no 1º caractere</span>
+      <span class="state subtle">{t("study.notes.annotate_timestamp_hint")}</span>
     {/if}
     <button
       type="button"
       class="capture-btn"
       onclick={captureTimestamp}
-      title="Recaptura timestamp atual"
+      title={t("study.notes.annotate_recapture")}
     >↻ timestamp</button>
   </footer>
 </div>

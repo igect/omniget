@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { page as routePage } from "$app/stores";
+  import { t } from "$lib/i18n";
   import Editor from "$lib/study-components/notes/Editor.svelte";
   import CalendarStrip from "$lib/study-components/notes/CalendarStrip.svelte";
   import ActivityHeatmap from "$lib/study-components/notes/ActivityHeatmap.svelte";
@@ -228,7 +229,7 @@
 <div class="journal-shell" data-surface="notes">
   <aside class="left">
     <header class="left-head">
-      <a href="/study/notes" class="back">← Notas</a>
+      <a href="/study/notes" class="back">{$t('study.notes.journal.back_to_notes')}</a>
       <h2 class="page-title">Journal</h2>
     </header>
 
@@ -238,12 +239,12 @@
       onclick={openToday}
       class:active={currentDay !== null && isToday(currentDay)}
     >
-      Hoje
+      {$t('study.notes.journal.today')}
     </button>
 
     <div class="nav-row">
-      <button type="button" class="btn ghost sm" onclick={() => nav("prev")}>← Ant.</button>
-      <button type="button" class="btn ghost sm" onclick={() => nav("next")}>Próx. →</button>
+      <button type="button" class="btn ghost sm" onclick={() => nav("prev")}>{$t('study.notes.journal.prev')}</button>
+      <button type="button" class="btn ghost sm" onclick={() => nav("next")}>{$t('study.notes.journal.next')}</button>
     </div>
 
     <button
@@ -251,13 +252,13 @@
       class="btn ghost sm jump"
       onclick={() => (showJumpDialog = true)}
     >
-      Ir para data…
+      {$t('study.notes.journal.go_to_date')}
     </button>
 
     <ActivityHeatmap journals={heatmap} onPick={openDay} />
 
     <section class="recent-list">
-      <h3>Histórico</h3>
+      <h3>{$t('study.notes.journal.history')}</h3>
       <ul>
         {#each recent.slice(0, 30) as r (r.page_id)}
           <li>
@@ -277,7 +278,7 @@
             </button>
           </li>
         {:else}
-          <li class="empty">Sem journals ainda.</li>
+          <li class="empty">{$t('study.notes.journal.empty')}</li>
         {/each}
       </ul>
     </section>
@@ -297,9 +298,9 @@
     />
 
     {#if loading}
-      <div class="state">Carregando journal…</div>
+      <div class="state">{$t('study.notes.journal.loading')}</div>
     {:else if !currentPage || currentDay === null}
-      <div class="state">Nenhum journal aberto.</div>
+      <div class="state">{$t('study.notes.journal.no_journal_open')}</div>
     {:else}
       <header class="ed-head">
         <div class="title-block">
@@ -312,10 +313,10 @@
             class="btn ghost sm"
             onclick={() => (applyTemplateOpen = true)}
           >
-            + Aplicar template
+            {$t('study.notes.journal.apply_template')}
           </button>
           {#if currentDay !== null && isToday(currentDay)}
-            <span class="badge today">hoje</span>
+            <span class="badge today">{$t('study.notes.journal.today_badge')}</span>
           {/if}
         </div>
       </header>
@@ -341,7 +342,7 @@
     }}
   >
     <div class="modal">
-      <h3>Ir para data</h3>
+      <h3>{$t('study.notes.journal.jump_to_date')}</h3>
       <input
         type="date"
         bind:value={jumpDate}
@@ -352,9 +353,9 @@
       />
       <footer>
         <button type="button" class="btn ghost" onclick={() => (showJumpDialog = false)}>
-          Cancelar
+          {$t('common.cancel')}
         </button>
-        <button type="button" class="btn primary" onclick={jumpToDate}>Abrir</button>
+        <button type="button" class="btn primary" onclick={jumpToDate}>{$t('study.notes.journal.open_date')}</button>
       </footer>
     </div>
   </div>
@@ -369,9 +370,9 @@
     }}
   >
     <div class="modal wide">
-      <h3>Aplicar template</h3>
+      <h3>{$t('study.notes.journal.apply_template_title')}</h3>
       <p class="hint">
-        Os blocos do template serão adicionados ao final deste journal.
+        {$t('study.notes.journal.apply_template_hint')}
       </p>
 
       <section>
@@ -392,7 +393,7 @@
 
       {#if userTemplates.length > 0}
         <section>
-          <h4>Suas páginas marcadas como template</h4>
+          <h4>{$t("study.notes.journal.your_templates")}</h4>
           <div class="tpl-grid">
             {#each userTemplates as t (t.page_id)}
               <button
@@ -410,7 +411,7 @@
 
       <footer>
         <button type="button" class="btn ghost" onclick={() => (applyTemplateOpen = false)}>
-          Cancelar
+          {$t('common.cancel')}
         </button>
       </footer>
     </div>

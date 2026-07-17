@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/i18n";
   import SettingsField from "./SettingsField.svelte";
   import { pluginInvoke } from "$lib/plugin-invoke";
 
@@ -98,7 +99,7 @@
         "youtube:player_invalidate_cache",
         {},
       );
-      lastInfo = `Cache do player.js limpo (${r.player_js_rows_deleted} linha(s)).`;
+      lastInfo = t("study.settings.youtube.player_cache_cleared", { rows: r.player_js_rows_deleted });
       await refresh();
     } catch (e) {
       lastError = String(e);
@@ -113,7 +114,7 @@
     lastInfo = null;
     try {
       const r = await pluginInvoke<{ deleted: number }>("study", "youtube:potoken_clear", {});
-      lastInfo = `PoTokens removidos: ${r.deleted}.`;
+      lastInfo = t("study.settings.youtube.potokens_cleared", { deleted: r.deleted });
       await refresh();
     } catch (e) {
       lastError = String(e);
@@ -136,7 +137,7 @@
           video_id: manualContentVideoId.trim() || undefined,
         },
       );
-      lastInfo = `Tokens salvos. visitor=${r.visitor_saved} content=${r.content_saved}.`;
+      lastInfo = t("study.settings.youtube.tokens_saved", { visitor: r.visitor_saved, content: r.content_saved });
       manualVisitorToken = "";
       manualContentToken = "";
       manualContentVideoId = "";
@@ -151,7 +152,7 @@
 
   async function runTestVideo() {
     if (!testVideoId.trim()) {
-      lastError = "Cole um video ID ou URL de YouTube.";
+      lastError = t("study.settings.youtube.paste_video_id_hint");
       return;
     }
     testRunning = true;
@@ -169,12 +170,12 @@
   }
 
   function formatTokenStatus(v: PotokenVisitor | undefined): string {
-    if (!v || !v.has_token) return "ausente";
-    if (v.expired) return "expirado";
+    if (!v || !v.has_token) return t("study.settings.youtube.token_absent");
+    if (v.expired) return t("study.settings.youtube.token_expired");
     const s = v.expires_in_seconds ?? 0;
     const h = Math.floor(s / 3600);
     const m = Math.floor((s % 3600) / 60);
-    return `válido por ${h}h${m}min`;
+    return t("study.settings.youtube.token_valid_for", { h, m });
   }
 
   $effect(() => {
@@ -183,9 +184,9 @@
 </script>
 
 <section class="tab">
-  <SettingsField label="Cliente YouTube" description="Estado do plugin study para reprodução de áudio do YouTube/Music.">
+  <SettingsField label={$t("study.settings.youtube.client_label")} description={$t("study.settings.youtube.client_desc")}>
     {#if loading && !clientStatus}
-      <span class="muted">Carregando…</span>
+      <span class="muted">{$t("study.settings.youtube.loading")}</span>
     {:else if clientStatus}
       <dl class="status-grid">
         <dt>Decipher engine</dt><dd><code>{clientStatus.decipher_engine}</code></dd>
@@ -197,89 +198,88 @@
           {#if clientStatus.player_cache_id}
             <code>{clientStatus.player_cache_id}</code>
             {#if clientStatus.player_cache_age_seconds !== null}
-              <span class="muted"> · {Math.floor(clientStatus.player_cache_age_seconds / 60)}min atrás</span>
+              <span class="muted">{$t("study.settings.youtube.cache_age", { min: Math.floor(clientStatus.player_cache_age_seconds / 60) })}</span>
             {/if}
           {:else}
-            <span class="muted">vazio</span>
+            <span class="muted">{$t("study.settings.youtube.cache_empty")}</span>
           {/if}
         </dd>
       </dl>
     {/if}
     <div class="row">
-      <button class="btn" disabled={loading} onclick={invalidatePlayerCache}>Limpar cache do player.js</button>
+      <button class="btn" disabled={loading} onclick={invalidatePlayerCache}>{$t("study.settings.youtube.clear_player_cache")}</button>
     </div>
   </SettingsField>
 
-  <SettingsField label="PoToken" description="Token de autenticação assinado pela YouTube. Gerado automaticamente via bgutils-js no boa_engine.">
+  <SettingsField label={$t("study.settings.youtube.potoken_label")} description={$t("study.settings.youtube.potoken_desc")}>
     {#if potokenStatus}
       <dl class="status-grid">
-        <dt>Mint disponível</dt><dd><code>{potokenStatus.minting_available ? "sim" : "não"}</code></dd>
-        <dt>Visitor token</dt><dd>{formatTokenStatus(potokenStatus.visitor)}</dd>
-        <dt>Content tokens em cache</dt><dd><code>{potokenStatus.content_cached_count}</code></dd>
+        <dt>{$t("study.settings.youtube.mint_available")}</dt><dd><code>{potokenStatus.minting_available ? $t("common.yes") : $t("common.no")}</code></dd>
+        <dt>{$t("study.settings.youtube.visitor_token")}</dt><dd>{formatTokenStatus(potokenStatus.visitor)}</dd>
+        <dt>{$t("study.settings.youtube.content_tokens_cached")}</dt><dd><code>{potokenStatus.content_cached_count}</code></dd>
       </dl>
     {/if}
     <div class="row">
-      <button class="btn" disabled={loading} onclick={clearPotokens}>Limpar PoTokens</button>
+      <button class="btn" disabled={loading} onclick={clearPotokens}>{$t("study.settings.youtube.clear_potokens")}</button>
       <button class="btn ghost" onclick={() => (manualPanelOpen = !manualPanelOpen)}>
-        {manualPanelOpen ? "Fechar token manual" : "Cole token manual…"}
+        {manualPanelOpen ? $t("study.settings.youtube.close_manual_token") : $t("study.settings.youtube.paste_manual_token")}
       </button>
     </div>
     {#if manualPanelOpen}
       <div class="manual-panel">
         <p class="hint">
-          Capture do DevTools (F12) em <code>music.youtube.com</code>: aba Network, request POST <code>youtubei/v1/player</code>, body tem
-          <code>serviceIntegrityDimensions.poToken</code> (content) e <code>context.user.visitorData</code>.
+          {@html $t("study.settings.youtube.manual_token_hint")}
         </p>
         <label class="field">
-          <span>Visitor token (opcional)</span>
+          <span>{$t("study.settings.youtube.visitor_token_optional")}</span>
           <input type="text" placeholder="CgsxxxxxYAk%3D…" bind:value={manualVisitorToken} />
         </label>
         <label class="field">
-          <span>Content token (opcional, requer video ID)</span>
+          <span>{$t("study.settings.youtube.content_token_optional")}</span>
           <input type="text" placeholder="MnQxxxxxxxxx…" bind:value={manualContentToken} />
         </label>
         <label class="field">
-          <span>Video ID (para content token)</span>
+          <span>{$t("study.settings.youtube.video_id_for_content")}</span>
           <input type="text" placeholder="dQw4w9WgXcQ" bind:value={manualContentVideoId} />
         </label>
         <div class="row">
-          <button class="btn primary" disabled={loading} onclick={saveManualToken}>Salvar</button>
+          <button class="btn primary" disabled={loading} onclick={saveManualToken}>{$t("common.save")}</button>
         </div>
       </div>
     {/if}
   </SettingsField>
 
-  <SettingsField label="Testar vídeo" description="Tenta cada cliente do cascade e mostra qual conseguiu cifra/stream. Útil pra debug.">
+  <SettingsField label={$t("study.settings.youtube.test_video_label")} description={$t("study.settings.youtube.test_video_desc")}>
     <div class="test-row">
       <input
         type="text"
-        placeholder="Cole video ID (dQw4w9WgXcQ) ou URL completa"
+        placeholder={$t("study.settings.youtube.test_video_placeholder")}
         bind:value={testVideoId}
         disabled={testRunning}
       />
       <button class="btn primary" disabled={testRunning || !testVideoId.trim()} onclick={runTestVideo}>
-        {testRunning ? "Testando…" : "Testar"}
+        {testRunning ? $t("study.settings.youtube.testing") : $t("common.test")}
       </button>
     </div>
     {#if testResult}
       <div class="test-summary">
         <strong>{testResult.video_id}</strong> ·
         {#if testResult.first_working_client}
-          primeiro cliente OK: <code>{testResult.first_working_client}</code>
+          {$t("study.settings.youtube.first_client_ok")} <code>{testResult.first_working_client}</code>
         {:else}
-          <span class="error">nenhum cliente funcionou</span>
+          <span class="error">{$t("study.settings.youtube.no_client_worked")}</span>
         {/if}
       </div>
       <table class="cascade-table">
         <thead>
           <tr>
-            <th>Cliente</th>
-            <th>Status</th>
-            <th>Audio</th>
-            <th>Direto</th>
-            <th>Cifra</th>
+            <th>{$t("study.settings.youtube.col_client")}</th>
+            <th>{$t("study.settings.youtube.col_status")}</th>
+            <th>{$t("study.settings.youtube.col_audio")}</th>
+            <th>{$t("study.settings.youtube.col_direct")}</th>
+            <th>{$t("study.settings.youtube.col_cipher")}</th>
             <th>sts/pot</th>
-            <th>Detalhe</th>
+            <th>{$t("study.settings.youtube.col_detail")}</th>
           </tr>
         </thead>
         <tbody>

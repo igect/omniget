@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/i18n";
   import { onMount, untrack } from "svelte";
   import { tabsStore } from "$lib/study-notes/tabs-store.svelte";
   import { notesPagesOutline, type OutlineEntry } from "$lib/notes-bridge";
@@ -53,11 +54,11 @@
   </header>
   <div class="body">
     {#if pageId == null}
-      <p class="empty">Sem página ativa.</p>
+      <p class="empty">{t("study.notes.shell.no_active_page")}</p>
     {:else if loading}
-      <p class="empty">Carregando…</p>
+      <p class="empty">{t("study.notes.shell.loading")}</p>
     {:else if entries.length === 0}
-      <p class="empty">Sem cabeçalhos nesta página.</p>
+      <p class="empty">{t("study.notes.shell.outline_no_headings")}</p>
     {:else}
       <ul class="entries">
         {#each entries as entry (entry.block_id)}

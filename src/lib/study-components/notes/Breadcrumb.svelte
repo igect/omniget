@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/i18n";
   import type { NotePage } from "$lib/notes-bridge";
 
   type Props = {
@@ -24,7 +25,7 @@
 </script>
 
 {#if page}
-  <nav class="breadcrumb" aria-label="Page path">
+  <nav class="breadcrumb" aria-label={t("study.notes.breadcrumb_aria")}>
     {#each segments as seg, i (seg.path)}
       {#if i > 0}
         <span class="sep" aria-hidden="true">/</span>
@@ -36,7 +37,7 @@
           type="button"
           class="seg link"
           onclick={() => onSegmentClick(seg.path)}
-          title="Ir para {seg.path}"
+          title={t("study.notes.breadcrumb_go_to", { path: seg.path })}
         >
           {seg.label}
         </button>

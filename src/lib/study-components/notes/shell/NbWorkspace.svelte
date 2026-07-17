@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/i18n";
   import { tabsStore } from "$lib/study-notes/tabs-store.svelte";
   import { type Snippet } from "svelte";
 
@@ -27,19 +28,19 @@
       <div class="ph-title">{activeTab.page_title || activeTab.page_name || activeTab.view_kind}</div>
       <div class="ph-hint">
         {#if activeTab.view_kind === "editor"}
-          Conteúdo da page é renderizado no leaf ativo. Clique aqui para focar.
+          {t("study.notes.shell.workspace_editor_hint")}
         {:else}
-          Esta visualização é renderizada no leaf ativo.
+          {t("study.notes.shell.workspace_view_hint")}
         {/if}
       </div>
       <button class="focus-btn" type="button" onclick={focusThisWnd}>
-        Focar este split
+        {t("study.notes.shell.workspace_focus_split")}
       </button>
     </div>
   {:else}
     <div class="placeholder">
-      <div class="ph-title">Sem tabs abertas</div>
-      <div class="ph-hint">Use o botão + acima ou Ctrl+T para abrir uma página.</div>
+      <div class="ph-title">{t("study.notes.shell.no_tabs")}</div>
+      <div class="ph-hint">{t("study.notes.shell.no_tabs_hint")}</div>
     </div>
   {/if}
 </div>

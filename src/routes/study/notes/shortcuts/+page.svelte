@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
+  import { t } from "$lib/i18n";
   import PageHero from "$lib/study-components/PageHero.svelte";
 
   let isMac = $state(false);
@@ -15,102 +16,104 @@
   type Row = { keys: string[]; desc: string };
   type Section = { title: string; rows: Row[] };
 
-  const SECTIONS = $derived<Section[]>([
-    {
-      title: "Edição estrutural",
-      rows: [
-        { keys: ["Tab"], desc: "Indent (vira filho do bloco anterior)" },
-        { keys: ["Shift+Tab"], desc: "Outdent (sobe um nível)" },
-        { keys: ["Alt+↑"], desc: "Mover bloco pra cima" },
-        { keys: ["Alt+↓"], desc: "Mover bloco pra baixo" },
-        { keys: [`${meta}+Shift+K`], desc: "Excluir bloco (com confirmação)" },
-        { keys: [`${meta}+/`], desc: "Colapsar/expandir bloco" },
-        { keys: [`${meta}+D`], desc: "Duplicar bloco (com toda a subtree)" },
-      ],
-    },
-    {
-      title: "Status TODO",
-      rows: [
-        { keys: [`${meta}+Enter`], desc: "Cicla status (TODO → DOING → DONE → vazio)" },
-      ],
-    },
-    {
-      title: "Formatação inline",
-      rows: [
-        { keys: [`${meta}+B`], desc: "Negrito (`**texto**`)" },
-        { keys: [`${meta}+I`], desc: "Itálico (`_texto_`)" },
-        { keys: [`${meta}+Shift+S`], desc: "Tachado (`~~texto~~`)" },
-        { keys: [`${meta}+Shift+C`], desc: "Code inline (`` `texto` ``)" },
-        { keys: [`${meta}+Shift+.`], desc: "Blockquote (`> ` na linha)" },
-      ],
-    },
-    {
-      title: "Inserção via slash menu",
-      rows: [
-        { keys: ["/"], desc: "Abre slash menu (15 comandos)" },
-        { keys: ["/todo /doing /done /later /now /waiting /canceled"], desc: "Define status do bloco" },
-        { keys: ["/today"], desc: "Insere data ISO de hoje" },
-        { keys: ["/date"], desc: "Insere link [[YYYY-MM-DD]] do journal de hoje" },
-        { keys: ["/page /tag /block"], desc: "Inicia [[, # ou ((" },
-        { keys: ["/code"], desc: "Insere bloco de código ``` ```" },
-        { keys: ["/query"], desc: "Insere {{query (and (todo TODO))}} skeleton" },
-        { keys: ["/embed page", "/embed block"], desc: "Insere {{embed [[…]]}} ou {{embed ((…))}}" },
-      ],
-    },
-    {
-      title: "Autocomplete inline",
-      rows: [
-        { keys: ["[["], desc: "Autocomplete de páginas existentes" },
-        { keys: ["#"], desc: "Autocomplete de tags" },
-        { keys: ["(("], desc: "Autocomplete de blocos recentes (uuid)" },
-      ],
-    },
-    {
-      title: "Histórico",
-      rows: [
-        { keys: [`${meta}+Z`], desc: "Desfaz última edição de conteúdo do bloco" },
-        { keys: [`${meta}+Alt+Z`], desc: "Desfaz última operação estrutural (move/delete/insert)" },
-        { keys: [`${meta}+Shift+Z`, `${meta}+Y`], desc: "Refaz última operação estrutural" },
-      ],
-    },
-    {
-      title: "Saída",
-      rows: [
-        { keys: ["Esc"], desc: "Fecha autocomplete / cancela seleção" },
-      ],
-    },
-    {
-      title: "Sintaxe Markdown reconhecida no preview",
-      rows: [
-        { keys: ["`> [!note]` `[!warn]` `[!info]` `[!success]` `[!tip]`"], desc: "Callout colorido abaixo do bloco" },
-        { keys: ["` ```lang `\\n`código`\\n` ``` `"], desc: "Code block syntax-highlighted (preview)" },
-        { keys: ["`$math$` ou `$$display$$`"], desc: "LaTeX renderizado via KaTeX (preview)" },
-        { keys: ["`| col1 | col2 |`\\n`|---|---|`\\n`|...|...|`"], desc: "Tabela markdown renderizada abaixo" },
-        { keys: ["`{{query (...)}}` `:sort X :limit N :offset M`"], desc: "Query inline com tabela ao vivo + paginação" },
-      ],
-    },
-    {
-      title: "Sintaxe de busca",
-      rows: [
-        { keys: ["`tag:project`"], desc: "Filtra blocos com link [[project]] ou #project" },
-        { keys: ["`page:Daily`"], desc: "Filtra blocos da página Daily" },
-        { keys: ["`status:DOING`"], desc: "Filtra por status property" },
-        { keys: ["`before:2026-05-01`", "`after:2026-04-01`"], desc: "Janela de updated_at" },
-        { keys: ["`tag:\"two words\"`"], desc: "Aspas pra valor com espaço" },
-      ],
-    },
-  ]);
+  let SECTIONS = $state<Section[]>([]);
+  $effect(() => {
+    SECTIONS = [
+      {
+        title: t("study.notes.shortcuts.section_editing"),
+        rows: [
+          { keys: ["Tab"], desc: t("study.notes.shortcuts.editing_indent_desc") },
+          { keys: ["Shift+Tab"], desc: t("study.notes.shortcuts.editing_outdent_desc") },
+          { keys: ["Alt+↑"], desc: t("study.notes.shortcuts.editing_move_up_desc") },
+          { keys: ["Alt+↓"], desc: t("study.notes.shortcuts.editing_move_down_desc") },
+          { keys: [`${meta}+Shift+K`], desc: t("study.notes.shortcuts.editing_delete_desc") },
+          { keys: [`${meta}+/`], desc: t("study.notes.shortcuts.editing_collapse_desc") },
+          { keys: [`${meta}+D`], desc: t("study.notes.shortcuts.editing_duplicate_desc") },
+        ],
+      },
+      {
+        title: t("study.notes.shortcuts.section_todo"),
+        rows: [
+          { keys: [`${meta}+Enter`], desc: t("study.notes.shortcuts.todo_cycle_desc") },
+        ],
+      },
+      {
+        title: t("study.notes.shortcuts.section_formatting"),
+        rows: [
+          { keys: [`${meta}+B`], desc: t("study.notes.shortcuts.format_bold_desc") },
+          { keys: [`${meta}+I`], desc: t("study.notes.shortcuts.format_italic_desc") },
+          { keys: [`${meta}+Shift+S`], desc: t("study.notes.shortcuts.format_strikethrough_desc") },
+          { keys: [`${meta}+Shift+C`], desc: t("study.notes.shortcuts.format_code_desc") },
+          { keys: [`${meta}+Shift+.`], desc: t("study.notes.shortcuts.format_blockquote_desc") },
+        ],
+      },
+      {
+        title: t("study.notes.shortcuts.section_slash"),
+        rows: [
+          { keys: ["/"], desc: t("study.notes.shortcuts.slash_menu_desc") },
+          { keys: ["/todo /doing /done /later /now /waiting /canceled"], desc: t("study.notes.shortcuts.slash_status_desc") },
+          { keys: ["/today"], desc: t("study.notes.shortcuts.slash_today_desc") },
+          { keys: ["/date"], desc: t("study.notes.shortcuts.slash_date_desc") },
+          { keys: ["/page /tag /block"], desc: t("study.notes.shortcuts.slash_link_desc") },
+          { keys: ["/code"], desc: t("study.notes.shortcuts.slash_code_desc") },
+          { keys: ["/query"], desc: t("study.notes.shortcuts.slash_query_desc") },
+          { keys: ["/embed page", "/embed block"], desc: t("study.notes.shortcuts.slash_embed_desc") },
+        ],
+      },
+      {
+        title: t("study.notes.shortcuts.section_autocomplete"),
+        rows: [
+          { keys: ["[["], desc: t("study.notes.shortcuts.auto_page_desc") },
+          { keys: ["#"], desc: t("study.notes.shortcuts.auto_tag_desc") },
+          { keys: ["(("], desc: t("study.notes.shortcuts.auto_block_desc") },
+        ],
+      },
+      {
+        title: t("study.notes.shortcuts.section_history"),
+        rows: [
+          { keys: [`${meta}+Z`], desc: t("study.notes.shortcuts.history_undo_content_desc") },
+          { keys: [`${meta}+Alt+Z`], desc: t("study.notes.shortcuts.history_undo_structural_desc") },
+          { keys: [`${meta}+Shift+Z`, `${meta}+Y`], desc: t("study.notes.shortcuts.history_redo_desc") },
+        ],
+      },
+      {
+        title: t("study.notes.shortcuts.section_exit"),
+        rows: [
+          { keys: ["Esc"], desc: t("study.notes.shortcuts.exit_close_desc") },
+        ],
+      },
+      {
+        title: t("study.notes.shortcuts.section_markdown"),
+        rows: [
+          { keys: ["`> [!note]` `[!warn]` `[!info]` `[!success]` `[!tip]`"], desc: t("study.notes.shortcuts.md_callout_desc") },
+          { keys: ["` ```lang `\\n`código`\\n` ``` `"], desc: t("study.notes.shortcuts.md_code_desc") },
+          { keys: ["`$math$` ou `$$display$$`"], desc: t("study.notes.shortcuts.md_latex_desc") },
+          { keys: ["`| col1 | col2 |`\\n`|---|---|`\\n`|...|...|`"], desc: t("study.notes.shortcuts.md_table_desc") },
+          { keys: ["`{{query (...)}}` `:sort X :limit N :offset M`"], desc: t("study.notes.shortcuts.md_query_desc") },
+        ],
+      },
+      {
+        title: t("study.notes.shortcuts.section_search"),
+        rows: [
+          { keys: ["`tag:project`"], desc: t("study.notes.shortcuts.search_tag_desc") },
+          { keys: ["`page:Daily`"], desc: t("study.notes.shortcuts.search_page_desc") },
+          { keys: ["`status:DOING`"], desc: t("study.notes.shortcuts.search_status_desc") },
+          { keys: ["`before:2026-05-01`", "`after:2026-04-01`"], desc: t("study.notes.shortcuts.search_date_desc") },
+          { keys: ["`tag:\"two words\"`"], desc: t("study.notes.shortcuts.search_quotes_desc") },
+        ],
+      },
+    ];
+  });
 </script>
 
 <section class="shortcuts-page">
   <PageHero
-    title="Atalhos do editor de notas"
-    subtitle="Detectado: {isMac ? 'Mac' : 'Windows/Linux'} ({meta} = {meta})"
+    title={$t("study.notes.shortcuts.page_title")}
+    subtitle={$t("study.notes.shortcuts.subtitle", { os: isMac ? "Mac" : "Windows/Linux", meta })}
   />
 
   <p class="muted small">
-    Esta página é estática — todos os atalhos listados estão wired no editor
-    em <code>/study/notes</code>. Se algo não funcionar, é bug.
+    {$t("study.notes.shortcuts.page_hint", { path: "/study/notes" })}
   </p>
 
   {#each SECTIONS as section (section.title)}
@@ -122,7 +125,7 @@
             <tr>
               <td class="keys-cell">
                 {#each row.keys as k, i (i)}
-                  {#if i > 0} ou {/if}
+                  {#if i > 0} {$t("study.notes.shortcuts.or")} {/if}
                   {#each k.split("+") as part, j (j)}
                     {#if j > 0}<span class="plus">+</span>{/if}
                     <kbd>{part}</kbd>

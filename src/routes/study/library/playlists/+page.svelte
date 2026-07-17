@@ -2,6 +2,7 @@
   import { onMount } from "svelte";
   import { goto } from "$app/navigation";
   import { pluginInvoke } from "$lib/plugin-invoke";
+  import { t } from "$lib/i18n";
   import ConfirmDialog from "$lib/study-components/ConfirmDialog.svelte";
 
   type PlaylistSummary = {
@@ -288,14 +289,13 @@
       <a href="/study/library" class="back">← Library</a>
       <h2>Playlists</h2>
       <button class="btn primary" onclick={() => (createOpen = true)}>
-        + Nova playlist
+        {$t("study.library.playlists_new_btn")}
       </button>
     </header>
 
     {#if playlists.length === 0}
       <p class="empty">
-        Sem playlists. Crie uma para agrupar cursos por trilha, prioridade,
-        área de estudo, etc.
+        {$t("study.library.playlists_empty")}
       </p>
     {:else}
       <ul class="pl-list">
@@ -325,11 +325,11 @@
     {/if}
 
     {#if loading}
-      <div class="state">Carregando…</div>
+      <div class="state">{$t("study.library.playlists_loading")}</div>
     {:else if !selected}
       <div class="state empty-state">
-        <h2>Selecione uma playlist</h2>
-        <p>Ou crie uma nova com o botão à esquerda.</p>
+        <h2>{$t("study.library.playlists_select_hint")}</h2>
+        <p>{$t("study.library.playlists_select_sub")}</p>
       </div>
     {:else}
       <header class="pl-head" style:--pl-color={selected.color ?? "var(--accent)"}>
@@ -373,14 +373,14 @@
 
       <section class="actions-bar">
         <button class="btn primary" onclick={() => (addCourseOpen = true)}>
-          + Adicionar curso
+          {$t("study.library.playlists_add_course_btn")}
         </button>
       </section>
 
       {#if entries.length === 0}
         <div class="empty-state">
-          <h3>Sem cursos nesta playlist</h3>
-          <p>Use o botão acima para adicionar.</p>
+          <h3>{$t("study.library.playlists_no_courses")}</h3>
+          <p>{$t("study.library.playlists_no_courses_hint")}</p>
         </div>
       {:else}
         <ol class="entries">
@@ -438,7 +438,7 @@
         />
       </label>
       <label class="form-field">
-        <span>Descrição (opcional)</span>
+        <span>{$t("study.library.playlists_desc_optional")}</span>
         <input type="text" bind:value={createDesc} />
       </label>
       <div class="form-field">
@@ -503,9 +503,9 @@
     }}
   >
     <div class="modal">
-      <h3>Editar metadados</h3>
+      <h3>{$t("study.library.playlists_edit_meta")}</h3>
       <label class="form-field">
-        <span>Descrição</span>
+        <span>{$t("study.library.playlists_desc")}</span>
         <input type="text" bind:value={metaDesc} />
       </label>
       <div class="form-field">
@@ -552,11 +552,11 @@
       <h3>Adicionar cursos</h3>
       <input
         type="text"
-        placeholder="Buscar curso…"
+        placeholder={$t("study.library.playlists_search_course")}
         bind:value={addCourseSearch}
       />
       {#if filteredAddCandidates.length === 0}
-        <p class="empty">Nenhum curso disponível.</p>
+        <p class="empty">{$t("study.library.playlists_no_courses_available")}</p>
       {:else}
         <ul class="add-list">
           {#each filteredAddCandidates as c (c.id)}
@@ -580,11 +580,11 @@
 
 <ConfirmDialog
   bind:open={confirmDeleteOpen}
-  title="Excluir playlist"
+  title={$t("study.library.playlists_delete_title")}
   message={selected
-    ? `"${selected.name}" será removida. Os cursos não serão deletados — apenas a playlist.`
+    ? $t("study.library.playlists_delete_msg", { name: selected.name })
     : ""}
-  confirmLabel="Excluir"
+  confirmLabel={$t("study.library.playlists_delete_confirm")}
   variant="danger"
   onConfirm={deletePlaylist}
 />

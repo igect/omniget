@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { goto } from "$app/navigation";
+  import { t } from "$lib/i18n";
   import { showToast } from "$lib/stores/toast-store.svelte";
   import {
     spotifyStore,
@@ -87,7 +88,7 @@
     try {
       const mode = await spotifyStore.playTrack(track, queue);
       if (mode === "youtube") {
-        showToast("info", "Tocando via YouTube (modo Free)");
+        showToast("info", t("study.music.spotify_play_via_yt"));
       }
     } catch (e) {
       showToast("error", e instanceof Error ? e.message : String(e));
@@ -122,7 +123,7 @@
       bind:value={query}
       oninput={onInput}
       type="search"
-      placeholder="Buscar nas suas curtidas, recents e top tracks…"
+      placeholder={$t("study.music.search_placeholder_spotify")}
       autocomplete="off"
     />
     {#if loading}
@@ -140,7 +141,7 @@
         role="tab"
         aria-selected={tab === "track"}
       >
-        Faixas {tracks.length > 0 ? `(${tracks.length})` : ""}
+        {$t("study.music.tab_tracks")}{tracks.length > 0 ? ` (${tracks.length})` : ""}
       </button>
       <button
         type="button"
@@ -150,7 +151,7 @@
         role="tab"
         aria-selected={tab === "playlist"}
       >
-        Playlists {playlists.length > 0 ? `(${playlists.length})` : ""}
+        {$t("study.music.tab_playlists")}{playlists.length > 0 ? ` (${playlists.length})` : ""}
       </button>
       <button
         type="button"
@@ -160,7 +161,7 @@
         role="tab"
         aria-selected={tab === "artist"}
       >
-        Artistas {artists.length > 0 ? `(${artists.length})` : ""}
+        {$t("study.music.tab_artists")}{artists.length > 0 ? ` (${artists.length})` : ""}
       </button>
       <button
         type="button"
@@ -170,7 +171,7 @@
         role="tab"
         aria-selected={tab === "album"}
       >
-        Álbuns {albums.length > 0 ? `(${albums.length})` : ""}
+        {$t("study.music.tab_albums")}{albums.length > 0 ? ` (${albums.length})` : ""}
       </button>
     </div>
   {/if}
@@ -231,7 +232,7 @@
             {/if}
           </div>
           <h3>{a.name}</h3>
-          <p>Artista</p>
+          <p>{$t("study.music.eyebrow_artist")}</p>
         </button>
       {/each}
     </div>
@@ -256,7 +257,7 @@
       {/each}
     </div>
   {:else if query.trim() && !loading}
-    <p class="muted">Nada encontrado para "{query}"</p>
+    <p class="muted">{$t("study.music.no_results_for", { query })}</p>
   {/if}
 </section>
 

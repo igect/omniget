@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/i18n";
   import { pluginInvoke } from "$lib/plugin-invoke";
   import {
     studySubjectsListForCourse,
@@ -88,32 +89,32 @@
     class="backdrop"
     role="dialog"
     aria-modal="true"
-    aria-label="Editar matérias"
+    aria-label={$t("study.shelves.subjects_modal.edit_aria")}
     tabindex="-1"
     onkeydown={onBackdropKey}
   >
     <button
       type="button"
       class="backdrop-btn"
-      aria-label="Fechar"
+      aria-label={$t("common.close")}
       onclick={onClose}
     ></button>
     <div class="modal" role="document">
       <header class="head">
-        <h2>Matérias do curso</h2>
-        <button type="button" class="close" onclick={onClose} aria-label="Fechar">×</button>
+        <h2>{$t("study.shelves.subjects_modal.title")}</h2>
+        <button type="button" class="close" onclick={onClose} aria-label={$t("common.close")}>×</button>
       </header>
       <div class="body">
         {#if loading}
-          <p class="muted">Carregando…</p>
+          <p class="muted">{$t("common.loading")}</p>
         {:else if error}
           <p class="error">{error}</p>
         {:else if allSubjects.length === 0}
           <p class="muted">
-            Nenhuma matéria criada. Vá para a aba Foco e crie uma primeiro.
+            {$t("study.shelves.subjects_modal.empty")}
           </p>
         {:else}
-          <ul class="list" aria-label="Lista de matérias">
+          <ul class="list" aria-label={$t("study.shelves.subjects_modal.list_aria")}>
             {#each allSubjects as s (s.id)}
               {@const isSelected = selected.has(s.id)}
               <li>
@@ -134,14 +135,14 @@
         {/if}
       </div>
       <footer class="foot">
-        <button type="button" class="btn ghost" onclick={onClose}>Cancelar</button>
+        <button type="button" class="btn ghost" onclick={onClose}>{$t("common.cancel")}</button>
         <button
           type="button"
           class="btn primary"
           disabled={!dirty || saving}
           onclick={save}
         >
-          {saving ? "Salvando…" : "Salvar"}
+          {saving ? $t("common.saving") : $t("common.save")}
         </button>
       </footer>
     </div>

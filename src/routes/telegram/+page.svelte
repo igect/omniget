@@ -235,7 +235,7 @@
       createFolderOpen = false;
       createFolderName = "";
     } catch (e: any) {
-      createFolderError = typeof e === "string" ? e : (e?.message ?? "Erro ao criar pasta");
+      createFolderError = typeof e === "string" ? e : (e?.message ?? t("telegram.create_folder_error"));
     } finally {
       createFolderBusy = false;
     }
@@ -1130,8 +1130,8 @@
         <button
           class="button account-btn"
           onclick={() => (accountPanelOpen = true)}
-          aria-label="Gerenciar contas"
-          title="Gerenciar contas"
+          aria-label={$t("telegram.manage_accounts")}
+          title={$t("telegram.manage_accounts")}
         >
           <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" />
@@ -1141,8 +1141,8 @@
         <button
           class="button"
           onclick={() => (cloneWizardOpen = true)}
-          aria-label="Clonar canais"
-          title="Clonar canais"
+          aria-label={$t("telegram.clone_channels")}
+          title={$t("telegram.clone_channels")}
         >
           <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <rect x="9" y="9" width="13" height="13" rx="2" />
@@ -1152,8 +1152,8 @@
         <button
           class="button transfers-btn"
           onclick={() => (transferPanelOpen = true)}
-          aria-label="Transferências"
-          title="Transferências"
+          aria-label={$t("telegram.transfers")}
+          title={$t("telegram.transfers")}
         >
           <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M12 5v14M19 12l-7 7-7-7" />
@@ -1165,8 +1165,8 @@
         <button
           class="button"
           onclick={() => (globalSearchOpen = true)}
-          aria-label="Busca global"
-          title="Busca global (Ctrl+K)"
+          aria-label={$t("telegram.global_search")}
+          title={$t("telegram.global_search_hint")}
         >
           <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="11" cy="11" r="8" />
@@ -1176,8 +1176,8 @@
         <button
           class="button"
           onclick={() => (perfPanelOpen = true)}
-          aria-label="Performance"
-          title="Performance de download"
+          aria-label={$t("telegram.performance")}
+          title={$t("telegram.performance_title")}
         >
           <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="12" cy="12" r="3" />
@@ -1233,7 +1233,7 @@
             aria-selected={chatViewMode === "all"}
             onclick={() => (chatViewMode = "all")}
           >
-            Todos
+            {$t("telegram.view_all")}
           </button>
           <button
             type="button"
@@ -1243,7 +1243,7 @@
             aria-selected={chatViewMode === "drive"}
             onclick={() => (chatViewMode = "drive")}
           >
-            Drive
+            {$t("telegram.view_drive")}
             <span class="view-tab-count">{chats.filter((c) => isOmnigetFolder(c as any)).length}</span>
           </button>
         </div>
@@ -1252,7 +1252,7 @@
             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M12 5v14M5 12h14" />
             </svg>
-            Nova pasta
+            {$t("telegram.new_folder")}
           </button>
         {/if}
       </div>
@@ -1260,7 +1260,7 @@
       <input
         type="text"
         class="input search-input"
-        placeholder={chatViewMode === "drive" ? "Buscar pasta..." : "Search..."}
+        placeholder={chatViewMode === "drive" ? $t("telegram.search_folder_placeholder") : $t("telegram.search_placeholder")}
         bind:value={chatSearch}
       />
 
@@ -1291,8 +1291,8 @@
               type="button"
               class="chat-info-btn"
               onclick={(e) => openDrawer(chat, e)}
-              aria-label="Gerenciar {chat.title}"
-              title="Gerenciar"
+              aria-label={$t("telegram.manage_chat", { title: chat.title })}
+              title={$t("telegram.manage")}
             >
               <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="12" cy="5" r="1.5" />
@@ -1319,14 +1319,14 @@
         type="button"
         class="button manage-btn"
         onclick={(e) => openDrawer(selectedChat!, e)}
-        aria-label="Gerenciar canal"
+        aria-label={$t("telegram.manage_channel")}
       >
         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="12" cy="5" r="1.5" />
           <circle cx="12" cy="12" r="1.5" />
           <circle cx="12" cy="19" r="1.5" />
         </svg>
-        Gerenciar
+        {$t("telegram.manage")}
       </button>
     </div>
 
@@ -1555,13 +1555,13 @@
     onkeydown={(e) => { if (e.key === "Escape" && !createFolderBusy) createFolderOpen = false; }}
   >
     <div class="create-folder-dialog" role="dialog" aria-modal="true">
-      <h3>Nova pasta Drive</h3>
-      <p class="dialog-hint">Cria um canal Telegram com sufixo <code>[og]</code> para você usar como pasta privada de mídias.</p>
+      <h3>{$t("telegram.create_folder_title")}</h3>
+      <p class="dialog-hint">{$t("telegram.create_folder_hint")}</p>
       <form onsubmit={(e) => { e.preventDefault(); commitCreateFolder(); }}>
         <input
           type="text"
           class="input"
-          placeholder="Nome da pasta"
+          placeholder={$t("telegram.create_folder_placeholder")}
           bind:value={createFolderName}
           disabled={createFolderBusy}
           autofocus

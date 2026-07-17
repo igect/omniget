@@ -2,6 +2,7 @@
   import { onMount } from "svelte";
   import { pluginInvoke } from "$lib/plugin-invoke";
   import PageHero from "$lib/study-components/PageHero.svelte";
+  import { t } from "$lib/i18n";
 
   type NotetypeSummary = {
     id: number;
@@ -131,7 +132,7 @@
       lastSourcePath = picked;
       const kind = detectKind(picked);
       if (!kind) {
-        error = `Formato não reconhecido: ${picked}`;
+        error = t("study.anki.import.error_format", { path: picked });
         return;
       }
       busy = true;
@@ -158,7 +159,7 @@
         result = { kind: "json", data };
       } else {
         if (csvNotetypeId === null || csvDeckId === null) {
-          error = "Selecione um modelo e um deck antes de importar CSV.";
+          error = t("study.anki.import.error_select_csv");
           return;
         }
         const delim = csvDelimiter === "" ? null : csvDelimiter;
@@ -210,7 +211,7 @@
         await pluginInvoke("study", "study:anki:export:json", { targetPath: target });
       } else {
         if (exportNotetypeId == null) {
-          showExportToast("err", "Selecione um modelo para exportar CSV");
+          showExportToast("err", t("study.anki.import.error_select_export"));
           return;
         }
         const delim = exportDelimiter === "" ? null : exportDelimiter;
@@ -220,7 +221,7 @@
           delimiter: delim,
         });
       }
-      showExportToast("ok", `Exportado · ${target.split(/[\\/]/).pop()}`);
+      showExportToast("ok", t("study.anki.import.toast_exported", { file: target.split(/[\\/]/).pop() }));
     } catch (e) {
       showExportToast("err", e instanceof Error ? e.message : String(e));
     } finally {
@@ -231,52 +232,52 @@
   function summaryRows(r: Result): { label: string; value: number | string }[] {
     if (r.kind === "apkg") {
       return [
-        { label: "Notes adicionadas", value: r.data.notes_added },
-        { label: "Cards adicionados", value: r.data.cards_added },
-        { label: "Decks novos", value: r.data.decks_added },
-        { label: "Modelos novos", value: r.data.notetypes_added },
-        { label: "Mídia copiada", value: r.data.media_added },
-        { label: "Revlog importado", value: r.data.revlog_added },
-        { label: "Notes ignoradas (já existem)", value: r.data.skipped_existing_notes },
+        { label: t("study.anki.import.sum_notes"), value: r.data.notes_added },
+        { label: t("study.anki.import.sum_cards"), value: r.data.cards_added },
+        { label: t("study.anki.import.sum_decks"), value: r.data.decks_added },
+        { label: t("study.anki.import.sum_notetypes"), value: r.data.notetypes_added },
+        { label: t("study.anki.import.sum_media"), value: r.data.media_added },
+        { label: t("study.anki.import.sum_revlog"), value: r.data.revlog_added },
+        { label: t("study.anki.import.sum_skipped"), value: r.data.skipped_existing_notes },
       ];
     }
     if (r.kind === "json") {
       return [
-        { label: "Notes adicionadas", value: r.data.notes_added },
-        { label: "Cards adicionados", value: r.data.cards_added },
-        { label: "Decks novos", value: r.data.decks_added },
-        { label: "Configs de deck novas", value: r.data.deck_configs_added },
-        { label: "Modelos novos", value: r.data.notetypes_added },
-        { label: "Revlog importado", value: r.data.revlog_added },
-        { label: "Notes ignoradas (já existem)", value: r.data.skipped_existing_notes },
+        { label: t("study.anki.import.sum_notes"), value: r.data.notes_added },
+        { label: t("study.anki.import.sum_cards"), value: r.data.cards_added },
+        { label: t("study.anki.import.sum_decks"), value: r.data.decks_added },
+        { label: t("study.anki.import.sum_deck_configs"), value: r.data.deck_configs_added },
+        { label: t("study.anki.import.sum_notetypes"), value: r.data.notetypes_added },
+        { label: t("study.anki.import.sum_revlog"), value: r.data.revlog_added },
+        { label: t("study.anki.import.sum_skipped"), value: r.data.skipped_existing_notes },
       ];
     }
     return [
-      { label: "Linhas importadas", value: r.data.imported },
-      { label: "Linhas ignoradas", value: r.data.skipped },
+      { label: t("study.anki.import.sum_lines_imported"), value: r.data.imported },
+      { label: t("study.anki.import.sum_lines_skipped"), value: r.data.skipped },
     ];
   }
 </script>
 
 <section class="study-page">
-  <PageHero title="Importar / Exportar" subtitle="Mover dados entre o omniget e outros clientes Anki" />
+  <PageHero title={$t("study.anki.import.title")} subtitle={$t("study.anki.import.subtitle")} />
 
   <div class="format-grid">
     <article class="format-card">
       <h3>.apkg / .colpkg</h3>
-      <p>Coleção exportada do Anki desktop. Inclui notes, cards, decks, modelos, revlog e mídia.</p>
-      <small class="muted">Conflitos: notes existentes (mesmo id ou guid) são ignoradas.</small>
+      <p>{$t("study.anki.import.fmt_apkg_desc")}</p>
+      <small class="muted">{$t("study.anki.import.fmt_apkg_conflict")}</small>
     </article>
     <article class="format-card">
       <h3>.json</h3>
-      <p>Snapshot interno do plugin (gerado por Exportar &gt; JSON). Round-trip completo.</p>
+      <p>{$t("study.anki.import.fmt_json_desc")}</p>
     </article>
     <article class="format-card csv-card">
       <h3>.csv / .tsv</h3>
-      <p>Planilha com colunas dos fields do modelo + opcionais Tags e Deck.</p>
+      <p>{$t("study.anki.import.fmt_csv_desc")}</p>
       <div class="csv-options">
         <label>
-          <span>Modelo</span>
+          <span>{$t("study.anki.import.csv_notetype_label")}</span>
           <select bind:value={csvNotetypeId} disabled={busy}>
             {#each notetypes as nt (nt.id)}
               <option value={nt.id}>{nt.name}</option>
@@ -284,7 +285,7 @@
           </select>
         </label>
         <label>
-          <span>Deck</span>
+          <span>{$t("study.anki.import.csv_deck_label")}</span>
           <select bind:value={csvDeckId} disabled={busy}>
             {#each decks as d (d.id)}
               <option value={d.id}>{d.name}</option>
@@ -292,17 +293,17 @@
           </select>
         </label>
         <label>
-          <span>Delimitador</span>
+          <span>{$t("study.anki.import.csv_delimiter_label")}</span>
           <select bind:value={csvDelimiter} disabled={busy}>
-            <option value="">Auto</option>
-            <option value={"\t"}>Tab</option>
-            <option value=",">Vírgula</option>
-            <option value=";">Ponto-e-vírgula</option>
+            <option value="">{$t("study.anki.import.csv_auto")}</option>
+            <option value={"\t"}>{$t("study.anki.import.csv_tab")}</option>
+            <option value=",">{$t("study.anki.import.csv_comma")}</option>
+            <option value=";">{$t("study.anki.import.csv_semicolon")}</option>
           </select>
         </label>
         <label class="checkbox">
           <input type="checkbox" bind:checked={csvHasHeader} disabled={busy} />
-          <span>Primeira linha é cabeçalho</span>
+          <span>{$t("study.anki.import.csv_header_label")}</span>
         </label>
       </div>
     </article>
@@ -310,10 +311,10 @@
 
   <div class="cta-row">
     <button type="button" class="btn-primary" onclick={pickAndImport} disabled={busy}>
-      {busy ? "Importando…" : "Escolher arquivo e importar"}
+      {busy ? $t("study.anki.import.importing") : $t("study.anki.import.import_btn")}
     </button>
     {#if lastSourcePath && !busy}
-      <span class="last-path">Último: {lastSourcePath}</span>
+      <span class="last-path">{$t("study.anki.import.last_path", { path: lastSourcePath })}</span>
     {/if}
   </div>
 
@@ -322,11 +323,8 @@
   {/if}
 
   <section class="export-section">
-    <h2 class="section-heading">Exportar</h2>
-    <p class="section-lede">
-      Salve a coleção em um arquivo. Útil pra backup externo, migração ou
-      compartilhamento.
-    </p>
+    <h2 class="section-heading">{$t("study.anki.import.export_heading")}</h2>
+    <p class="section-lede">{$t("study.anki.import.export_desc")}</p>
 
     {#if exportToast}
       <div class="toast" class:err={exportToast.kind === "err"} role="status">
@@ -337,49 +335,49 @@
     <div class="export-grid">
       <article class="export-card">
         <h3>.apkg</h3>
-        <p>Compatível com Anki desktop. Inclui notes, cards, decks, modelos e mídia.</p>
+        <p>{$t("study.anki.import.exp_apkg_desc")}</p>
         <button
           type="button"
           class="btn-secondary"
           onclick={() => pickAndExport("apkg")}
           disabled={exporting !== null || busy}
         >
-          {exporting === "apkg" ? "Exportando…" : "Exportar .apkg"}
+          {exporting === "apkg" ? $t("study.anki.import.exporting") : $t("study.anki.import.exp_apkg_btn")}
         </button>
       </article>
 
       <article class="export-card">
         <h3>.colpkg</h3>
-        <p>Coleção completa (formato preferido pelo Anki para backup full).</p>
+        <p>{$t("study.anki.import.exp_colpkg_desc")}</p>
         <button
           type="button"
           class="btn-secondary"
           onclick={() => pickAndExport("colpkg")}
           disabled={exporting !== null || busy}
         >
-          {exporting === "colpkg" ? "Exportando…" : "Exportar .colpkg"}
+          {exporting === "colpkg" ? $t("study.anki.import.exporting") : $t("study.anki.import.exp_colpkg_btn")}
         </button>
       </article>
 
       <article class="export-card">
         <h3>.json</h3>
-        <p>Snapshot interno. Importável de volta no omniget com round-trip completo.</p>
+        <p>{$t("study.anki.import.exp_json_desc")}</p>
         <button
           type="button"
           class="btn-secondary"
           onclick={() => pickAndExport("json")}
           disabled={exporting !== null || busy}
         >
-          {exporting === "json" ? "Exportando…" : "Exportar .json"}
+          {exporting === "json" ? $t("study.anki.import.exporting") : $t("study.anki.import.exp_json_btn")}
         </button>
       </article>
 
       <article class="export-card csv-card">
         <h3>.csv (notes)</h3>
-        <p>Planilha de notes para um modelo específico. Útil pra editar em Excel/Sheets.</p>
+        <p>{$t("study.anki.import.exp_csv_desc")}</p>
         <div class="export-options">
           <label>
-            <span>Modelo</span>
+            <span>{$t("study.anki.import.csv_notetype_label")}</span>
             <select bind:value={exportNotetypeId} disabled={exporting !== null}>
               {#each notetypes as nt (nt.id)}
                 <option value={nt.id}>{nt.name}</option>
@@ -387,12 +385,12 @@
             </select>
           </label>
           <label>
-            <span>Delimitador</span>
+            <span>{$t("study.anki.import.csv_delimiter_label")}</span>
             <select bind:value={exportDelimiter} disabled={exporting !== null}>
-              <option value="">Auto</option>
-              <option value={"\t"}>Tab</option>
-              <option value=",">Vírgula</option>
-              <option value=";">Ponto-e-vírgula</option>
+              <option value="">{$t("study.anki.import.csv_auto")}</option>
+              <option value={"\t"}>{$t("study.anki.import.csv_tab")}</option>
+              <option value=",">{$t("study.anki.import.csv_comma")}</option>
+              <option value=";">{$t("study.anki.import.csv_semicolon")}</option>
             </select>
           </label>
         </div>
@@ -402,7 +400,7 @@
           onclick={() => pickAndExport("csv")}
           disabled={exporting !== null || busy || exportNotetypeId == null}
         >
-          {exporting === "csv" ? "Exportando…" : "Exportar .csv"}
+          {exporting === "csv" ? $t("study.anki.import.exporting") : $t("study.anki.import.exp_csv_btn")}
         </button>
       </article>
     </div>
@@ -411,7 +409,7 @@
   {#if result}
     <section class="card result-card">
       <header class="card-head">
-        <h2>Importação concluída</h2>
+        <h2>{$t("study.anki.import.result_title")}</h2>
         <span class="kind-badge">{result.kind.toUpperCase()}</span>
       </header>
       <ul class="summary-list">
@@ -424,19 +422,19 @@
       </ul>
       {#if result.kind === "csv" && result.data.errors.length > 0}
         <details class="errors">
-          <summary>{result.data.errors.length} linhas com erro</summary>
+          <summary>{$t("study.anki.import.result_error_lines", { count: result.data.errors.length })}</summary>
           <ul>
             {#each result.data.errors.slice(0, 20) as err (err)}
               <li>{err}</li>
             {/each}
             {#if result.data.errors.length > 20}
-              <li class="muted">… e mais {result.data.errors.length - 20}</li>
+              <li class="muted">{$t("study.anki.import.result_more_errors", { count: result.data.errors.length - 20 })}</li>
             {/if}
           </ul>
         </details>
       {/if}
       <footer class="card-foot">
-        <a class="back-link" href="/study/anki">Ver no painel →</a>
+        <a class="back-link" href="/study/anki">{$t("study.anki.import.result_back_link")}</a>
       </footer>
     </section>
   {/if}

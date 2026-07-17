@@ -146,9 +146,9 @@
 
   function presetLabelStudy(presetId: string): string {
     const labels: Record<string, string> = {
-      "pomodoro-25": "Pomodoro 25",
-      "deep-50": "Deep Work 50",
-      "stopwatch": "Cronômetro",
+      "pomodoro-25": t("study.focus.preset_pomodoro_25"),
+      "deep-50": t("study.focus.preset_deep_50"),
+      "stopwatch": t("study.focus.preset_stopwatch"),
     };
     return labels[presetId] ?? presetId;
   }
@@ -308,7 +308,7 @@
   }
 
   async function actionCreatePage() {
-    const name = window.prompt("Nome da nova página:");
+    const name = window.prompt(t("study.layout.prompt_new_page"));
     if (!name || !name.trim()) return;
     try {
       const r = await (
@@ -1084,7 +1084,7 @@
             ></div>
           </div>
           <span class="palette-hint"
-            >{xpState.level_progress_pct}% até L{xpState.level + 1} ·
+            >{$t("study.common.xp_progress", { pct: xpState.level_progress_pct, level: xpState.level + 1 })} ·
             {xpState.xp_to_next} XP</span
           >
         </footer>

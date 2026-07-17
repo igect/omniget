@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/i18n";
   import type { SlashCommand, FilteredSlashGroup } from "./slash-commands";
 
   type Props = {
@@ -23,7 +24,7 @@
     style:left={`${position.x}px`}
     style:top={`${position.y}px`}
     role="listbox"
-    aria-label="Comandos slash"
+    aria-label={t("study.notes.slash_menu_aria")}
   >
     {#each groups as group (group.group)}
       <div class="group">

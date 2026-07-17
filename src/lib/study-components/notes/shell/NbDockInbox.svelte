@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/i18n";
   import { onMount } from "svelte";
   import { tabsStore } from "$lib/study-notes/tabs-store.svelte";
   import { notesInboxList, type PageSummary } from "$lib/notes-bridge";
@@ -30,23 +31,23 @@
 
 <aside class="nb-dock">
   <header class="dock-head">
-    <span class="dock-title">Inbox</span>
-    <button class="refresh" type="button" onclick={() => void reload()} title="Recarregar" aria-label="Recarregar">
+    <span class="dock-title">{t("study.notes.shell.inbox_title")}</span>
+    <button class="refresh" type="button" onclick={() => void reload()} title={t("study.notes.shell.reload")} aria-label={t("study.notes.shell.reload")}>
       ↻
     </button>
   </header>
   <div class="body">
     {#if loading && pages.length === 0}
-      <p class="empty">Carregando…</p>
+      <p class="empty">{t("study.notes.shell.loading")}</p>
     {:else if pages.length === 0}
-      <p class="empty">Nada para triar — caixa vazia.</p>
+      <p class="empty">{t("study.notes.shell.inbox_empty")}</p>
     {:else}
       <ul class="entries">
         {#each pages as p (p.id)}
           <li>
             <button type="button" class="entry-btn" onclick={() => open(p.id)} title={p.name}>
               <span class="title">{p.title || p.name}</span>
-              <span class="sub">{p.block_count} {p.block_count === 1 ? "bloco" : "blocos"}</span>
+              <span class="sub">{t("study.notes.shell.block_count", { count: p.block_count })}</span>
             </button>
           </li>
         {/each}

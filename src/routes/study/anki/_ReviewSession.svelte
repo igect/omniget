@@ -3,6 +3,7 @@
   import { pluginInvoke } from "$lib/plugin-invoke";
   import { awardXp, bumpCounter } from "$lib/study-gamification";
   import PageHero from "$lib/study-components/PageHero.svelte";
+  import { t } from "$lib/i18n";
 
   interface Props {
     deckName?: string | null;
@@ -260,30 +261,30 @@
     initialTotal === 0 ? 0 : Math.round((answered / initialTotal) * 100),
   );
 
-  const eyebrow = $derived(deckName ? `Deck · ${deckName}` : "Todos os decks");
+  const eyebrow = $derived(deckName ? `${t("study.anki.review.deck_prefix")} · ${deckName}` : t("study.anki.review.all_decks"));
 </script>
 
 <section class="study-page">
-  <PageHero title="Estudar" subtitle={eyebrow} />
+  <PageHero title={$t("study.anki.review.title")} subtitle={eyebrow} />
 
   {#if loading}
-    <p class="muted">Carregando sessão…</p>
+    <p class="muted">{$t("study.anki.review.loading_session")}</p>
   {:else if error}
     <p class="error">{error}</p>
   {:else if !card}
     <section class="card complete-card">
       <div class="complete-icon" aria-hidden="true">✓</div>
-      <h2>Sessão concluída</h2>
+      <h2>{$t("study.anki.review.session_complete")}</h2>
       {#if initialTotal === 0}
-        <p>Nenhum card pendente para esta sessão.</p>
+        <p>{$t("study.anki.review.no_cards_due")}</p>
       {:else}
-        <p>Você respondeu {answered} cards. Bom trabalho!</p>
+        <p>{$t("study.anki.review.answered_count", { count: answered })}</p>
       {/if}
       <div class="complete-actions">
-        <a class="btn-primary" href="/study/anki">Voltar ao painel</a>
+        <a class="btn-primary" href="/study/anki">{$t("study.anki.review.back_to_panel")}</a>
         {#if initialTotal > 0}
           <button type="button" class="btn-secondary" onclick={loadQueue}>
-            Tentar mais cards
+            {$t("study.anki.review.try_more")}
           </button>
         {/if}
       </div>
@@ -298,7 +299,7 @@
 
     <article class="card-stage">
       <iframe
-        title={showAnswer ? "Resposta" : "Pergunta"}
+        title={showAnswer ? $t("study.anki.review.answer_title") : $t("study.anki.review.question_title")}
         srcdoc={showAnswer ? backDoc : frontDoc}
         sandbox="allow-same-origin"
         class="card-frame"
@@ -308,9 +309,9 @@
     {#if !showAnswer}
       <div class="cta-row">
         <button type="button" class="btn-primary big" onclick={reveal}>
-          Mostrar resposta
+          {$t("study.anki.review.show_answer")}
         </button>
-        <span class="kbd-hint">Espaço</span>
+        <span class="kbd-hint">{$t("study.anki.review.space_hint")}</span>
       </div>
     {:else}
       <div class="rating-row">
@@ -320,7 +321,7 @@
           onclick={() => answer(1)}
           disabled={busyAnswer}
         >
-          <span class="rate-label">De novo</span>
+          <span class="rate-label">{$t("study.anki.review.btn_again")}</span>
           <span class="rate-ivl">{preview ? fmtIvl(preview.again_ivl_days) : "—"}</span>
           <span class="rate-key">1</span>
         </button>
@@ -330,7 +331,7 @@
           onclick={() => answer(2)}
           disabled={busyAnswer}
         >
-          <span class="rate-label">Difícil</span>
+          <span class="rate-label">{$t("study.anki.review.btn_hard")}</span>
           <span class="rate-ivl">{preview ? fmtIvl(preview.hard_ivl_days) : "—"}</span>
           <span class="rate-key">2</span>
         </button>
@@ -340,7 +341,7 @@
           onclick={() => answer(3)}
           disabled={busyAnswer}
         >
-          <span class="rate-label">Bom</span>
+          <span class="rate-label">{$t("study.anki.review.btn_good")}</span>
           <span class="rate-ivl">{preview ? fmtIvl(preview.good_ivl_days) : "—"}</span>
           <span class="rate-key">3</span>
         </button>
@@ -350,7 +351,7 @@
           onclick={() => answer(4)}
           disabled={busyAnswer}
         >
-          <span class="rate-label">Fácil</span>
+          <span class="rate-label">{$t("study.anki.review.btn_easy")}</span>
           <span class="rate-ivl">{preview ? fmtIvl(preview.easy_ivl_days) : "—"}</span>
           <span class="rate-key">4</span>
         </button>

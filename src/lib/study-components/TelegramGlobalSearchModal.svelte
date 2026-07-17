@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/i18n";
   import { telegramSearchGlobalHits, type TelegramGlobalSearchHit } from "$lib/study-telegram-bridge";
 
   let {
@@ -86,7 +87,7 @@
     onclick={(e) => { if (e.target === e.currentTarget) close(); }}
     onkeydown={(e) => { if (e.key === "Escape") close(); }}
   >
-    <div class="modal" role="dialog" aria-modal="true" aria-label="Busca global">
+    <div class="modal" role="dialog" aria-modal="true" aria-label={$t("telegram.global_search_modal")}>
       <header class="modal-header">
         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="search-icon">
           <circle cx="11" cy="11" r="8" />

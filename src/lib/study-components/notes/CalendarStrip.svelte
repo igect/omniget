@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/i18n";
   import type { JournalSummary } from "$lib/notes-bridge";
 
   type Props = {
@@ -61,11 +62,11 @@
   }
 </script>
 
-<div class="calendar-strip" role="group" aria-label="Calendário 14 dias">
+<div class="calendar-strip" role="group" aria-label={t("study.notes.calendar_aria")}>
   <button
     type="button"
     class="nav-btn"
-    aria-label="Semanas anteriores"
+    aria-label={t("study.notes.calendar_prev_week")}
     onclick={() => (weekOffset -= 1)}
   >‹</button>
 
@@ -92,7 +93,7 @@
   <button
     type="button"
     class="nav-btn"
-    aria-label="Semanas seguintes"
+    aria-label={t("study.notes.calendar_next_week")}
     onclick={() => (weekOffset += 1)}
   >›</button>
 
@@ -101,8 +102,8 @@
       type="button"
       class="month-btn"
       onclick={onShowMonth}
-      title="Ver mês completo"
-    >Mês</button>
+      title={t("study.notes.calendar_view_month")}
+    >{t("study.notes.calendar_month")}</button>
   {/if}
 </div>
 

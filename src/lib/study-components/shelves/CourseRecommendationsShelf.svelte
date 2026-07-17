@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/i18n";
   import {
     studyLibraryRecommendations,
     type RecommendedCourseItem,
@@ -34,9 +35,9 @@
 </script>
 
 {#if loading}
-  <Shelf title="Você pode gostar" eyebrow="Sugestões" isLoading={true} />
+  <Shelf title={$t("study.shelves.recommendations.title")} eyebrow={$t("study.shelves.recommendations.eyebrow")} isLoading={true} />
 {:else if items.length > 0}
-  <Shelf title="Você pode gostar" eyebrow="Sugestões">
+  <Shelf title={$t("study.shelves.recommendations.title")} eyebrow={$t("study.shelves.recommendations.eyebrow")}>
     {#each items as it (it.id)}
       <CourseCard
         courseId={it.id}

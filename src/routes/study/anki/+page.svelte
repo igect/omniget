@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { goto } from "$app/navigation";
+  import { t } from "$lib/i18n";
   import {
     ankiOpen,
     ankiDashboard,
@@ -35,7 +36,7 @@
       await ankiOpen();
       dashState = await ankiDashboard();
     } catch (e: any) {
-      error = typeof e === "string" ? e : (e?.message ?? "Erro");
+      error = typeof e === "string" ? e : (e?.message ?? t("study.anki.general.error"));
     } finally {
       loading = false;
     }
@@ -58,8 +59,8 @@
   const streakDashoffset = $derived(RING_C * (1 - streakRatio));
   const streakLabel = $derived(
     dashState
-      ? dashState.streak.current >= 7 ? "STREAK" : dashState.streak.current > 0 ? "DIAS" : "COMECE"
-      : "COMECE",
+      ? dashState.streak.current >= 7 ? t("study.anki.general.streak_label") : dashState.streak.current > 0 ? t("study.anki.general.days_label") : t("study.anki.general.start_label")
+      : t("study.anki.general.start_label"),
   );
 </script>
 
@@ -70,13 +71,13 @@
 {:else if error}
   <div class="surface-card">
     <p class="error-text">{error}</p>
-    <button type="button" class="btn-cta" onclick={load}>Tentar novamente</button>
+    <button type="button" class="btn-cta" onclick={load}>{$t("study.anki.general.retry")}</button>
   </div>
 {:else if dashState}
   <div class="grid">
     <section class="hero surface-card">
       <header class="hero-head">
-        <span class="eyebrow">Hoje</span>
+        <span class="eyebrow">{$t("study.anki.general.today")}</span>
         {#if dashState.pending.total > 0}
           <a class="pill pill-cta" href="/study/anki/sync">
             <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -85,7 +86,7 @@
               <path d="M21 4v4h-4" />
               <path d="M3 20v-4h4" />
             </svg>
-            {dashState.pending.total} pendentes
+            {dashState.pending.total} {$t("study.anki.general.pending")}
           </a>
         {/if}
       </header>
@@ -95,23 +96,23 @@
           <h1 class="page-title hero-title">{dashState.motd}</h1>
           <p class="hero-counts">
             <strong>{dashState.due_today_total}</strong>
-            <span class="dim">due</span>
+            <span class="dim">{$t("study.anki.general.due")}</span>
             <span class="sep">·</span>
             <strong>{dashState.new_today_total}</strong>
-            <span class="dim">novos</span>
+            <span class="dim">{$t("study.anki.general.new")}</span>
             <span class="sep">·</span>
             <strong>{dashState.learning_total}</strong>
-            <span class="dim">aprendendo</span>
+            <span class="dim">{$t("study.anki.general.learning")}</span>
           </p>
 
           <div class="hero-actions">
             {#if totalToReview > 0}
               <button type="button" class="btn-cta lg" onclick={() => startStudy()}>
-                Estudar agora · {totalToReview} cards
+                {$t("study.anki.general.study_now", { count: totalToReview })}
               </button>
             {:else}
               <button type="button" class="btn-outline lg" onclick={() => goto("/study/anki/decks")}>
-                Abrir decks
+                {$t("study.anki.general.open_decks")}
               </button>
             {/if}
           </div>
@@ -122,7 +123,7 @@
     <aside class="streak-pane">
       <section class="surface-card streak-card">
         <header class="streak-head">
-          <h2 class="section-title">Streak</h2>
+          <h2 class="section-title">{$t("study.anki.general.streak")}</h2>
         </header>
 
         <div class="streak-ring-wrap">
@@ -148,9 +149,9 @@
         </div>
 
         <div class="streak-meta">
-          <span><strong>{dashState.streak.reviewed_today}</strong> hoje</span>
+          <span><strong>{dashState.streak.reviewed_today}</strong> {$t("study.anki.general.today_lower")}</span>
           <span class="sep">·</span>
-          <span><strong>{dashState.streak.longest}</strong> recorde</span>
+          <span><strong>{dashState.streak.longest}</strong> {$t("study.anki.general.record")}</span>
         </div>
 
         <ul class="milestones">
@@ -167,8 +168,8 @@
     {#if decksWithDue.length > 0}
       <section class="surface-card decks-block">
         <header class="block-head">
-          <h2 class="section-title">Decks pendentes</h2>
-          <a class="link" href="/study/anki/decks">Ver todos →</a>
+          <h2 class="section-title">{$t("study.anki.general.due_decks")}</h2>
+          <a class="link" href="/study/anki/decks">{$t("study.anki.general.view_all")}</a>
         </header>
 
         <ul class="deck-list">
@@ -180,7 +181,7 @@
                 </span>
                 <span class="deck-pills">
                   {#if d.due > 0}<span class="pill pill-info">{d.due} due</span>{/if}
-                  {#if d.new_count > 0}<span class="pill pill-success">{d.new_count} novos</span>{/if}
+                  {#if d.new_count > 0}<span class="pill pill-success">{d.new_count} {$t("study.anki.general.new")}</span>{/if}
                   <span class="deck-total">{d.total}</span>
                 </span>
               </button>
@@ -190,10 +191,10 @@
       </section>
     {:else}
       <section class="surface-card empty-pane">
-        <h2 class="empty-title">Tudo zerado</h2>
-        <p class="empty-desc">Você revisou todos os cards de hoje. Volte amanhã ou crie novos.</p>
+        <h2 class="empty-title">{$t("study.anki.general.all_clear")}</h2>
+        <p class="empty-desc">{$t("study.anki.general.all_clear_desc")}</p>
         <button type="button" class="btn-cta" onclick={() => goto("/study/anki/decks")}>
-          Abrir decks
+          {$t("study.anki.general.open_decks")}
         </button>
       </section>
     {/if}

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/i18n";
   import { onMount } from "svelte";
   import { tabsStore } from "$lib/study-notes/tabs-store.svelte";
   import { notesBookmarksList, type PageSummary } from "$lib/notes-bridge";
@@ -30,16 +31,16 @@
 
 <aside class="nb-dock">
   <header class="dock-head">
-    <span class="dock-title">Favoritos</span>
-    <button class="refresh" type="button" onclick={() => void reload()} title="Recarregar" aria-label="Recarregar">
+    <span class="dock-title">{t("study.notes.shell.bookmark_title")}</span>
+    <button class="refresh" type="button" onclick={() => void reload()} title={t("study.notes.shell.reload")} aria-label={t("study.notes.shell.reload")}>
       ↻
     </button>
   </header>
   <div class="body">
     {#if loading && pages.length === 0}
-      <p class="empty">Carregando…</p>
+      <p class="empty">{t("study.notes.shell.loading")}</p>
     {:else if pages.length === 0}
-      <p class="empty">Nenhuma página marcada com <code>bookmark::true</code>.</p>
+      <p class="empty">{t("study.notes.shell.bookmark_empty")}</p>
     {:else}
       <ul class="entries">
         {#each pages as p (p.id)}

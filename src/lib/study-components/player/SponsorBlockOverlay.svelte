@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/i18n";
   import type { SponsorBlockSegment } from "$lib/study-bridge";
 
   type Props = {
@@ -17,15 +18,15 @@
     onDismiss,
   }: Props = $props();
 
-  const CATEGORY_LABELS: Record<string, string> = {
-    sponsor: "patrocinado",
-    selfpromo: "auto-promoção",
-    intro: "intro",
-    outro: "encerramento",
-    interaction: "pedido de interação",
-    preview: "prévia",
-    music_offtopic: "trecho não-musical",
-    filler: "enrolação",
+  const CATEGORY_KEYS: Record<string, string> = {
+    sponsor: "player.sponsorblock.sponsor",
+    selfpromo: "player.sponsorblock.selfpromo",
+    intro: "player.sponsorblock.intro",
+    outro: "player.sponsorblock.outro",
+    interaction: "player.sponsorblock.interaction",
+    preview: "player.sponsorblock.preview",
+    music_offtopic: "player.sponsorblock.music_offtopic",
+    filler: "player.sponsorblock.filler",
   };
 
   let dismissed = $state<Set<string>>(new Set());
@@ -62,7 +63,8 @@
   });
 
   function label(category: string): string {
-    return CATEGORY_LABELS[category] ?? category;
+    const key = CATEGORY_KEYS[category];
+    return key ? t(key) : category;
   }
 
   function handleSkip() {
@@ -79,15 +81,15 @@
 </script>
 
 {#if activeSegment && !autoSkip}
-  <div class="sb-overlay" role="region" aria-label="SponsorBlock">
+  <div class="sb-overlay" role="region" aria-label={$t("player.sponsorblock.label")}>
     <button type="button" class="skip-btn" onclick={handleSkip}>
-      <span>Pular {label(activeSegment.category)}</span>
+      <span>{$t("player.sponsorblock.skip", { category: label(activeSegment.category) })}</span>
       <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <polyline points="13 17 18 12 13 7" />
         <polyline points="6 17 11 12 6 7" />
       </svg>
     </button>
-    <button type="button" class="dismiss-btn" onclick={handleDismiss} aria-label="Dispensar">
+    <button type="button" class="dismiss-btn" onclick={handleDismiss} aria-label={$t("player.sponsorblock.dismiss")}>
       <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <line x1="18" y1="6" x2="6" y2="18" />
         <line x1="6" y1="6" x2="18" y2="18" />

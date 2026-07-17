@@ -1,5 +1,6 @@
 <script lang="ts">
   import PageHero from "$lib/study-components/PageHero.svelte";
+  import { t } from "$lib/i18n";
 
   interface Props {
     title: string;
@@ -11,7 +12,7 @@
 </script>
 
 <section class="study-page">
-  <PageHero {title} subtitle="Em construção" />
+  <PageHero {title} subtitle={$t("study.anki.general.stub_hint")} />
 
   <div class="card">
     <div class="card-body">
@@ -25,7 +26,7 @@
       {/if}
     </div>
     <footer class="card-foot">
-      <a class="back-link" href="/study/anki">← Voltar ao painel</a>
+      <a class="back-link" href="/study/anki">{$t("study.anki.general.back_to_panel")}</a>
     </footer>
   </div>
 </section>

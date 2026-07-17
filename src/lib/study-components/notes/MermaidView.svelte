@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/i18n";
   import { onDestroy } from "svelte";
 
   type Props = {
@@ -125,12 +126,12 @@
 <div class="mermaid-block" data-mermaid data-mode={mode}>
   <header class="mermaid-head" contenteditable="false">
     <span class="mermaid-icon" aria-hidden="true">▦</span>
-    <span class="mermaid-label">mermaid</span>
+    <span class="mermaid-label">{t("study.notes.mermaid_label")}</span>
     <button
       type="button"
       class="mermaid-toggle"
       onclick={toggleMode}
-      title={mode === "render" ? "Editar source" : "Voltar pro diagrama"}
+      title={mode === "render" ? t("study.notes.edit_source") : t("study.notes.back_to_diagram")}
     >
       {mode === "render" ? "‹/›" : "▶"}
     </button>
@@ -144,21 +145,21 @@
       onblur={onSourceBlur}
       spellcheck="false"
       rows={Math.max(3, editingValue.split("\n").length)}
-      aria-label="Source do diagrama mermaid"
+      aria-label={t("study.notes.mermaid_source_aria")}
     ></textarea>
   {:else if renderState.kind === "idle"}
-    <p class="mermaid-state">Sem source. Clique em ‹/› para editar.</p>
+    <p class="mermaid-state">{t("study.notes.mermaid_no_source")}</p>
   {:else if renderState.kind === "loading"}
-    <p class="mermaid-state">renderizando…</p>
+    <p class="mermaid-state">{t("study.notes.rendering")}</p>
   {:else if renderState.kind === "rendered"}
     <div class="mermaid-svg">
       {@html renderState.svg}
     </div>
   {:else if renderState.kind === "error"}
     <div class="mermaid-error">
-      <p class="mermaid-error-msg">erro: {renderState.message}</p>
+      <p class="mermaid-error-msg">{t("study.notes.error_prefix")}{renderState.message}</p>
       <button type="button" class="mermaid-edit-btn" onclick={toggleMode}
-        >Editar source</button>
+        >{t("study.notes.edit_source")}</button>
     </div>
   {/if}
 </div>

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/i18n";
   import { onMount, untrack } from "svelte";
   import { tabsStore } from "$lib/study-notes/tabs-store.svelte";
   import { notesGraph, type Graph, type GraphNode } from "$lib/notes-bridge";
@@ -67,17 +68,17 @@
 <aside class="nb-dock">
   <header class="dock-head">
     <span class="dock-title">Graph</span>
-    <button class="refresh" type="button" onclick={() => void reload()} title="Recarregar" aria-label="Recarregar">
+    <button class="refresh" type="button" onclick={() => void reload()} title={t("study.notes.shell.reload")} aria-label={t("study.notes.shell.reload")}>
       ↻
     </button>
   </header>
   <div class="body">
     {#if loading && !graph}
-      <p class="empty">Construindo graph…</p>
+      <p class="empty">{t("study.notes.shell.graph_building")}</p>
     {:else if pageId == null}
-      <p class="empty">Sem página ativa.</p>
+      <p class="empty">{t("study.notes.shell.no_active_page")}</p>
     {:else if !center}
-      <p class="empty">Página não está no grafo.</p>
+      <p class="empty">{t("study.notes.shell.graph_page_not_in_graph")}</p>
     {:else}
       <div class="center">
         <span class="dot" aria-hidden="true"></span>
@@ -85,7 +86,7 @@
         <span class="meta">{center.ref_count} refs</span>
       </div>
       {#if neighbors.length === 0}
-        <p class="empty">Sem links 1-hop.</p>
+        <p class="empty">{t("study.notes.shell.graph_no_links")}</p>
       {:else}
         <ul class="neighbors">
           {#each neighbors as n (n.node.id)}

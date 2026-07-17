@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/i18n";
   import { onMount } from "svelte";
   import { showToast } from "$lib/stores/toast-store.svelte";
   import {
@@ -143,11 +144,11 @@
           <span class="artist">{track.user.username}</span>
         </div>
       </div>
-      <button type="button" class="close" onclick={onClose} aria-label="Fechar">×</button>
+      <button type="button" class="close" onclick={onClose} aria-label={$t("study.music.downloads.close")}>×</button>
     </header>
 
     <section class="section">
-      <h3>Como salvar?</h3>
+      <h3>{$t("study.music.downloads.how_to_save")}</h3>
       <div class="mode-pills">
         <button
           type="button"
@@ -156,7 +157,7 @@
           onclick={() => setMode("mp3")}
         >
           <span class="pill-title">MP3</span>
-          <span class="pill-sub">Recomendado · funciona em tudo</span>
+          <span class="pill-sub">{$t("study.music.downloads.mp3_sub")}</span>
         </button>
         <button
           type="button"
@@ -165,7 +166,7 @@
           onclick={() => setMode("flac")}
         >
           <span class="pill-title">FLAC</span>
-          <span class="pill-sub">Sem perda · arquivo grande</span>
+          <span class="pill-sub">{$t("study.music.downloads.flac_sub")}</span>
         </button>
         <button
           type="button"
@@ -173,8 +174,8 @@
           class:on={mode === "advanced"}
           onclick={() => setMode("advanced")}
         >
-          <span class="pill-title">⚙ Avançado…</span>
-          <span class="pill-sub">Outros codecs</span>
+          <span class="pill-title">{$t("study.music.downloads.advanced")}</span>
+          <span class="pill-sub">{$t("study.music.downloads.other_codecs")}</span>
         </button>
       </div>
 
@@ -196,11 +197,11 @@
             </div>
           </div>
           <div class="adv-row">
-            <label class="adv-label" for="quality-select">Fonte</label>
+            <label class="adv-label" for="quality-select">{$t("study.music.downloads.source")}</label>
             <select id="quality-select" class="quality-select" bind:value={quality}>
-              <option value="progressive">Progressivo MP3 128 (padrão)</option>
-              <option value="hq">HQ AAC ~256 (Go+)</option>
-              <option value="original">Original do uploader (se permitido)</option>
+              <option value="progressive">{$t("study.music.downloads.progressive_mp3")}</option>
+              <option value="hq">{$t("study.music.downloads.hq_aac")}</option>
+              <option value="original">{$t("study.music.downloads.original")}</option>
             </select>
           </div>
         </div>
@@ -208,25 +209,25 @@
     </section>
 
     <section class="section">
-      <h3>Onde salvar?</h3>
+      <h3>{$t("study.music.downloads.where_to_save")}</h3>
       <div class="folder-row">
         <input
           type="text"
           bind:value={outputDir}
-          placeholder="Escolhe uma pasta…"
+          placeholder={$t("study.music.downloads.choose_folder")}
           readonly
         />
-        <button type="button" class="ghost" onclick={pickFolder}>Procurar…</button>
+        <button type="button" class="ghost" onclick={pickFolder}>{$t("study.music.downloads.browse")}</button>
       </div>
       <label class="remember">
         <input type="checkbox" bind:checked={remember} />
-        <span>Lembrar pasta e formato pra próxima</span>
+        <span>{$t("study.music.downloads.remember")}</span>
       </label>
     </section>
 
     <footer class="actions">
       <button type="button" class="ghost" onclick={onClose} disabled={downloading}>
-        Cancelar
+        {$t("study.music.downloads.cancel")}
       </button>
       <button
         type="button"
@@ -234,7 +235,7 @@
         onclick={startDownload}
         disabled={downloading || !outputDir}
       >
-        {downloading ? "Iniciando…" : "Baixar"}
+        {downloading ? $t("study.music.downloads.starting") : $t("study.music.downloads.download")}
       </button>
     </footer>
   </div>

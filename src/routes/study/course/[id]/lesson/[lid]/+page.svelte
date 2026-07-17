@@ -705,7 +705,7 @@
     const isPaused = videoRef ? videoRef.paused : true;
     void rpcSetSource({
       source: "video",
-      details: lesson.title ?? "Aula",
+      details: lesson.title ?? t("study.lesson.lesson"),
       state: courseTitle || "—",
       duration: Math.floor(durationMs / 1000),
       position: positionSec,
@@ -775,7 +775,7 @@
           start_secs: start,
           duration_secs: actual,
           dest_dir: null,
-          label: `${safeForFilename(lesson.title || "aula")}-${ts}`,
+          label: `${safeForFilename(lesson.title || t("study.lesson.lesson"))}-${ts}`,
           reencode: null,
         },
       });
@@ -812,7 +812,7 @@
         return;
       }
       const ts = fmtTimestamp(videoRef?.currentTime ?? 0);
-      const filename = `replay-${safeForFilename(lesson?.title || "aula")}-${ts}.mp4`;
+      const filename = `replay-${safeForFilename(lesson?.title || t("study.lesson.lesson"))}-${ts}.mp4`;
       const res = await pluginInvoke<{
         ok: boolean;
         stats: {
@@ -860,7 +860,7 @@
   async function captureScreenshot() {
     if (!videoRef || !lesson) return;
     if (!videoRef.videoWidth || !videoRef.videoHeight) {
-      screenshotToast = "Vídeo ainda não carregou";
+      screenshotToast = t("study.lesson.screenshot_not_loaded");
       setTimeout(() => (screenshotToast = ""), 2400);
       return;
     }
@@ -878,7 +878,7 @@
         );
       });
       const ts = fmtTimestamp(videoRef.currentTime);
-      const filename = `${safeForFilename(lesson.title || "aula")}-${ts}.png`;
+      const filename = `${safeForFilename(lesson.title || t("study.lesson.lesson"))}-${ts}.png`;
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -887,14 +887,14 @@
       a.click();
       document.body.removeChild(a);
       setTimeout(() => URL.revokeObjectURL(url), 1000);
-      screenshotToast = `Screenshot salva (${ts})`;
+      screenshotToast = `${t("study.lesson.screenshot_saved")} (${ts})`;
       setTimeout(() => (screenshotToast = ""), 2800);
       void awardXp("screenshot", 1, {
         lesson_id: lesson.id,
         timestamp: Math.floor(videoRef.currentTime),
       });
     } catch (e) {
-      screenshotToast = `Falhou: ${e instanceof Error ? e.message : String(e)}`;
+      screenshotToast = `${t("study.lesson.screenshot_failed")}: ${e instanceof Error ? e.message : String(e)}`;
       setTimeout(() => (screenshotToast = ""), 4000);
     }
   }
@@ -1211,8 +1211,8 @@
             type="button"
             class="btn icon-btn"
             onclick={captureScreenshot}
-            title="Capturar frame atual como PNG"
-            aria-label="Screenshot do frame atual"
+            title={$t("study.lesson.screenshot_title")}
+            aria-label={$t("study.lesson.screenshot_aria")}
           >
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
@@ -1258,8 +1258,8 @@
             type="button"
             class="btn icon-btn"
             onclick={() => (annotateOpen = !annotateOpen)}
-            title="Anotar este momento da aula"
-            aria-label="Anotar momento"
+            title={$t("study.lesson.annotate_title")}
+            aria-label={$t("study.lesson.annotate_aria")}
           >
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
@@ -1291,7 +1291,7 @@
         </div>
       </div>
 
-      <nav class="panel-tabs" aria-label="painéis da aula">
+      <nav class="panel-tabs" aria-label={$t("study.lesson.panels_aria")}>
         <SegmentedControl
           bind:value={activePanel}
           options={panelOptions}
@@ -1318,7 +1318,7 @@
             </ul>
           </div>
         {:else}
-          <p class="muted panel-empty">Sem anexos nesta aula.</p>
+          <p class="muted panel-empty">{$t("study.lesson.no_attachments")}</p>
         {/if}
       {/if}
 
@@ -1326,23 +1326,23 @@
         <div class="info-panel">
           {#if lesson}
             <dl class="info-grid">
-              <dt>Aula</dt>
-              <dd>{lesson.title}</dd>
-              <dt>Posição</dt>
-              <dd>#{lesson.position}</dd>
-              {#if lesson.duration_ms}
-                <dt>Duração</dt>
-                <dd>{formatTime(lesson.duration_ms / 1000)}</dd>
-              {/if}
-              <dt>Status</dt>
-              <dd>{markedComplete ? "Completa" : "Em andamento"}</dd>
-              {#if videoRef && isFinite(videoRef.duration)}
-                <dt>Tempo atual</dt>
-                <dd>
-                  {formatTime(videoRef.currentTime)} /
-                  {formatTime(videoRef.duration)}
-                </dd>
-              {/if}
+            <dt>{$t("study.lesson.info_lesson")}</dt>
+            <dd>{lesson.title}</dd>
+            <dt>{$t("study.lesson.info_position")}</dt>
+            <dd>#{lesson.position}</dd>
+            {#if lesson.duration_ms}
+              <dt>{$t("study.lesson.info_duration")}</dt>
+              <dd>{formatTime(lesson.duration_ms / 1000)}</dd>
+            {/if}
+            <dt>{$t("study.lesson.info_status")}</dt>
+            <dd>{markedComplete ? $t("study.lesson.info_complete") : $t("study.lesson.info_in_progress")}</dd>
+            {#if videoRef && isFinite(videoRef.duration)}
+              <dt>{$t("study.lesson.info_current_time")}</dt>
+              <dd>
+                {formatTime(videoRef.currentTime)} /
+                {formatTime(videoRef.duration)}
+              </dd>
+            {/if}
             </dl>
             {#if lesson.description_raw && lesson.description_raw.trim()}
               <section class="lesson-description">
