@@ -222,6 +222,8 @@ OmniGet 在一个窗口里搞定这一切。粘贴课程链接、YouTube 链接�
 
 OmniGet 自带完整的插件（课程、学习、Telegram、转换等等），它们会在首次启动时自行安装。当有新版本发布时，它们也会自动更新，你永远不用去手动找下载。插件支持热加载，无需重启应用。可以在侧边栏里随时开关任意插件，也可以卸载你不需要的。你移除的，就一直保持移除状态。
 
+插件 ABI 兼容性会在加载时验证——每个插件声明其 SDK 版本，核心会拒绝不匹配的二进制文件并给出明确的错误提示，绝不会静默运行有问题的插件。
+
 <p align="center">
   <img src="assets/readme/en/plugins.png" alt="OmniGet 插件与依赖，浏览器扩展配对以及以表格形式展示的受管理工具" width="820" />
   <br/>
@@ -242,7 +244,7 @@ OmniGet 自带完整的插件（课程、学习、Telegram、转换等等），�
 - **Telegram 聊天浏览器**，可保存任意聊天中的照片、视频和文件。
 - **浏览器扩展**（Chrome 和 Firefox），一键把当前页面交给 OmniGet。
 - **全局快捷键**（`Ctrl+Shift+D`，macOS 上为 `Cmd+Shift+D`），下载剪贴板里的任意链接。
-- **10 种语言** 和 **15 种主题**，包括 Catppuccin、Dracula、One Dark Pro、NyxVamp 以及三种墨水屏配色。
+- **10 种语言** 全面覆盖界面——每个按钮、标签和提示都已翻译，语言文件自动同步，确保没有任何遗漏的 key。**15 种主题**，包括 Catppuccin、Dracula、One Dark Pro、NyxVamp 以及三种墨水屏配色。
 - **GitHub 令牌支持**，在专家设置中配置，可绕过 GitHub API 速率限制以检查更新。
 
 ---
