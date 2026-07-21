@@ -40,10 +40,10 @@ pub struct PluginNavInfo {
 }
 
 #[tauri::command]
-pub fn list_plugins(
+pub async fn list_plugins(
     state: tauri::State<'_, Arc<tokio::sync::RwLock<PluginManager>>>,
 ) -> Result<Vec<PluginInfo>, String> {
-    let manager = state.blocking_read();
+    let manager = state.read().await;
     let installed = manager.installed_plugins();
 
     let infos: Vec<PluginInfo> = installed
@@ -134,11 +134,11 @@ pub fn list_plugins(
 }
 
 #[tauri::command]
-pub fn get_plugin_frontend_path(
+pub async fn get_plugin_frontend_path(
     state: tauri::State<'_, Arc<tokio::sync::RwLock<PluginManager>>>,
     plugin_id: String,
 ) -> Result<String, String> {
-    let manager = state.blocking_read();
+    let manager = state.read().await;
     let frontend_dir = manager.plugins_dir().join(&plugin_id).join("frontend");
     if !frontend_dir.exists() {
         return Err(format!("Plugin '{}' has no frontend", plugin_id));
@@ -147,56 +147,60 @@ pub fn get_plugin_frontend_path(
 }
 
 #[tauri::command]
-pub fn set_plugin_enabled(
+pub async fn set_plugin_enabled(
     app: tauri::AppHandle,
     state: tauri::State<'_, Arc<tokio::sync::RwLock<PluginManager>>>,
     plugin_id: String,
     enabled: bool,
 ) -> Result<(), String> {
-    {
-        let mut manager = state.blocking_write();
+    let needs_load = {
+        let mut manager = state.write().await;
         manager
             .set_enabled(&plugin_id, enabled)
             .map_err(|e| e.to_string())?;
-        if enabled && !manager.is_loaded(&plugin_id) {
-            let plugins_dir = manager.plugins_dir().to_path_buf();
-            let host = build_plugin_host(&app, plugins_dir);
-            let _ = manager.load_one(&plugin_id, host);
-        }
+        enabled && !manager.is_loaded(&plugin_id)
+    };
+    if needs_load {
+        let plugins_dir = {
+            let manager = state.read().await;
+            manager.plugins_dir().to_path_buf()
+        };
+        let host = build_plugin_host(&app, plugins_dir);
+        let mut manager = state.write().await;
+        let _ = manager.load_one(&plugin_id, host);
     }
     emit_plugins_changed(&app);
     Ok(())
 }
 
 #[tauri::command]
-pub fn uninstall_plugin(
+pub async fn uninstall_plugin(
     app: tauri::AppHandle,
     state: tauri::State<'_, Arc<tokio::sync::RwLock<PluginManager>>>,
     plugin_id: String,
 ) -> Result<(), String> {
-    {
-        let mut manager = state.blocking_write();
-        manager.unregister(&plugin_id).map_err(|e| e.to_string())?;
-    }
+    let mut manager = state.write().await;
+    manager.unregister(&plugin_id).map_err(|e| e.to_string())?;
+    drop(manager);
     emit_plugins_changed(&app);
     Ok(())
 }
 
 #[tauri::command]
-pub fn get_loaded_plugin_manifests(
+pub async fn get_loaded_plugin_manifests(
     state: tauri::State<'_, Arc<tokio::sync::RwLock<PluginManager>>>,
 ) -> Result<Vec<PluginManifest>, String> {
-    let manager = state.blocking_read();
+    let manager = state.read().await;
     Ok(manager.loaded_manifests().into_iter().cloned().collect())
 }
 
 #[tauri::command]
-pub fn get_plugin_i18n(
+pub async fn get_plugin_i18n(
     state: tauri::State<'_, Arc<tokio::sync::RwLock<PluginManager>>>,
     plugin_id: String,
     locale: String,
 ) -> Result<serde_json::Value, String> {
-    let manager = state.blocking_read();
+    let manager = state.read().await;
     let i18n_dir = manager.plugins_dir().join(&plugin_id).join("i18n");
     let locale_file = i18n_dir.join(format!("{}.json", locale));
     if !locale_file.exists() {
@@ -211,6 +215,11 @@ pub fn get_plugin_i18n(
     serde_json::from_str(&content).map_err(|e| e.to_string())
 }
 
+const PLUGIN_COMMAND_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(30);
+/// Max time to wait for the plugin-manager lock during startup/bootstrap
+/// before returning a "busy" error instead of blocking the UI indefinitely.
+const LOCK_ACQUIRE_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(5);
+
 #[tauri::command]
 pub async fn plugin_command(
     state: tauri::State<'_, Arc<tokio::sync::RwLock<PluginManager>>>,
@@ -218,8 +227,59 @@ pub async fn plugin_command(
     command: String,
     args: serde_json::Value,
 ) -> Result<serde_json::Value, String> {
-    let manager = state.read().await;
-    manager.handle_command(&plugin_id, &command, args).await
+    // Fast-path: if Telegram has no saved session file, skip calling the
+    // plugin entirely — avoids the grammers TCP connect hang that freezes
+    // the app (even the 30s timeout may not fire when the tokio timer is
+    // starved by a blocked worker thread).
+    if plugin_id == "telegram" && command == "telegram_check_session" {
+        if let Some(data_dir) = dirs::data_dir() {
+            let session_path = data_dir.join("omniget").join("telegram.session");
+            if !session_path.exists() {
+                return Ok(serde_json::json!("not_authenticated"));
+            }
+        }
+    }
+
+    // Acquire lock only to look up the plugin and clone its Arc.
+    // Drop the lock immediately so no other command is ever blocked
+    // while a plugin is processing (which can take 15+ seconds for
+    // Telegram to time out its TCP connection to an unreachable DC).
+    //
+    // The lock acquisition itself is wrapped in a timeout so that if
+    // the plugin-manager write lock is held by the background
+    // bootstrap/auto-update thread (which can take many seconds on
+    // slow networks), the frontend gets a "busy" error and can retry
+    // rather than freezing the UI indefinitely.
+    let instance = {
+        let manager = tokio::time::timeout(LOCK_ACQUIRE_TIMEOUT, state.read())
+            .await
+            .map_err(|_| {
+                format!(
+                    "Plugin manager is busy initialising, \
+                     try again in a few seconds (command '{}')",
+                    command,
+                )
+            })?;
+        manager
+            .plugin_instance(&plugin_id)
+            .ok_or_else(|| format!("Plugin '{}' not loaded", plugin_id))?
+    };
+    // Lock is released here — `manager` guard is dropped.
+
+    let cmd_label = command.clone();
+    let result = tokio::time::timeout(
+        PLUGIN_COMMAND_TIMEOUT,
+        instance.handle_command(command, args),
+    )
+    .await;
+    result.map_err(|_| {
+        format!(
+            "Plugin '{}' command '{}' did not respond within {} seconds",
+            plugin_id,
+            cmd_label,
+            PLUGIN_COMMAND_TIMEOUT.as_secs(),
+        )
+    })?
 }
 
 const REGISTRY_URLS: &[&str] = &[
@@ -366,7 +426,10 @@ pub async fn install_plugin_zip_from_repo(
     }
 
     let client = crate::core::http_client::apply_global_proxy(
-        reqwest::Client::builder().user_agent("OmniGet"),
+        reqwest::Client::builder()
+            .user_agent("OmniGet")
+            .timeout(std::time::Duration::from_secs(60))
+            .connect_timeout(std::time::Duration::from_secs(15)),
     )
     .build()
     .map_err(|e| e.to_string())?;

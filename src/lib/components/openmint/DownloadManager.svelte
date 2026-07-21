@@ -14,6 +14,7 @@
     getLastFilesCount,
     clearStatus as clearStoreStatus,
     startDownload as startStoreDownload,
+    stopDownload as stopStoreDownload,
     reattachIfActive,
   } from '$lib/stores/openmint-download-store.svelte';
   import { createEventDispatcher, onMount } from 'svelte';
@@ -25,8 +26,7 @@
   let contentType = $state('all');
   let cookiesFile = $state('');
   let depsStatus = $state('');
-  
-  // Profile management
+
   let savedProfiles = $state<Array<{ url: string; username?: string }>>([]);
   let selectedProfileIndex = $state(-1);
 
@@ -35,6 +35,10 @@
   let liveOutput = $derived(getLiveOutput());
   let status = $derived(getStatus());
   let statusType = $derived(getStatusType());
+
+  let needsCookiesWarning = $derived(
+    (contentType === 'stories' || contentType === 'highlights') && !cookiesFile.trim()
+  );
 
   onMount(async () => {
     reattachIfActive();
@@ -47,8 +51,7 @@
       if (settings.cookies_file) {
         cookiesFile = settings.cookies_file;
       }
-      
-      // Load saved profiles
+
       await loadSavedProfiles();
     } catch (error) {
       console.error('Failed to load settings:', error);
@@ -59,8 +62,7 @@
     try {
       const instagramProfiles = await loadProfiles('instagram');
       savedProfiles = instagramProfiles;
-      
-      // Auto-select first profile if none selected and no manual URL
+
       if (savedProfiles.length > 0 && selectedProfileIndex === -1 && !url.trim()) {
         selectedProfileIndex = 0;
       }
@@ -72,31 +74,33 @@
   async function checkDeps() {
     try {
       depsStatus = await checkPythonDependencies();
+      if (depsStatus.includes('OK')) {
+        setTimeout(() => {
+          if (depsStatus.includes('OK')) {
+            depsStatus = '';
+          }
+        }, 3000);
+      }
     } catch (error) {
       depsStatus = `Error: ${error}`;
     }
   }
 
   function getDownloadUrl(): string | null {
-    // Priority 1: Manual URL input
     if (url.trim()) {
       return url.trim();
     }
-    
-    // Priority 2: Selected saved profile
     if (selectedProfileIndex >= 0 && savedProfiles[selectedProfileIndex]) {
       return savedProfiles[selectedProfileIndex].url;
     }
-    
     return null;
   }
 
   async function startDownload() {
     const downloadUrl = getDownloadUrl();
-    
+
     if (!downloadUrl || !outputDir.trim()) {
-      status = "Please enter a profile URL or select a saved profile, and specify output directory";
-      statusType = "error";
+      clearStoreStatus();
       return;
     }
 
@@ -118,6 +122,10 @@
     }
   }
 
+  async function handleStop() {
+    await stopStoreDownload();
+  }
+
   async function saveSettings() {
     try {
       await saveAppSettings(
@@ -136,7 +144,6 @@
 
   function selectProfile(index: number) {
     selectedProfileIndex = index;
-    // Clear manual URL when selecting a saved profile
     if (index >= 0) {
       url = '';
     }
@@ -149,8 +156,7 @@
   $effect(() => {
     checkDeps();
   });
-  
-  // Watch for manual URL changes
+
   $effect(() => {
     if (url.trim()) {
       selectedProfileIndex = -1;
@@ -159,9 +165,11 @@
 </script>
 
 <div class="download-manager">
-  <div class="deps-check" class:ok={depsStatus.includes('OK')} class:error={!depsStatus.includes('OK')}>
-    <span>{depsStatus || 'Checking dependencies...'}</span>
-  </div>
+  {#if depsStatus}
+    <div class="deps-check" class:ok={depsStatus.includes('OK')} class:error={!depsStatus.includes('OK')}>
+      <span>{depsStatus}</span>
+    </div>
+  {/if}
 
   {#if status}
     <div class="status-alert" class:success={statusType === 'success'} class:error={statusType === 'error'}>
@@ -211,10 +219,10 @@
         id="output-dir"
         type="text"
         bind:value={outputDir}
-        placeholder="E:\Downloads"
         disabled={downloading}
       />
     </div>
+    <p class="field-hint">Files are organized automatically as Platform / Username / MediaType.</p>
   </div>
 
   <div class="form-group">
@@ -229,16 +237,18 @@
   </div>
 
   <div class="form-group">
-    <label for="cookies-file">Cookies File (optional)</label>
+    <label for="cookies-file">Cookies File {(contentType === 'stories' || contentType === 'highlights') ? '(required)' : '(optional)'}</label>
     <div class="input-with-button">
       <input
         id="cookies-file"
         type="text"
         bind:value={cookiesFile}
-        placeholder="E:\Downloads\instagram.com_cookies.txt"
         disabled={downloading}
       />
     </div>
+    {#if needsCookiesWarning}
+      <p class="field-warning">Stories and Highlights require a cookies file - Instagram blocks anonymous access.</p>
+    {/if}
   </div>
 
   <div class="button-group">
@@ -249,13 +259,22 @@
     >
       Save Settings
     </button>
-    <button
-      class="download-btn"
-      onclick={startDownload}
-      disabled={!getDownloadUrl() || !outputDir.trim() || downloading}
-    >
-      {downloading ? 'Downloading...' : 'Start Download'}
-    </button>
+    {#if downloading}
+      <button
+        class="download-btn stop-btn"
+        onclick={handleStop}
+      >
+        Stop Download
+      </button>
+    {:else}
+      <button
+        class="download-btn"
+        onclick={startDownload}
+        disabled={!getDownloadUrl() || !outputDir.trim() || needsCookiesWarning}
+      >
+        Start Download
+      </button>
+    {/if}
   </div>
 
   {#if downloading || filesDownloaded > 0}
@@ -392,6 +411,18 @@
     cursor: not-allowed;
   }
 
+  .field-hint {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    margin-top: 0.375rem;
+  }
+
+  .field-warning {
+    font-size: 0.75rem;
+    color: #ef4444;
+    margin-top: 0.375rem;
+  }
+
   .saved-profiles {
     margin-top: 0.75rem;
     padding: 0.75rem;
@@ -489,6 +520,16 @@
   }
 
   .download-btn:hover:not(:disabled) {
+    opacity: 0.9;
+    transform: translateY(-1px);
+  }
+
+  .stop-btn {
+    background: #ef4444;
+    color: white;
+  }
+
+  .stop-btn:hover {
     opacity: 0.9;
     transform: translateY(-1px);
   }

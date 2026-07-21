@@ -36,5 +36,22 @@ fn setup_environment() {
 fn main() {
     check_portable_mode();
     setup_environment();
+
+    // Older versions resolved the settings store against Tauri's
+    // own AppData dir, so portable users' settings landed in the
+    // OS profile. Adopt that file once if the portable dir has none.
+    let portable_settings = omniget_lib::core::paths::app_data_dir()
+        .map(|d| d.join("settings.json"));
+    if let Some(ref path) = portable_settings {
+        if !path.exists() {
+            if let Some(os_settings) = dirs::data_dir()
+                .map(|d| d.join("wtf.tonho.omniget").join("settings.json"))
+                .filter(|p| p.exists())
+            {
+                let _ = std::fs::copy(&os_settings, path);
+            }
+        }
+    }
+
     omniget_lib::run()
 }

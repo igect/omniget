@@ -1,5 +1,6 @@
 import {
   runGalleryDlDownload,
+  cancelDownload,
   listenToDownloadProgress,
   generateDownloadId,
   type DownloadProgress,
@@ -81,6 +82,15 @@ export async function startDownload(
     return;
   }
 
+  // Stories/Highlights need cookies - Instagram blocks anonymous access.
+  // Catching this here means the invoke round-trip (and its generic
+  // catch-all error) never even happens for the common mistake.
+  if ((contentType === "stories" || contentType === "highlights") && !cleanCookiesFile) {
+    status = "Stories and Highlights require a cookies file - Instagram blocks anonymous access to this content.";
+    statusType = "error";
+    return;
+  }
+
   active = true;
   filesDownloaded = 0;
   liveOutput = [];
@@ -128,9 +138,30 @@ export async function startDownload(
   }
 }
 
+export async function stopDownload() {
+  if (!active || !downloadId) return;
+
+  try {
+    await cancelDownload(downloadId);
+    status = "Download cancelled";
+    statusType = "info";
+  } catch (error) {
+    console.error('Failed to cancel download:', error);
+    status = `Failed to cancel: ${error}`;
+    statusType = "error";
+  } finally {
+    active = false;
+    if (unlisten) {
+      unlisten();
+      unlisten = null;
+    }
+    downloadId = null;
+  }
+}
+
 export async function reattachIfActive() {
   if (!active || !downloadId || unlisten) return;
-  
+
   unlisten = await listenToDownloadProgress(downloadId, (progressData: DownloadProgress) => {
     liveOutput = [...liveOutput, progressData.message];
     if (progressData.files_downloaded > 0) {

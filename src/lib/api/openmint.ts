@@ -44,6 +44,10 @@ export async function runGalleryDlDownload(
   });
 }
 
+export async function cancelDownload(downloadId: string): Promise<string> {
+  return await invoke<string>('cancel_download', { downloadId });
+}
+
 export async function listenToDownloadProgress(
   downloadId: string,
   callback: (progress: DownloadProgress) => void

@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+﻿use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -7,9 +7,29 @@ use omniget_plugin_sdk::{InstalledPlugin, OmnigetPlugin, PluginHost, PluginManif
 use serde::Serialize;
 use tracing;
 
-pub struct LoadedPlugin {
+/// Bundles the loaded dynamic-library handle together with the plugin trait
+/// object so that both stay alive as long as any `Arc` reference exists.
+pub(crate) struct PluginInstance {
     _lib: Option<libloading::Library>,
-    pub plugin: Box<dyn OmnigetPlugin>,
+    plugin: Box<dyn OmnigetPlugin>,
+}
+
+impl PluginInstance {
+    pub(crate) async fn handle_command(
+        &self,
+        command: String,
+        args: serde_json::Value,
+    ) -> Result<serde_json::Value, String> {
+        self.plugin.handle_command(command, args).await
+    }
+
+    pub(crate) fn shutdown(&self) {
+        self.plugin.shutdown();
+    }
+}
+
+pub struct LoadedPlugin {
+    inner: Arc<PluginInstance>,
     pub manifest: PluginManifest,
 }
 
@@ -122,6 +142,12 @@ impl PluginManager {
         self.loaded.get(id)
     }
 
+    /// Clone the `Arc<PluginInstance>` so the caller can invoke the plugin
+    /// *without* holding the `PluginManager` lock.
+    pub(crate) fn plugin_instance(&self, plugin_id: &str) -> Option<Arc<PluginInstance>> {
+        self.loaded.get(plugin_id).map(|lp| lp.inner.clone())
+    }
+
     pub fn load_error(&self, id: &str) -> Option<&PluginLoadError> {
         self.load_errors.get(id)
     }
@@ -149,15 +175,10 @@ impl PluginManager {
         command: &str,
         args: serde_json::Value,
     ) -> Result<serde_json::Value, String> {
-        let loaded = self
-            .loaded
-            .get(plugin_id)
+        let instance = self
+            .plugin_instance(plugin_id)
             .ok_or_else(|| format!("Plugin '{}' not loaded", plugin_id))?;
-
-        loaded
-            .plugin
-            .handle_command(command.to_string(), args)
-            .await
+        instance.handle_command(command.to_string(), args).await
     }
 
     pub fn save_installed(&self) -> anyhow::Result<()> {
@@ -178,10 +199,11 @@ impl PluginManager {
     }
 
     pub fn unregister(&mut self, plugin_id: &str) -> anyhow::Result<()> {
-        if let Some(mut loaded) = self.loaded.remove(plugin_id) {
-            loaded.plugin.shutdown();
-            let _leaked_lib = loaded._lib.take();
-            std::mem::forget(_leaked_lib);
+        if let Some(loaded) = self.loaded.remove(plugin_id) {
+            loaded.inner.shutdown();
+            // The library and plugin drop when the last Arc reference goes away
+            // (outstanding in-flight `plugin_command` clones keep it alive until
+            //  they complete, preventing a premature dlclose).
         }
         self.load_errors.remove(plugin_id);
         self.installed.retain(|p| p.id != plugin_id);
@@ -240,7 +262,7 @@ fn load_single_plugin(
         unsafe { lib.get(b"omniget_plugin_abi_version") }.map_err(|_| {
             PluginLoadError {
                 message: format!(
-                    "Missing omniget_plugin_abi_version symbol (plugin built against an older SDK; core expects ABI v{})",
+                    "This plugin was built for an older version of OmniGet (no ABI handshake; this version requires ABI v{}). Update the plugin: reinstall it from the Marketplace to get a compatible build.",
                     ABI_VERSION
                 ),
                 kind: "missing_abi_symbol".to_string(),
@@ -253,7 +275,7 @@ fn load_single_plugin(
     if plugin_abi != ABI_VERSION {
         return Err(PluginLoadError {
             message: format!(
-                "ABI mismatch: plugin has v{}, core expects v{}",
+                "This plugin was built for an older version of OmniGet (plugin ABI v{}, this version requires v{}). Update the plugin: reinstall it from the Marketplace to get a compatible build.",
                 plugin_abi, ABI_VERSION
             ),
             kind: "abi_mismatch".to_string(),
@@ -262,19 +284,128 @@ fn load_single_plugin(
         });
     }
 
+    // ABI_VERSION alone cannot detect a plugin compiled by a different rustc.
+    // Rust has no stable ABI ΓÇö trait-object vtables, fat-pointer conventions
+    // and std/serde type layouts can change between compiler releases ΓÇö and
+    // every non-C-ABI type crossing this boundary (Box<dyn OmnigetPlugin>,
+    // Arc<dyn PluginHost>, String, serde_json::Value, boxed futures) is UB on
+    // a mismatch. This is exactly what crashed v0.7.1 (host: rustc 1.97.0)
+    // with registry plugins built by rustc 1.95/1.96: they passed the ABI v2
+    // handshake, loaded, then jumped through corrupted pointers on the first
+    // plugin command (SIGSEGV on a tokio worker). Since ABI v3 the
+    // export_plugin! macro also exports a build-info symbol; require it and
+    // require the plugin's rustc fingerprint to match ours exactly.
+    let build_info_fn: libloading::Symbol<extern "C" fn() -> *const std::os::raw::c_char> =
+        unsafe { lib.get(b"omniget_plugin_build_info") }.map_err(|_| PluginLoadError {
+            message: format!(
+                "This plugin was built for an older version of OmniGet (missing toolchain handshake; this version requires ABI v{}). Update the plugin: reinstall it from the Marketplace to get a compatible build.",
+                ABI_VERSION
+            ),
+            kind: "abi_mismatch".to_string(),
+            plugin_abi: Some(plugin_abi),
+            expected_abi: Some(ABI_VERSION),
+        })?;
+
+    // Reading a thin `*const c_char` from an extern "C" fn is FFI-safe on any
+    // rustc, unlike the Rust-ABI surface it guards.
+    let plugin_build_info = {
+        let raw = build_info_fn();
+        if raw.is_null() {
+            String::new()
+        } else {
+            unsafe { std::ffi::CStr::from_ptr(raw) }
+                .to_string_lossy()
+                .into_owned()
+        }
+    };
+    let host_info = omniget_plugin_sdk::build_info_str();
+    let host_rustc = omniget_plugin_sdk::rustc_component(host_info);
+    let plugin_rustc = omniget_plugin_sdk::rustc_component(&plugin_build_info);
+    if plugin_rustc.is_none() || plugin_rustc != host_rustc {
+        return Err(PluginLoadError {
+            message: format!(
+                "This plugin was built with a different Rust toolchain ('{}') than this version of OmniGet ('{}') and cannot be loaded safely. Update the plugin: reinstall it from the Marketplace to get a compatible build.",
+                plugin_rustc.unwrap_or("unknown"),
+                host_rustc.unwrap_or("unknown"),
+            ),
+            kind: "abi_mismatch".to_string(),
+            plugin_abi: Some(plugin_abi),
+            expected_abi: Some(ABI_VERSION),
+        });
+    }
+    tracing::debug!(
+        "[plugins] toolchain handshake ok: plugin '{}' / host '{}'",
+        plugin_build_info,
+        host_info
+    );
+
     let init_fn: libloading::Symbol<extern "C" fn() -> *mut dyn OmnigetPlugin> =
         unsafe { lib.get(b"omniget_plugin_init") }.map_err(|_| {
             PluginLoadError::simple("missing_init_symbol", "Missing omniget_plugin_init symbol")
         })?;
 
-    let mut plugin = unsafe { Box::from_raw(init_fn()) };
-    plugin
-        .initialize(host)
-        .map_err(|e| PluginLoadError::simple("initialize", format!("Plugin init failed: {e}")))?;
+    // A plugin's init entrypoint runs arbitrary foreign code; convert panics
+    // into load errors instead of aborting the whole app.
+    let plugin_ptr =
+        match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| init_fn())) {
+            Ok(ptr) => ptr,
+            Err(_) => {
+                // The plugin may already have spawned threads before panicking;
+                // leak the library instead of dropping it (dlclose would unmap
+                // code those threads are still executing ΓåÆ SIGSEGV). Mirrors
+                // the deliberate leak in `PluginManager::unregister`.
+                std::mem::forget(lib);
+                return Err(PluginLoadError::simple(
+                    "initialize",
+                    "Plugin panicked in omniget_plugin_init",
+                ));
+            }
+        };
+    if plugin_ptr.is_null() {
+        std::mem::forget(lib);
+        return Err(PluginLoadError::simple(
+            "initialize",
+            "omniget_plugin_init returned a null plugin",
+        ));
+    }
+    let mut plugin = unsafe { Box::from_raw(plugin_ptr) };
+
+    let init_result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        plugin.initialize(host)
+    }));
+    match init_result {
+        Ok(Ok(())) => {}
+        Ok(Err(e)) => {
+            // `initialize` may have spawned threads before failing. Dropping
+            // the `Library` here would dlclose and unmap the plugin's code
+            // while those threads still run ΓåÆ SIGSEGV. Deliberately leak it
+            // instead, mirroring `PluginManager::unregister`. The plugin box
+            // is leaked too: its Drop impl lives in the (possibly half
+            // initialized) plugin and isn't safe to run after a failed init.
+            std::mem::forget(plugin);
+            std::mem::forget(lib);
+            return Err(PluginLoadError::simple(
+                "initialize",
+                format!("Plugin init failed: {e}"),
+            ));
+        }
+        Err(_) => {
+            // Same reasoning as above, but the plugin state is additionally
+            // unknown after a panic ΓÇö never run its Drop.
+            std::mem::forget(plugin);
+            std::mem::forget(lib);
+            return Err(PluginLoadError::simple(
+                "initialize",
+                "Plugin panicked during initialize",
+            ));
+        }
+    }
 
     Ok(LoadedPlugin {
-        _lib: Some(lib),
-        plugin,
+        inner: Arc::new(PluginInstance {
+            _lib: Some(lib),
+            plugin,
+        }),
         manifest,
     })
 }

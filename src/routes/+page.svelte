@@ -67,6 +67,8 @@
   let debounceTimer = $state<ReturnType<typeof setTimeout> | null>(null);
   let downloadMode = $state<"auto" | "audio" | "mute">("auto");
   let selectedQuality = $state("best");
+  const COURSE_PLATFORMS = new Set(["hotmart", "udemy"]);
+
   let clipStart = $state("");
   let clipEnd = $state("");
   let scheduleAt = $state("");
@@ -142,7 +144,7 @@
     if (!pendingAutoDownload) return;
     if (omniState.kind === "detected") {
       const info = omniState.info;
-      if (info.platform === "hotmart" || info.platform === "p2p") {
+      if (COURSE_PLATFORMS.has(info.platform) || info.platform === "p2p") {
         pendingAutoDownload = false;
         return;
       }
@@ -398,7 +400,9 @@
       const result = await invoke<PlatformInfo>("detect_platform", { url: value });
       if (result.supported) {
         omniState = { kind: "detected", info: result };
-        invoke("prefetch_media_info", { url: value }).catch(() => {});
+        if (!COURSE_PLATFORMS.has(result.platform)) {
+          invoke("prefetch_media_info", { url: value }).catch(() => {});
+        }
         loadCookieAccounts(value);
         if (result.content_type === "playlist") {
           loadPlaylistEntries(value);
@@ -623,8 +627,8 @@
     if (omniState.kind !== "detected") return;
     const info = omniState.info;
 
-    if (info.platform === "hotmart") {
-      goto(`/courses?platform=${encodeURIComponent(info.platform)}`);
+    if (COURSE_PLATFORMS.has(info.platform)) {
+      goto(`/courses/${encodeURIComponent(info.platform)}`);
       return;
     }
 

@@ -87,8 +87,12 @@ pub async fn open_auth_webview(
             let mut is_success = false;
 
             if let Some(ref pattern) = success_pattern {
-                if url_str.contains(pattern) {
-                    is_success = true;
+                if let Ok(nav_url) = url::Url::parse(&url_str) {
+                    let host_and_path =
+                        format!("{}{}", nav_url.host_str().unwrap_or(""), nav_url.path());
+                    if host_and_path.contains(pattern) {
+                        is_success = true;
+                    }
                 }
             }
 

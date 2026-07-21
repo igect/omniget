@@ -112,6 +112,11 @@ pub async fn queue_url_with_defaults(
         .ok_or_else(|| "No downloader available for this URL".to_string())?;
 
     let platform = Platform::from_url(&url);
+
+    if matches!(platform, Some(Platform::Hotmart) | Some(Platform::Udemy)) {
+        return Err("Course platforms can't be downloaded from a URL. Open the Courses page (requires the Courses plugin and a logged-in account).".to_string());
+    }
+
     let platform_name = platform
         .map(|p| p.to_string())
         .unwrap_or_else(|| "generic".to_string());

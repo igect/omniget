@@ -4,10 +4,12 @@ use std::fs;
 use std::path::PathBuf;
 use std::io::{BufRead, BufReader};
 use std::sync::atomic::{AtomicU32, Ordering};
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
+use std::collections::HashMap;
 use std::thread;
 use serde::{Deserialize, Serialize};
 use chrono::Utc;
+use once_cell::sync::Lazy;
 
 #[cfg(target_os = "windows")]
 use std::os::windows::process::CommandExt;
@@ -39,10 +41,12 @@ pub struct AppSettings {
     pub cookies_file: Option<String>,
 }
 
-// Shared config directory for this module. Lives under the same root the
-// rest of OmniGet uses (omniget_core::core::paths::app_data_dir), instead of
-// a separate "OpenMint" folder under a different OS path. This keeps
-// settings/profiles.json alongside the rest of the app's persisted state.
+// Tracks the OS PID of every in-flight gallery-dl process, keyed by the
+// frontend-generated download_id. This is what makes cancel_download
+// possible - without it there's no way to find and kill a specific
+// running download from a separate command invocation.
+static RUNNING_DOWNLOADS: Lazy<Mutex<HashMap<String, u32>>> = Lazy::new(|| Mutex::new(HashMap::new()));
+
 fn omniget_config_dir() -> Result<PathBuf, String> {
     let base = omniget_core::core::paths::app_data_dir()
         .ok_or("Could not find app data directory")?;
@@ -52,13 +56,8 @@ fn omniget_config_dir() -> Result<PathBuf, String> {
     Ok(dir)
 }
 
-// Check Python dependencies (hidden window)
 #[command]
 pub fn check_python_dependencies() -> Result<String, String> {
-    // Debian/Ubuntu (the distros our .deb/.AppImage builds target) don't ship
-    // a `python` alias out of the box - only `python3` exists unless the user
-    // installed python-is-python3. Trying `python3` first and falling back to
-    // `python` avoids reporting "Python is not installed" when it actually is.
     let python_found = ["python3", "python"].iter().any(|bin| {
         let mut cmd = Command::new(bin);
         #[cfg(target_os = "windows")]
@@ -89,7 +88,35 @@ pub fn check_python_dependencies() -> Result<String, String> {
     Ok("All dependencies OK".to_string())
 }
 
-// Run gallery-dl download asynchronously.
+// Detects platform from a URL for use in the folder structure
+// (OutputDir / Platform / Username / MediaType). Falls back to "Other"
+// for anything unrecognized rather than failing the whole download.
+fn detect_platform_name(url: &str) -> &'static str {
+    let low = url.to_lowercase();
+    if low.contains("instagram.com") { "Instagram" }
+    else if low.contains("tiktok.com") { "TikTok" }
+    else if low.contains("facebook.com") { "Facebook" }
+    else if low.contains("x.com") || low.contains("twitter.com") { "X" }
+    else { "Other" }
+}
+
+// Generic username extractor used for folder naming and for constructing
+// the Instagram stories/highlights URLs. Works across all four platforms,
+// unlike the old Instagram-only extract_username_from_url.
+fn extract_username_generic(url: &str) -> Option<String> {
+    let trimmed = url.trim_end_matches('/');
+    let after_scheme = trimmed.split("://").nth(1).unwrap_or(trimmed);
+    let mut parts = after_scheme.split('/');
+    parts.next()?; // skip domain
+    let first_path = parts.next()?;
+    let cleaned = first_path.split(['?', '#']).next()?;
+    let cleaned = cleaned.trim_start_matches('@');
+    if cleaned.is_empty() || ["p", "reel", "tv", "stories", "highlights"].contains(&cleaned) {
+        return None;
+    }
+    Some(cleaned.to_string())
+}
+
 #[command]
 pub async fn run_gallery_dl_download(
     app: AppHandle,
@@ -106,6 +133,10 @@ pub async fn run_gallery_dl_download(
     .map_err(|e| format!("Download task panicked: {}", e))?
 }
 
+// Entry point. Handles the single-content-type case directly, and splits
+// "all" into sequential per-media-type runs (mirroring the Python
+// script's choice == '7' behavior) so each media type still gets its own
+// folder instead of one unfiltered dump.
 fn run_gallery_dl_download_blocking(
     app: AppHandle,
     url: String,
@@ -114,31 +145,114 @@ fn run_gallery_dl_download_blocking(
     content_type: String,
     download_id: String,
 ) -> Result<DownloadResult, String> {
-    // Create base output directory
     fs::create_dir_all(&output_dir)
         .map_err(|e| format!("Failed to create output directory: {}", e))?;
 
-    let mut cmd = Command::new("gallery-dl");
-    
-    #[cfg(target_os = "windows")]
-    cmd.creation_flags(0x08000000);
+    let platform_name = detect_platform_name(&url);
+    let is_instagram = platform_name == "Instagram";
 
-    // Determine output directory based on content type
-    let final_output_dir = match content_type.as_str() {
-        "photos" => PathBuf::from(&output_dir).join("Photos"),
-        "videos" => PathBuf::from(&output_dir).join("Videos"),
-        "stories" => PathBuf::from(&output_dir).join("Stories"),
-        "highlights" => PathBuf::from(&output_dir).join("Highlights"),
-        _ => PathBuf::from(&output_dir),
+    if content_type == "all" {
+        let mut sub_types: Vec<&str> = vec!["photos", "videos"];
+        if is_instagram {
+            sub_types.push("stories");
+            sub_types.push("highlights");
+        }
+
+        let mut total_files = 0u32;
+        let mut failures: Vec<String> = Vec::new();
+
+        for sub_type in sub_types {
+            match run_single_content_download(
+                &app, &url, &output_dir, &cookies_file, sub_type, &download_id, platform_name,
+            ) {
+                Ok(result) => {
+                    total_files += result.files_count;
+                    if !result.success {
+                        failures.push(format!("{}: {}", sub_type, result.message));
+                    }
+                }
+                Err(e) => failures.push(format!("{}: {}", sub_type, e)),
+            }
+        }
+
+        if failures.is_empty() {
+            Ok(DownloadResult {
+                success: true,
+                message: format!("Download completed successfully. {} files downloaded.", total_files),
+                files_count: total_files,
+            })
+        } else {
+            Ok(DownloadResult {
+                success: false,
+                message: format!(
+                    "{} files downloaded, but some steps failed: {}",
+                    total_files,
+                    failures.join(" | ")
+                ),
+                files_count: total_files,
+            })
+        }
+    } else {
+        run_single_content_download(
+            &app, &url, &output_dir, &cookies_file, &content_type, &download_id, platform_name,
+        )
+    }
+}
+
+fn run_single_content_download(
+    app: &AppHandle,
+    url: &str,
+    output_dir: &str,
+    cookies_file: &Option<String>,
+    content_type: &str,
+    download_id: &str,
+    platform_name: &str,
+) -> Result<DownloadResult, String> {
+    // Stories/Highlights are login-gated on Instagram - failing fast with a
+    // clear message here beats letting gallery-dl fail cryptically with no
+    // cookies and reporting a confusing generic error to the user.
+    if (content_type == "stories" || content_type == "highlights")
+        && cookies_file.as_deref().unwrap_or("").trim().is_empty()
+    {
+        let label = if content_type == "stories" { "Stories" } else { "Highlights" };
+        return Err(format!(
+            "{} require a valid Instagram cookies file - Instagram doesn't allow anonymous access to this content.",
+            label
+        ));
+    }
+
+    let username = extract_username_generic(url).unwrap_or_else(|| "unknown_user".to_string());
+
+    let media_type_name = match content_type {
+        "photos" => "Photos",
+        "videos" => "Videos",
+        "stories" => "Stories",
+        "highlights" => "Highlights",
+        _ => "Media",
     };
+
+    // New layout: OutputDir / Platform / Username / MediaType
+    // e.g. E:\OmniGet\Instagram\momo\Photos
+    let final_output_dir = PathBuf::from(output_dir)
+        .join(platform_name)
+        .join(&username)
+        .join(media_type_name);
 
     fs::create_dir_all(&final_output_dir)
         .map_err(|e| format!("Failed to create content directory: {}", e))?;
 
+    let mut cmd = Command::new("gallery-dl");
+    #[cfg(target_os = "windows")]
+    cmd.creation_flags(0x08000000);
+
     cmd.arg("-d").arg(&final_output_dir);
 
-    // Apply strict content type filters
-    match content_type.as_str() {
+    // Prevent gallery-dl from adding its own platform/user subfolders on
+    // top of the ones we just built - without this you'd get
+    // .../Instagram/momo/Photos/instagram/momo/... doubled up.
+    cmd.arg("-o").arg("directory=[]");
+
+    match content_type {
         "photos" => {
             cmd.arg("--filter").arg("extension in ('jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'jfif', 'heic', 'avif', 'tiff', 'svg')");
         }
@@ -146,36 +260,22 @@ fn run_gallery_dl_download_blocking(
             cmd.arg("--filter").arg("extension in ('mp4', 'webm', 'mkv', 'mov', 'avi', 'm4v', 'flv', 'wmv', '3gp', 'mpeg', 'mpg', 'ts', 'f4v', 'mts', 'm2ts')");
         }
         "stories" => {
-            // Stories require specific URL handling
-            // Extract username from URL and construct stories URL
-            if let Some(username) = extract_username_from_url(&url) {
-                let stories_url = format!("https://www.instagram.com/stories/{}/", username);
-                cmd.arg(&stories_url);
-            } else {
-                cmd.arg(&url);
-            }
+            let stories_url = format!("https://www.instagram.com/stories/{}/", username);
+            cmd.arg(&stories_url);
         }
         "highlights" => {
-            // Highlights require specific URL handling
-            if let Some(username) = extract_username_from_url(&url) {
-                let highlights_url = format!("https://www.instagram.com/{}/highlights/", username);
-                cmd.arg(&highlights_url);
-            } else {
-                cmd.arg(&url);
-            }
+            let highlights_url = format!("https://www.instagram.com/{}/highlights/", username);
+            cmd.arg(&highlights_url);
         }
         _ => {}
     }
 
     if let Some(cookies) = cookies_file {
-        if !cookies.is_empty() {
-            cmd.arg("--cookies").arg(&cookies);
+        if !cookies.trim().is_empty() {
+            cmd.arg("--cookies").arg(cookies);
         }
     }
 
-    // Respect the main app's Advanced Settings (proxy + custom User-Agent)
-    // instead of running gallery-dl in its own silo. Previously these had
-    // no effect on openmint downloads even when configured app-wide.
     let app_settings = crate::storage::config::load_settings_standalone();
     let user_agent = app_settings.advanced.user_agent.trim();
     if !user_agent.is_empty() {
@@ -186,10 +286,9 @@ fn run_gallery_dl_download_blocking(
     }
 
     cmd.arg("--sleep-request").arg("2");
-    
-    // For stories and highlights, we already set the URL above
+
     if content_type != "stories" && content_type != "highlights" {
-        cmd.arg(&url);
+        cmd.arg(url);
     }
 
     cmd.stdout(Stdio::piped());
@@ -198,22 +297,21 @@ fn run_gallery_dl_download_blocking(
     let mut child = cmd.spawn()
         .map_err(|e| format!("Failed to start gallery-dl: {}", e))?;
 
+    // Register this child's PID so cancel_download can find and kill it.
+    RUNNING_DOWNLOADS.lock().unwrap().insert(download_id.to_string(), child.id());
+
     let stdout = child.stdout.take().ok_or("Failed to capture stdout")?;
     let stderr = child.stderr.take().ok_or("Failed to capture stderr")?;
 
     let files_downloaded = Arc::new(AtomicU32::new(0));
 
-    // stdout reader
     let stdout_handle = {
         let app = app.clone();
-        let download_id = download_id.clone();
+        let download_id = download_id.to_string();
         let files_downloaded = files_downloaded.clone();
         thread::spawn(move || {
             let reader = BufReader::new(stdout);
             for line in reader.lines().flatten() {
-                // Blank lines (gallery-dl prints separators between items/
-                // galleries) aren't a downloaded file - counting them
-                // inflates files_downloaded shown to the user.
                 if line.trim().is_empty() {
                     continue;
                 }
@@ -226,11 +324,10 @@ fn run_gallery_dl_download_blocking(
         })
     };
 
-    // stderr reader
     let last_stderr_line = Arc::new(std::sync::Mutex::new(String::new()));
     let stderr_handle = {
         let app = app.clone();
-        let download_id = download_id.clone();
+        let download_id = download_id.to_string();
         let files_downloaded = files_downloaded.clone();
         let last_stderr_line = last_stderr_line.clone();
         thread::spawn(move || {
@@ -252,6 +349,10 @@ fn run_gallery_dl_download_blocking(
     let status = child.wait()
         .map_err(|e| format!("Download process failed: {}", e))?;
 
+    // Whether it succeeded, failed, or was killed by cancel_download, this
+    // download_id is no longer running - clean up its PID entry.
+    RUNNING_DOWNLOADS.lock().unwrap().remove(download_id);
+
     let final_count = files_downloaded.load(Ordering::SeqCst);
 
     if status.success() {
@@ -267,33 +368,46 @@ fn run_gallery_dl_download_blocking(
         } else {
             format!("gallery-dl exited with code {}", status.code().unwrap_or(-1))
         };
-        Err(error_msg)
+        Ok(DownloadResult {
+            success: false,
+            message: error_msg,
+            files_count: final_count,
+        })
     }
 }
 
-// Helper function to extract username from Instagram URL
-fn extract_username_from_url(url: &str) -> Option<String> {
-    if !url.contains("instagram.com") {
-        return None;
-    }
-    
-    // Handle various Instagram URL formats
-    let url = url.trim_end_matches('/');
-    
-    // Find the part after instagram.com/
-    if let Some(pos) = url.find("instagram.com/") {
-        let after_domain = &url[pos + 14..];
-        let username = after_domain.split('/').next()?;
-        let cleaned = username.split(['?', '#']).next()?;
-        if !cleaned.is_empty() && cleaned != "stories" && cleaned != "highlights" {
-            return Some(cleaned.to_string());
+// Kills the running gallery-dl process for a given download_id, if any.
+// Uses taskkill /T on Windows to also take down any child processes
+// gallery-dl may have spawned, not just the top-level PID.
+#[command]
+pub fn cancel_download(download_id: String) -> Result<String, String> {
+    let pid = RUNNING_DOWNLOADS.lock().unwrap().get(&download_id).copied();
+
+    match pid {
+        Some(pid) => {
+            #[cfg(target_os = "windows")]
+            {
+                let mut kill_cmd = Command::new("taskkill");
+                kill_cmd.args(["/PID", &pid.to_string(), "/T", "/F"]);
+                kill_cmd.creation_flags(0x08000000);
+                kill_cmd.output()
+                    .map_err(|e| format!("Failed to kill process: {}", e))?;
+            }
+            #[cfg(not(target_os = "windows"))]
+            {
+                Command::new("kill")
+                    .args(["-9", &pid.to_string()])
+                    .output()
+                    .map_err(|e| format!("Failed to kill process: {}", e))?;
+            }
+
+            RUNNING_DOWNLOADS.lock().unwrap().remove(&download_id);
+            Ok("Download cancelled".to_string())
         }
+        None => Err("No running download found for that ID".to_string()),
     }
-    
-    None
 }
 
-// Save app settings
 #[command]
 pub fn save_app_settings(
     output_directory: Option<String>,
@@ -316,7 +430,6 @@ pub fn save_app_settings(
     Ok("Settings saved successfully".to_string())
 }
 
-// Load app settings
 #[command]
 pub fn load_app_settings() -> Result<AppSettings, String> {
     let settings_file = omniget_config_dir()?.join("app_settings.json");
@@ -337,7 +450,6 @@ pub fn load_app_settings() -> Result<AppSettings, String> {
     Ok(settings)
 }
 
-// Load profiles
 #[command]
 pub fn load_profiles(platform: String) -> Result<Vec<Profile>, String> {
     let profiles_file = omniget_config_dir()?.join("profiles.json");
@@ -365,14 +477,8 @@ pub fn load_profiles(platform: String) -> Result<Vec<Profile>, String> {
     Ok(platform_profiles)
 }
 
-// Save profile with validation
 #[command]
 pub fn save_profile(platform: String, url: String) -> Result<String, String> {
-    // Defensive trim: the frontend trims before calling us, but never trust
-    // that a caller did the right thing. Untrimmed values (trailing
-    // whitespace/newlines from a paste) used to get stored verbatim, which
-    // made list entries render oddly and could cause the duplicate check
-    // below to miss a match against a cleanly-typed version of the same URL.
     let url = url.trim().to_string();
 
     if url.is_empty() {
@@ -390,12 +496,13 @@ pub fn save_profile(platform: String, url: String) -> Result<String, String> {
         serde_json::json!({})
     };
 
-    // Extract a display username from the URL. Strips query strings/
-    // fragments (e.g. "instagram.com/nahid/?hl=en" used to become
-    // "nahid?hl=en") and a leading "@" (e.g. TikTok's "/@handle" paths),
-    // so plain-typed usernames and pasted profile URLs render the same way.
+    // FIX: trim the trailing slash before splitting on '/', so a URL like
+    // "instagram.com/nahid/?hl=en" doesn't have its username swallowed by
+    // the query-string segment. Previously this produced username: None
+    // for any "...username/?query" shaped URL.
     let username = if url.starts_with("http") {
-        url.split('/')
+        let trimmed = url.trim_end_matches('/');
+        trimmed.split('/')
             .filter(|s| !s.is_empty())
             .last()
             .map(|s| {
@@ -418,9 +525,6 @@ pub fn save_profile(platform: String, url: String) -> Result<String, String> {
             if existing_url == Some(url.as_str()) {
                 return Err("Profile already exists".to_string());
             }
-            // Exact URL match misses e.g. http vs https or a "?hl=en" query
-            // string on an otherwise-identical profile - fall back to
-            // comparing the normalized username too.
             if let Some(new_name) = &username {
                 let existing_name = profile.get("username").and_then(|v| v.as_str());
                 if let Some(existing_name) = existing_name {
@@ -462,7 +566,6 @@ pub fn save_profile(platform: String, url: String) -> Result<String, String> {
     Ok("Profile saved successfully".to_string())
 }
 
-// Delete profile
 #[command]
 pub fn delete_profile(platform: String, index: usize) -> Result<String, String> {
     let profiles_file = omniget_config_dir()?.join("profiles.json");
@@ -500,7 +603,6 @@ pub fn delete_profile(platform: String, index: usize) -> Result<String, String> 
     Ok("Profile deleted".to_string())
 }
 
-// Setup folder structure
 #[command]
 pub fn setup_openmint_folders(base_dir: String, cookies_dir: String) -> Result<String, String> {
     let base_path = PathBuf::from(base_dir);
