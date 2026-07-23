@@ -100,20 +100,33 @@ fn detect_platform_name(url: &str) -> &'static str {
     else { "Other" }
 }
 
-// Generic username extractor used for folder naming and for constructing
-// the Instagram stories/highlights URLs. Works across all four platforms,
-// unlike the old Instagram-only extract_username_from_url.
+// Shared username extractor used for folder naming, for building the
+// Instagram stories/highlights URLs, and for save_profile. Handles both a
+// full profile URL and a bare "username"/"@username" input, and filters out
+// reserved path segments (p, reel, tv, stories, highlights) so a pasted
+// post/story link can't get stored or used as if it were a username.
 fn extract_username_generic(url: &str) -> Option<String> {
-    let trimmed = url.trim_end_matches('/');
-    let after_scheme = trimmed.split("://").nth(1).unwrap_or(trimmed);
-    let mut parts = after_scheme.split('/');
-    parts.next()?; // skip domain
-    let first_path = parts.next()?;
-    let cleaned = first_path.split(['?', '#']).next()?;
+    let trimmed = url.trim().trim_end_matches('/');
+    if trimmed.is_empty() {
+        return None;
+    }
+
+    let candidate = if trimmed.contains("://") {
+        let after_scheme = trimmed.split("://").nth(1).unwrap_or(trimmed);
+        let mut parts = after_scheme.split('/');
+        parts.next()?; // skip domain
+        parts.next()?
+    } else {
+        trimmed
+    };
+
+    let cleaned = candidate.split(['?', '#']).next()?;
     let cleaned = cleaned.trim_start_matches('@');
+
     if cleaned.is_empty() || ["p", "reel", "tv", "stories", "highlights"].contains(&cleaned) {
         return None;
     }
+
     Some(cleaned.to_string())
 }
 
@@ -208,6 +221,18 @@ fn run_single_content_download(
     download_id: &str,
     platform_name: &str,
 ) -> Result<DownloadResult, String> {
+    // Stories/Highlights are an Instagram-only concept in gallery-dl - TikTok,
+    // Facebook, and X have no equivalent extractor. Reject early with a clear
+    // message instead of silently building a wrong-platform Instagram URL
+    // from this platform's username.
+    if (content_type == "stories" || content_type == "highlights") && platform_name != "Instagram" {
+        let label = if content_type == "stories" { "Stories" } else { "Highlights" };
+        return Err(format!(
+            "{} are only available for Instagram. gallery-dl has no {} support for {}.",
+            label, content_type, platform_name
+        ));
+    }
+
     // Stories/Highlights are login-gated on Instagram - failing fast with a
     // clear message here beats letting gallery-dl fail cryptically with no
     // cookies and reporting a confusing generic error to the user.
@@ -244,6 +269,11 @@ fn run_single_content_download(
     let mut cmd = Command::new("gallery-dl");
     #[cfg(target_os = "windows")]
     cmd.creation_flags(0x08000000);
+    #[cfg(unix)]
+    {
+        use std::os::unix::process::CommandExt;
+        cmd.process_group(0);
+    }
 
     cmd.arg("-d").arg(&final_output_dir);
 
@@ -285,8 +315,7 @@ fn run_single_content_download(
         cmd.arg("--proxy").arg(&proxy);
     }
 
-    cmd.arg("--quiet");
-    cmd.arg("--Print").arg("after:FILE_OK:");
+    cmd.arg("--Print").arg("after:FILE_OK:{filename}.{extension}");
     cmd.arg("--sleep-request").arg("2");
 
     if content_type != "stories" && content_type != "highlights" {
@@ -347,7 +376,7 @@ fn run_single_content_download(
     let watchdog_completed = Arc::new(std::sync::atomic::AtomicBool::new(false));
     let watchdog_done = watchdog_completed.clone();
     let watchdog_pid = child.id();
-    let watchdog = thread::spawn(move || {
+    let _watchdog = thread::spawn(move || {
         thread::sleep(std::time::Duration::from_secs(1800)); // 30 minutes
         if !watchdog_done.load(Ordering::SeqCst) {
             kill_process_tree(watchdog_pid);
@@ -389,6 +418,11 @@ fn run_single_content_download(
     }
 }
 
+// Kills a gallery-dl process and everything it spawned (e.g. ffmpeg for
+// video merging). On Windows, taskkill /T handles the tree. On Unix, the
+// child was placed in its own process group at spawn time (see
+// cmd.process_group(0) above), so a negative PID here signals the whole
+// group at once - no blocking sleep, no orphaned children.
 fn kill_process_tree(pid: u32) {
     #[cfg(target_os = "windows")]
     {
@@ -399,11 +433,7 @@ fn kill_process_tree(pid: u32) {
     }
     #[cfg(not(target_os = "windows"))]
     {
-        // Send SIGTERM to the process group
-        let _ = Command::new("kill").args(["--", &pid.to_string()]).output();
-        // If it doesn't respond within 3 seconds, SIGKILL
-        std::thread::sleep(std::time::Duration::from_secs(3));
-        let _ = Command::new("kill").args(["-9", &pid.to_string()]).output();
+        let _ = Command::new("kill").args(["-9", &format!("-{}", pid)]).output();
     }
 }
 

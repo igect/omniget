@@ -28,6 +28,15 @@
   let cookiesFile = $state('');
   let depsStatus = $state('');
 
+  function detectPlatform(url: string): string {
+    const low = url.toLowerCase();
+    if (low.includes('instagram.com')) return 'Instagram';
+    if (low.includes('tiktok.com')) return 'TikTok';
+    if (low.includes('facebook.com')) return 'Facebook';
+    if (low.includes('x.com') || low.includes('twitter.com')) return 'X';
+    return 'Other';
+  }
+
   let savedProfiles = $state<Array<{ url: string; username?: string; _platformLabel?: string }>>([]);
   let selectedProfileIndex = $state(-1);
 
@@ -39,6 +48,13 @@
 
   let needsCookiesWarning = $derived(
     (contentType === 'stories' || contentType === 'highlights') && !cookiesFile.trim()
+  );
+
+  let currentPlatform = $derived(detectPlatform(getDownloadUrl() ?? ''));
+  let isInstagram = $derived(currentPlatform === 'Instagram');
+
+  let platformMismatch = $derived(
+    (contentType === 'stories' || contentType === 'highlights') && !isInstagram
   );
 
   onMount(async () => {
@@ -61,13 +77,19 @@
 
   async function loadSavedProfiles() {
     try {
-      const platforms = ['instagram', 'tiktok', 'facebook', 'x'];
-      const results = await Promise.all(platforms.map((p) => loadProfiles(p)));
-      const all = results.flat().map((profile, i) => ({
-        ...profile,
-        _platformLabel: ['Instagram', 'TikTok', 'Facebook', 'X'][i % 4]
-      }));
-      savedProfiles = all;
+      const platformLabels: Record<string, string> = {
+        instagram: 'Instagram',
+        tiktok: 'TikTok',
+        facebook: 'Facebook',
+        x: 'X',
+      };
+      const results = await Promise.all(
+        Object.keys(platformLabels).map(async (platform) => {
+          const profiles = await loadProfiles(platform);
+          return profiles.map((p) => ({ ...p, _platformLabel: platformLabels[platform] }));
+        })
+      );
+      savedProfiles = results.flat();
 
       if (savedProfiles.length > 0 && selectedProfileIndex === -1 && !url.trim()) {
         selectedProfileIndex = 0;
@@ -169,6 +191,12 @@
     }
   });
 
+  $effect(() => {
+    if ((contentType === 'stories' || contentType === 'highlights') && !isInstagram) {
+      contentType = 'photos';
+    }
+  });
+
   async function browseOutputDir() {
     const selected = await open({ directory: true, multiple: false, title: 'Select Output Directory' });
     if (selected) outputDir = selected;
@@ -250,8 +278,12 @@
     <select id="content-type" bind:value={contentType} disabled={downloading}>
       <option value="photos">Photos Only</option>
       <option value="videos">Videos Only</option>
-      <option value="stories">Stories Only</option>
-      <option value="highlights">Highlights Only</option>
+      <option value="stories" disabled={!isInstagram}>
+        Stories Only {isInstagram ? '' : '(Instagram only)'}
+      </option>
+      <option value="highlights" disabled={!isInstagram}>
+        Highlights Only {isInstagram ? '' : '(Instagram only)'}
+      </option>
       <option value="all">All Content</option>
     </select>
   </div>
@@ -269,6 +301,9 @@
       </div>
     {#if needsCookiesWarning}
       <p class="field-warning">Stories and Highlights require a cookies file - Instagram blocks anonymous access.</p>
+    {/if}
+    {#if platformMismatch}
+      <p class="field-warning">Stories and Highlights are only supported for Instagram.</p>
     {/if}
   </div>
 
@@ -291,7 +326,7 @@
       <button
         class="download-btn"
         onclick={startDownload}
-        disabled={!getDownloadUrl() || !outputDir.trim() || needsCookiesWarning}
+        disabled={!getDownloadUrl() || !outputDir.trim() || needsCookiesWarning || platformMismatch}
       >
         Start Download
       </button>
