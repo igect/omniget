@@ -79,8 +79,8 @@ export async function saveProfile(platform: string, url: string): Promise<string
   return await invoke<string>('save_profile', { platform, url });
 }
 
-export async function deleteProfile(platform: string, index: number): Promise<string> {
-  return await invoke<string>('delete_profile', { platform, index });
+export async function deleteProfile(platform: string, profileUrl: string): Promise<string> {
+  return await invoke<string>('delete_profile', { platform, profileUrl });
 }
 
 export async function setupOpenMintFolders(baseDir: string, cookiesDir: string): Promise<string> {

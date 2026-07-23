@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { open } from '@tauri-apps/plugin-dialog';
   import {
     checkPythonDependencies,
     saveAppSettings,
@@ -27,7 +28,7 @@
   let cookiesFile = $state('');
   let depsStatus = $state('');
 
-  let savedProfiles = $state<Array<{ url: string; username?: string }>>([]);
+  let savedProfiles = $state<Array<{ url: string; username?: string; _platformLabel?: string }>>([]);
   let selectedProfileIndex = $state(-1);
 
   let downloading = $derived(isActive());
@@ -60,8 +61,13 @@
 
   async function loadSavedProfiles() {
     try {
-      const instagramProfiles = await loadProfiles('instagram');
-      savedProfiles = instagramProfiles;
+      const platforms = ['instagram', 'tiktok', 'facebook', 'x'];
+      const results = await Promise.all(platforms.map((p) => loadProfiles(p)));
+      const all = results.flat().map((profile, i) => ({
+        ...profile,
+        _platformLabel: ['Instagram', 'TikTok', 'Facebook', 'X'][i % 4]
+      }));
+      savedProfiles = all;
 
       if (savedProfiles.length > 0 && selectedProfileIndex === -1 && !url.trim()) {
         selectedProfileIndex = 0;
@@ -162,6 +168,16 @@
       selectedProfileIndex = -1;
     }
   });
+
+  async function browseOutputDir() {
+    const selected = await open({ directory: true, multiple: false, title: 'Select Output Directory' });
+    if (selected) outputDir = selected;
+  }
+
+  async function browseCookiesFile() {
+    const selected = await open({ directory: false, multiple: false, title: 'Select Cookies File' });
+    if (selected) cookiesFile = selected;
+  }
 </script>
 
 <div class="download-manager">
@@ -200,6 +216,9 @@
               disabled={downloading}
             >
               <span class="profile-name">{profile.username || profile.url}</span>
+              {#if profile._platformLabel}
+                <span class="profile-platform">{profile._platformLabel}</span>
+              {/if}
               {#if selectedProfileIndex === index}
                 <span class="checkmark">✓</span>
               {/if}
@@ -214,14 +233,15 @@
 
   <div class="form-group">
     <label for="output-dir">Output Directory</label>
-    <div class="input-with-button">
-      <input
-        id="output-dir"
-        type="text"
-        bind:value={outputDir}
-        disabled={downloading}
-      />
-    </div>
+      <div class="input-with-button">
+        <input
+          id="output-dir"
+          type="text"
+          bind:value={outputDir}
+          disabled={downloading}
+        />
+        <button class="browse-btn" onclick={browseOutputDir} disabled={downloading}>Browse</button>
+      </div>
     <p class="field-hint">Files are organized automatically as Platform / Username / MediaType.</p>
   </div>
 
@@ -238,14 +258,15 @@
 
   <div class="form-group">
     <label for="cookies-file">Cookies File {(contentType === 'stories' || contentType === 'highlights') ? '(required)' : '(optional)'}</label>
-    <div class="input-with-button">
-      <input
-        id="cookies-file"
-        type="text"
-        bind:value={cookiesFile}
-        disabled={downloading}
-      />
-    </div>
+      <div class="input-with-button">
+        <input
+          id="cookies-file"
+          type="text"
+          bind:value={cookiesFile}
+          disabled={downloading}
+        />
+        <button class="browse-btn" onclick={browseCookiesFile} disabled={downloading}>Browse</button>
+      </div>
     {#if needsCookiesWarning}
       <p class="field-warning">Stories and Highlights require a cookies file - Instagram blocks anonymous access.</p>
     {/if}
@@ -405,6 +426,36 @@
     border-color: var(--accent);
   }
 
+  .input-with-button {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .input-with-button input {
+    flex: 1;
+  }
+
+  .browse-btn {
+    padding: 0.625rem 1rem;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+    white-space: nowrap;
+    transition: all 0.2s;
+  }
+
+  .browse-btn:hover:not(:disabled) {
+    background: var(--bg-tertiary);
+  }
+
+  .browse-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
   .form-group input:disabled,
   .form-group select:disabled {
     opacity: 0.6;
@@ -474,6 +525,14 @@
 
   .profile-name {
     font-weight: 500;
+  }
+
+  .profile-platform {
+    font-size: 0.75rem;
+    background: var(--bg-tertiary);
+    padding: 2px 6px;
+    border-radius: 3px;
+    color: var(--text-secondary);
   }
 
   .checkmark {

@@ -79,11 +79,23 @@
     }
   }
 
-  async function removeProfile(index: number) {
-    if (!confirm('Delete this profile?')) return;
-    
+  let confirmDeleteUrl = $state<string | null>(null);
+
+  function promptDelete(url: string) {
+    confirmDeleteUrl = url;
+  }
+
+  function cancelDelete() {
+    confirmDeleteUrl = null;
+  }
+
+  async function confirmDelete() {
+    const url = confirmDeleteUrl;
+    confirmDeleteUrl = null;
+    if (!url) return;
+
     try {
-      await deleteProfile(activePlatform, index);
+      await deleteProfile(activePlatform, url);
       await loadPlatformProfiles();
     } catch (err) {
       console.error('Failed to delete profile:', err);
@@ -137,7 +149,7 @@
               <span class="profile-username">@{profile.username}</span>
             {/if}
           </div>
-          <button class="delete-btn" onclick={() => removeProfile(index)}>
+          <button class="delete-btn" onclick={() => promptDelete(profile.url)}>
             Delete
           </button>
         </li>
@@ -145,6 +157,21 @@
     </ul>
   {/if}
 </div>
+
+{#if confirmDeleteUrl}
+  <!-- svelte-ignore a11y_click_events_have_key_events -->
+  <!-- svelte-ignore a11y_no_static_element_interactions -->
+  <div class="confirm-overlay" onclick={cancelDelete}>
+    <div class="confirm-dialog" onclick={(e) => e.stopPropagation()}>
+      <p>Delete this profile?</p>
+      <p class="confirm-url">{confirmDeleteUrl}</p>
+      <div class="confirm-actions">
+        <button class="confirm-no" onclick={cancelDelete}>Cancel</button>
+        <button class="confirm-yes" onclick={confirmDelete}>Yes, Delete</button>
+      </div>
+    </div>
+  </div>
+{/if}
 
 <style>
   .profile-manager {
@@ -292,5 +319,68 @@
     color: var(--text-secondary);
     padding: 3rem;
     font-size: 1rem;
+  }
+
+  .confirm-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+  }
+
+  .confirm-dialog {
+    background: var(--bg-primary);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.5rem;
+    max-width: 400px;
+    width: 90%;
+    text-align: center;
+  }
+
+  .confirm-dialog p {
+    margin: 0 0 0.5rem;
+    color: var(--text-primary);
+  }
+
+  .confirm-url {
+    font-weight: 600;
+    word-break: break-all;
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    margin-bottom: 1.25rem;
+  }
+
+  .confirm-actions {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: center;
+  }
+
+  .confirm-actions button {
+    padding: 0.625rem 1.25rem;
+    border: none;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .confirm-no {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+  }
+
+  .confirm-yes {
+    background: #ef4444;
+    color: white;
+  }
+
+  .confirm-yes:hover {
+    opacity: 0.9;
   }
 </style>

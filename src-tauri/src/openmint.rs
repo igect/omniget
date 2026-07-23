@@ -285,6 +285,8 @@ fn run_single_content_download(
         cmd.arg("--proxy").arg(&proxy);
     }
 
+    cmd.arg("--quiet");
+    cmd.arg("--Print").arg("after:FILE_OK:");
     cmd.arg("--sleep-request").arg("2");
 
     if content_type != "stories" && content_type != "highlights" {
@@ -312,14 +314,13 @@ fn run_single_content_download(
         thread::spawn(move || {
             let reader = BufReader::new(stdout);
             for line in reader.lines().flatten() {
-                if line.trim().is_empty() {
-                    continue;
+                if line.contains("FILE_OK:") {
+                    let count = files_downloaded.fetch_add(1, Ordering::SeqCst) + 1;
+                    let _ = app.emit(&format!("download_{}", download_id), DownloadProgress {
+                        message: line,
+                        files_downloaded: count,
+                    });
                 }
-                let count = files_downloaded.fetch_add(1, Ordering::SeqCst) + 1;
-                let _ = app.emit(&format!("download_{}", download_id), DownloadProgress {
-                    message: line,
-                    files_downloaded: count,
-                });
             }
         })
     };
@@ -343,11 +344,23 @@ fn run_single_content_download(
         })
     };
 
+    let watchdog_completed = Arc::new(std::sync::atomic::AtomicBool::new(false));
+    let watchdog_done = watchdog_completed.clone();
+    let watchdog_pid = child.id();
+    let watchdog = thread::spawn(move || {
+        thread::sleep(std::time::Duration::from_secs(1800)); // 30 minutes
+        if !watchdog_done.load(Ordering::SeqCst) {
+            kill_process_tree(watchdog_pid);
+        }
+    });
+
     let _ = stdout_handle.join();
     let _ = stderr_handle.join();
 
     let status = child.wait()
         .map_err(|e| format!("Download process failed: {}", e))?;
+
+    watchdog_completed.store(true, Ordering::SeqCst);
 
     // Whether it succeeded, failed, or was killed by cancel_download, this
     // download_id is no longer running - clean up its PID entry.
@@ -376,6 +389,24 @@ fn run_single_content_download(
     }
 }
 
+fn kill_process_tree(pid: u32) {
+    #[cfg(target_os = "windows")]
+    {
+        let mut kill_cmd = Command::new("taskkill");
+        kill_cmd.args(["/PID", &pid.to_string(), "/T", "/F"]);
+        kill_cmd.creation_flags(0x08000000);
+        let _ = kill_cmd.output();
+    }
+    #[cfg(not(target_os = "windows"))]
+    {
+        // Send SIGTERM to the process group
+        let _ = Command::new("kill").args(["--", &pid.to_string()]).output();
+        // If it doesn't respond within 3 seconds, SIGKILL
+        std::thread::sleep(std::time::Duration::from_secs(3));
+        let _ = Command::new("kill").args(["-9", &pid.to_string()]).output();
+    }
+}
+
 // Kills the running gallery-dl process for a given download_id, if any.
 // Uses taskkill /T on Windows to also take down any child processes
 // gallery-dl may have spawned, not just the top-level PID.
@@ -385,22 +416,7 @@ pub fn cancel_download(download_id: String) -> Result<String, String> {
 
     match pid {
         Some(pid) => {
-            #[cfg(target_os = "windows")]
-            {
-                let mut kill_cmd = Command::new("taskkill");
-                kill_cmd.args(["/PID", &pid.to_string(), "/T", "/F"]);
-                kill_cmd.creation_flags(0x08000000);
-                kill_cmd.output()
-                    .map_err(|e| format!("Failed to kill process: {}", e))?;
-            }
-            #[cfg(not(target_os = "windows"))]
-            {
-                Command::new("kill")
-                    .args(["-9", &pid.to_string()])
-                    .output()
-                    .map_err(|e| format!("Failed to kill process: {}", e))?;
-            }
-
+            kill_process_tree(pid);
             RUNNING_DOWNLOADS.lock().unwrap().remove(&download_id);
             Ok("Download cancelled".to_string())
         }
@@ -496,24 +512,7 @@ pub fn save_profile(platform: String, url: String) -> Result<String, String> {
         serde_json::json!({})
     };
 
-    // FIX: trim the trailing slash before splitting on '/', so a URL like
-    // "instagram.com/nahid/?hl=en" doesn't have its username swallowed by
-    // the query-string segment. Previously this produced username: None
-    // for any "...username/?query" shaped URL.
-    let username = if url.starts_with("http") {
-        let trimmed = url.trim_end_matches('/');
-        trimmed.split('/')
-            .filter(|s| !s.is_empty())
-            .last()
-            .map(|s| {
-                let cleaned = s.split(['?', '#']).next().unwrap_or(s);
-                cleaned.trim_start_matches('@').to_string()
-            })
-            .filter(|s| !s.is_empty())
-    } else {
-        let cleaned = url.trim_start_matches('@');
-        if cleaned.is_empty() { None } else { Some(cleaned.to_string()) }
-    };
+    let username = extract_username_generic(&url);
 
     if let Some(arr) = all_profiles
         .as_object()
@@ -567,7 +566,7 @@ pub fn save_profile(platform: String, url: String) -> Result<String, String> {
 }
 
 #[command]
-pub fn delete_profile(platform: String, index: usize) -> Result<String, String> {
+pub fn delete_profile(platform: String, profile_url: String) -> Result<String, String> {
     let profiles_file = omniget_config_dir()?.join("profiles.json");
 
     if !profiles_file.exists() {
@@ -580,18 +579,19 @@ pub fn delete_profile(platform: String, index: usize) -> Result<String, String> 
     let mut all_profiles: serde_json::Value = serde_json::from_str(&content)
         .map_err(|e| format!("Failed to parse profiles: {}", e))?;
 
-    if let Some(arr) = all_profiles
+    let deleted = all_profiles
         .as_object_mut()
         .and_then(|obj| obj.get_mut(&platform))
         .and_then(|v| v.as_array_mut())
-    {
-        if index < arr.len() {
-            arr.remove(index);
-        } else {
-            return Err("Profile index out of bounds".to_string());
-        }
-    } else {
-        return Err("Platform not found".to_string());
+        .map(|arr| {
+            let len_before = arr.len();
+            arr.retain(|p| p.get("url").and_then(|u| u.as_str()) != Some(&profile_url));
+            len_before != arr.len()
+        })
+        .unwrap_or(false);
+
+    if !deleted {
+        return Err("Profile not found".to_string());
     }
 
     let content = serde_json::to_string_pretty(&all_profiles)
