@@ -233,29 +233,27 @@
       oninput={clearSelectedProfile}
     />
     {#if !url.trim() && savedProfiles.length > 0}
-      <div class="saved-profiles">
-        <p class="profile-label">Or select a saved profile:</p>
-        <div class="profile-list">
-          {#each savedProfiles as profile, index}
-            <button
-              class:profile-button={true}
-              class:selected={selectedProfileIndex === index}
-              onclick={() => selectProfile(index)}
-              disabled={downloading}
-            >
-              <span class="profile-name">{profile.username || profile.url}</span>
-              {#if profile._platformLabel}
-                <span class="profile-platform">{profile._platformLabel}</span>
-              {/if}
-              {#if selectedProfileIndex === index}
-                <span class="checkmark">✓</span>
-              {/if}
-            </button>
-          {/each}
-        </div>
+      <p class="profile-label">Or select a saved profile</p>
+      <div class="profile-list">
+        {#each savedProfiles as profile, index}
+          <button
+            class:profile-button={true}
+            class:selected={selectedProfileIndex === index}
+            onclick={() => selectProfile(index)}
+            disabled={downloading}
+          >
+            <span class="profile-name">{profile.username || profile.url}</span>
+            {#if profile._platformLabel}
+              <span class="profile-platform">{profile._platformLabel}</span>
+            {/if}
+            {#if selectedProfileIndex === index}
+              <span class="checkmark">✓</span>
+            {/if}
+          </button>
+        {/each}
       </div>
     {:else if !url.trim() && savedProfiles.length === 0}
-      <p class="no-profiles">No saved profiles. Add profiles in the Profiles tab.</p>
+      <p class="no-profiles">No saved profiles — <button class="inline-link" onclick={() => dispatch('switchToProfiles')}>add one</button></p>
     {/if}
   </div>
 
@@ -274,18 +272,14 @@
   </div>
 
   <div class="form-group">
-    <label for="content-type">Content Type</label>
-    <select id="content-type" bind:value={contentType} disabled={downloading}>
-      <option value="photos">Photos Only</option>
-      <option value="videos">Videos Only</option>
-      <option value="stories" disabled={!isInstagram}>
-        Stories Only {isInstagram ? '' : '(Instagram only)'}
-      </option>
-      <option value="highlights" disabled={!isInstagram}>
-        Highlights Only {isInstagram ? '' : '(Instagram only)'}
-      </option>
-      <option value="all">All Content</option>
-    </select>
+    <label>Content Type</label>
+    <div class="segmented">
+      <button type="button" class:active={contentType === 'all'} onclick={() => contentType = 'all'} disabled={downloading}>All</button>
+      <button type="button" class:active={contentType === 'photos'} onclick={() => contentType = 'photos'} disabled={downloading}>Photos</button>
+      <button type="button" class:active={contentType === 'videos'} onclick={() => contentType = 'videos'} disabled={downloading}>Videos</button>
+      <button type="button" class:active={contentType === 'stories'} onclick={() => contentType = 'stories'} disabled={downloading || !isInstagram} title={isInstagram ? '' : 'Instagram only'}>Stories</button>
+      <button type="button" class:active={contentType === 'highlights'} onclick={() => contentType = 'highlights'} disabled={downloading || !isInstagram} title={isInstagram ? '' : 'Instagram only'}>Highlights</button>
+    </div>
   </div>
 
   <div class="form-group">
@@ -509,18 +503,10 @@
     margin-top: 0.375rem;
   }
 
-  .saved-profiles {
-    margin-top: 0.75rem;
-    padding: 0.75rem;
-    background: var(--bg-secondary);
-    border-radius: 6px;
-    border: 1px solid var(--border);
-  }
-
   .profile-label {
     font-size: 0.8125rem;
     color: var(--text-secondary);
-    margin-bottom: 0.5rem;
+    margin: 0.75rem 0 0.5rem;
   }
 
   .profile-list {
@@ -579,6 +565,16 @@
     color: var(--text-secondary);
     font-style: italic;
   }
+
+  .inline-link { background: none; border: none; padding: 0; color: var(--accent); font-size: 0.8125rem; cursor: pointer; text-decoration: underline; }
+  .inline-link:hover { opacity: 0.8; }
+
+  .segmented { display: inline-flex; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+  .segmented button { border: none; border-radius: 0; background: transparent; color: var(--text-secondary); font-size: 0.8125rem; padding: 0.5rem 0.875rem; cursor: pointer; transition: all 0.2s; }
+  .segmented button + button { border-left: 1px solid var(--border); }
+  .segmented button.active { background: var(--bg-tertiary); color: var(--text-primary); font-weight: 600; }
+  .segmented button:disabled { opacity: 0.4; cursor: not-allowed; }
+  .segmented button:hover:not(:disabled):not(.active) { background: var(--bg-hover); }
 
   .button-group {
     display: flex;

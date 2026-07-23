@@ -259,28 +259,10 @@
     cursor: not-allowed;
   }
 
-  .profiles-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-  }
+  .profiles-list { list-style: none; padding: 0; margin: 0; border-top: 1px solid var(--border); }
 
-  .profile-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 1rem;
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    margin-bottom: 0.75rem;
-    background: var(--bg-secondary);
-    transition: all 0.2s;
-  }
-
-  .profile-item:hover {
-    border-color: var(--accent);
-    transform: translateX(2px);
-  }
+  .profile-item { display: flex; justify-content: space-between; align-items: center; padding: 0.875rem 0; border-bottom: 1px solid var(--border); transition: background 0.2s; }
+  .profile-item:hover { background: var(--bg-hover); }
 
   .profile-info {
     display: flex;

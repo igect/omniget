@@ -32,7 +32,7 @@
 
   <div class="content">
     {#if activeTab === 'download'}
-      <DownloadManager />
+      <DownloadManager on:switchToProfiles={() => activeTab = 'profiles'} />
     {:else}
       <ProfileManager />
     {/if}
