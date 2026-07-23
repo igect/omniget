@@ -130,6 +130,29 @@ fn extract_username_generic(url: &str) -> Option<String> {
     Some(cleaned.to_string())
 }
 
+// Given raw profile input and the platform key used in the UI/profiles.json
+// ("instagram", "tiktok", "facebook", "x"), builds a real, directly-
+// downloadable profile URL if the input is a bare username. If the input
+// already contains "://" it's returned unchanged. This guarantees a saved
+// profile's stored `url` is always something gallery-dl can actually
+// download, regardless of whether the user typed a full link or just a
+// plain username - across all four platforms, not just Instagram.
+fn canonicalize_profile_url(platform: &str, raw_input: &str) -> String {
+    let trimmed = raw_input.trim();
+    if trimmed.contains("://") {
+        return trimmed.to_string();
+    }
+
+    let username = trimmed.trim_start_matches('@');
+    match platform {
+        "instagram" => format!("https://www.instagram.com/{}/", username),
+        "tiktok" => format!("https://www.tiktok.com/@{}", username),
+        "facebook" => format!("https://www.facebook.com/{}", username),
+        "x" => format!("https://x.com/{}", username),
+        _ => trimmed.to_string(),
+    }
+}
+
 #[command]
 pub async fn run_gallery_dl_download(
     app: AppHandle,
@@ -343,10 +366,11 @@ fn run_single_content_download(
         thread::spawn(move || {
             let reader = BufReader::new(stdout);
             for line in reader.lines().flatten() {
-                if line.contains("FILE_OK:") {
+                if let Some(pos) = line.find("FILE_OK:") {
+                    let filename = line[pos + "FILE_OK:".len()..].trim();
                     let count = files_downloaded.fetch_add(1, Ordering::SeqCst) + 1;
                     let _ = app.emit(&format!("download_{}", download_id), DownloadProgress {
-                        message: line,
+                        message: format!("Downloaded: {}", filename),
                         files_downloaded: count,
                     });
                 }
@@ -525,11 +549,13 @@ pub fn load_profiles(platform: String) -> Result<Vec<Profile>, String> {
 
 #[command]
 pub fn save_profile(platform: String, url: String) -> Result<String, String> {
-    let url = url.trim().to_string();
+    let raw_input = url.trim().to_string();
 
-    if url.is_empty() {
+    if raw_input.is_empty() {
         return Err("URL or username cannot be empty".to_string());
     }
+
+    let url = canonicalize_profile_url(&platform, &raw_input);
 
     let config_dir = omniget_config_dir()?;
     let profiles_file = config_dir.join("profiles.json");

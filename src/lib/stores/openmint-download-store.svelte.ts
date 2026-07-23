@@ -16,6 +16,7 @@ let status = $state("");
 let statusType = $state<StatusType>("info");
 let lastFilesCount = $state(0);
 let unlisten: (() => void) | null = null;
+let cancelledByUser = false;
 
 export function isActive(): boolean {
   return active;
@@ -72,6 +73,8 @@ export async function startDownload(
     throw new Error("A download is already in progress");
   }
 
+  cancelledByUser = false;
+
   const cleanUrl = url.trim();
   const cleanOutputDir = cleanPathLike(outputDir);
   const cleanCookiesFile = cookiesFile.trim() ? cleanPathLike(cookiesFile) : "";
@@ -116,7 +119,10 @@ export async function startDownload(
       id,
     );
 
-    if (result.success) {
+    if (cancelledByUser) {
+      status = "Download cancelled";
+      statusType = "info";
+    } else if (result.success) {
       status = `✅ Downloaded ${result.files_count} files successfully!`;
       statusType = "success";
       filesDownloaded = result.files_count;
@@ -140,6 +146,8 @@ export async function startDownload(
 
 export async function stopDownload() {
   if (!active || !downloadId) return;
+
+  cancelledByUser = true;
 
   try {
     await cancelDownload(downloadId);
