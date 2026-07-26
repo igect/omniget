@@ -223,7 +223,7 @@
   {/if}
 
   <div class="form-group">
-    <label for="profile-url">Profile URL (optional - overrides saved profiles)</label>
+    <label for="profile-url">Profile URL</label>
     <input
       id="profile-url"
       type="text"
@@ -268,7 +268,6 @@
         />
         <button class="browse-btn" onclick={browseOutputDir} disabled={downloading}>Browse</button>
       </div>
-    <p class="field-hint">Files are organized automatically as Platform / Username / MediaType.</p>
   </div>
 
   <div class="form-group">
@@ -373,9 +372,9 @@
   }
 
   .deps-check.ok {
-    background: rgba(34, 197, 94, 0.15);
-    color: #22c55e;
-    border: 1px solid rgba(34, 197, 94, 0.3);
+    background: rgba(120,113,108,0.15);
+    color: #78716c;
+    border: 1px solid rgba(120,113,108,0.3);
   }
 
   .deps-check.error {
@@ -396,9 +395,9 @@
   }
 
   .status-alert.success {
-    background: rgba(34, 197, 94, 0.15);
-    color: #22c55e;
-    border: 1px solid rgba(34, 197, 94, 0.3);
+    background: rgba(120,113,108,0.15);
+    color: #78716c;
+    border: 1px solid rgba(120,113,108,0.3);
   }
 
   .status-alert.error {
@@ -491,12 +490,6 @@
     cursor: not-allowed;
   }
 
-  .field-hint {
-    font-size: 0.75rem;
-    color: var(--text-secondary);
-    margin-top: 0.375rem;
-  }
-
   .field-warning {
     font-size: 0.75rem;
     color: #ef4444;
@@ -534,9 +527,9 @@
   }
 
   .profile-button.selected {
-    background: rgba(34, 197, 94, 0.15);
-    border-color: #22c55e;
-    color: #22c55e;
+    background: rgba(120,113,108,0.15);
+    border-color: #78716c;
+    color: #78716c;
   }
 
   .profile-button:disabled {
@@ -655,9 +648,9 @@
 
   .progress-complete {
     padding: 1rem;
-    background: rgba(34, 197, 94, 0.15);
+    background: rgba(120,113,108,0.15);
     border-radius: 6px;
-    border: 1px solid rgba(34, 197, 94, 0.3);
+    border: 1px solid rgba(120,113,108,0.3);
   }
 
   .progress-text {
