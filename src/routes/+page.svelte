@@ -60,6 +60,9 @@
     format_note: string | null;
   };
 
+  // Platforms whose content is downloaded via the Courses page (courses
+  // plugin + logged-in account), not from a pasted URL.
+  const COURSE_PLATFORMS = new Set(["hotmart", "udemy"]);
 
   let url = $state(getOmniboxDraftUrl());
   let homeInputMode = $state<HomeInputMode>("url");
@@ -67,8 +70,6 @@
   let debounceTimer = $state<ReturnType<typeof setTimeout> | null>(null);
   let downloadMode = $state<"auto" | "audio" | "mute">("auto");
   let selectedQuality = $state("best");
-  const COURSE_PLATFORMS = new Set(["hotmart", "udemy"]);
-
   let clipStart = $state("");
   let clipEnd = $state("");
   let scheduleAt = $state("");
@@ -85,6 +86,21 @@
   let formatError = $state<string | null>(null);
   let formatFetchGeneration = $state(0);
   let referer = $state("");
+
+  // Derived quality data from real yt-dlp format info.
+  // These update after the user loads formats via FormatSelector.
+  let availableHeights = $derived(
+    formats.length > 0
+      ? [...new Set(
+          formats
+            .filter(f => f.has_video && typeof f.height === "number" && f.height > 0)
+            .map(f => f.height as number)
+        )].sort((a, b) => b - a)
+      : null
+  );
+  let hasAudioOnly = $derived(
+    formats.some(f => f.has_audio && !f.has_video)
+  );
 
   type CookieAccount = {
     slug: string;
@@ -315,9 +331,29 @@
 
   function toEpochMs(v: string): number | null {
     if (!v) return null;
-    const ms = new Date(v).getTime();
+    const ms = new Date(v.includes("T") ? v : `${v}T00:00`).getTime();
     if (Number.isNaN(ms)) return null;
     return ms;
+  }
+
+  function schedulePart(v: string, part: "date" | "time"): string {
+    if (!v) return "";
+    const [date, time = ""] = v.split("T");
+    return part === "date" ? date : time;
+  }
+
+  function withSchedulePart(current: string, part: "date" | "time", value: string): string {
+    const pad = (n: number) => String(n).padStart(2, "0");
+    let [date, time = ""] = current ? current.split("T") : ["", ""];
+    if (part === "date") date = value;
+    else time = value;
+    if (!date && !time) return "";
+    if (!date) {
+      const now = new Date();
+      date = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+    }
+    if (!time) time = "00:00";
+    return `${date}T${time}`;
   }
 
   function setSchedulePreset(kind: "1h" | "tonight" | "1d") {
@@ -666,6 +702,46 @@
 
     const currentUrl = url.trim();
     const platform = info.platform;
+
+    // B40: a regra do usuário decide antes de a gente perguntar de novo. Só
+    // preenche o que ele não escolheu explicitamente nesta sessão — uma regra
+    // não pode sobrescrever a escolha feita agora, na frente dele.
+    let ruleQuality = selectedQuality;
+    try {
+      const hit = await invoke<{ name: string; then: { output_dir?: string | null; quality?: string | null } } | null>(
+        "preview_rule_match",
+        { url: currentUrl, platform },
+      );
+      if (hit) {
+        if (hit.then.output_dir) outputDir = hit.then.output_dir;
+        if (hit.then.quality && !selectedQuality) ruleQuality = hit.then.quality;
+        showToast("info", $t("omnibox.rule_applied", { name: hit.name }) as string);
+      }
+    } catch {
+      // Regra é conveniência: se falhar, o download segue com as escolhas manuais.
+    }
+
+    // B39: comparar com o que esta URL era da última vez, antes de sobrescrever.
+    // Depois do download é tarde: o arquivo antigo já foi.
+    const snapshot = {
+      duration_secs: mediaPreview?.duration_seconds ?? null,
+      chapters: [],
+      sha256: null,
+      title: mediaPreview?.title ?? null,
+    };
+    try {
+      const mudou = await invoke<string | null>("check_media_changed", {
+        url: currentUrl,
+        current: snapshot,
+      });
+      if (mudou) {
+        showToast("info", $t("omnibox.media_changed", { summary: mudou }) as string);
+      }
+    } catch {
+      // Aviso é cortesia: se falhar, o download segue como sempre seguiu.
+    }
+    void invoke("record_media_snapshot", { url: currentUrl, snapshot }).catch(() => {});
+
     omniState = { kind: "preparing", platform };
     url = "";
 
@@ -674,7 +750,7 @@
         url: currentUrl,
         outputDir,
         downloadMode: downloadMode === "auto" ? null : downloadMode,
-        quality: selectedQuality,
+        quality: ruleQuality,
         formatId: selectedFormatId,
         referer: referer.trim() || null,
         cookieSlug: selectedCookieSlug,
@@ -697,6 +773,13 @@
     }
   }
 
+  type PreflightReport = {
+    total: number;
+    ready: number;
+    verdict: "go" | "go_with_skips" | "stop";
+    problems: { url: string; problem: string | null }[];
+  };
+
   async function handleBatchDownload() {
     if (omniState.kind !== "batch") return;
     const batchUrls = omniState.urls;
@@ -713,11 +796,37 @@
       outputDir = selected;
     }
 
+    // B34: conferir antes de enfileirar. Sem isto, uma URL sem suporte ou
+    // repetida entra na fila e so falha depois, uma por uma — o usuario
+    // descobre item a item o que dava para saber de uma vez.
+    let paraBaixar = batchUrls;
+    try {
+      const report = await invoke<PreflightReport>("preflight_batch", {
+        urls: batchUrls,
+        outputDir,
+      });
+      if (report.verdict === "stop") {
+        showToast("error", $t("omnibox.preflight_stop", { total: report.total }) as string);
+        return;
+      }
+      if (report.problems.length > 0) {
+        const ruins = new Set(report.problems.map(p => p.url));
+        paraBaixar = batchUrls.filter(u => !ruins.has(u));
+        showToast("info", $t("omnibox.preflight_skips", {
+          skipped: report.problems.length,
+          total: report.total,
+        }) as string);
+      }
+    } catch {
+      // A conferencia e uma cortesia, nao um portao: se ela falhar, o lote
+      // segue como seguia antes.
+    }
+
     omniState = { kind: "idle" };
     url = "";
 
     const results = await Promise.allSettled(
-      batchUrls.map(u => invoke<DownloadStarted>("download_from_url", {
+      paraBaixar.map(u => invoke<DownloadStarted>("download_from_url", {
         url: u,
         outputDir,
         downloadMode: downloadMode === "auto" ? null : downloadMode,
@@ -823,12 +932,20 @@
   }
 
   function handleHomeModeChange(mode: HomeInputMode) {
+    // batch/torrent/p2p are momentary actions, not persistent input modes:
+    // return to "url" so the tab bar never strands on an empty state when
+    // the picker/dialog is cancelled
     if (mode === "p2p") {
       showP2pSendDialog = true;
+      homeInputMode = "url";
     } else if (mode === "torrent") {
-      void openTorrentFile();
+      void openTorrentFile().finally(() => {
+        homeInputMode = "url";
+      });
     } else if (mode === "batch") {
-      void openBatchFile();
+      void openBatchFile().finally(() => {
+        homeInputMode = "url";
+      });
     }
   }
 
@@ -940,7 +1057,7 @@
       </div>
     {/if}
 
-    {#if showOmnibox && homeInputMode === "url"}
+    {#if showOmnibox}
       <HomeUrlBar bind:url bind:mode={homeInputMode} onInput={handleInput} onModeChange={handleHomeModeChange} />
     {/if}
 
@@ -1052,8 +1169,8 @@
             <button type="button" class="cookie-hint-link" onclick={() => goto("/settings?tab=cookies")}>{$t("omnibox.cookie_hint_action")}</button>
           </p>
         {/if}
-        {#if omniState.info.platform === "hotmart"}
-          <button class="button action-btn" onclick={handleAction}>{$t('omnibox.go_to_hotmart')}</button>
+        {#if COURSE_PLATFORMS.has(omniState.info.platform)}
+          <button class="button action-btn" onclick={handleAction}>{$t(omniState.info.platform === "udemy" ? 'omnibox.go_to_udemy' : 'omnibox.go_to_hotmart')}</button>
         {:else}
           {@const playlistBlocked = omniState.info.content_type === "playlist" && playlistEntries.length > 0 && selectedPlaylistItems.size === 0}
           {@const torrentBlocked = torrentEntries.length > 0 && selectedTorrentFiles.size === 0}
@@ -1066,7 +1183,7 @@
               <summary class="options-toggle">{$t('omnibox.options')}</summary>
               <div class="options-content">
                 <DownloadModeSelector bind:downloadMode onChange={() => { selectedFormatId = null; }} />
-                <QualityPicker bind:selectedQuality selectedFormatId />
+                <QualityPicker bind:selectedQuality selectedFormatId {availableHeights} {hasAudioOnly} />
                 {#if cookieAccounts.length > 1}
                   <CookieAccountPicker accounts={cookieAccounts} bind:selectedSlug={selectedCookieSlug} />
                 {/if}
@@ -1100,10 +1217,12 @@
                           <button type="button" class="schedule-preset" onclick={() => { scheduleAt = ""; scheduleStop = ""; }}>{$t('omnibox.schedule_clear')}</button>
                         {/if}
                       </div>
-                      <div class="timerange-inputs">
-                        <input class="timerange-input schedule-input" type="datetime-local" bind:value={scheduleAt} aria-label={$t('omnibox.schedule_start') as string} />
+                      <div class="timerange-inputs schedule-row">
+                        <input class="timerange-input schedule-date" type="date" value={schedulePart(scheduleAt, "date")} oninput={(e) => { scheduleAt = withSchedulePart(scheduleAt, "date", e.currentTarget.value); }} aria-label={$t('omnibox.schedule_start') as string} />
+                        <input class="timerange-input schedule-time" type="time" step="60" value={schedulePart(scheduleAt, "time")} oninput={(e) => { scheduleAt = withSchedulePart(scheduleAt, "time", e.currentTarget.value); }} aria-label={$t('omnibox.schedule_start') as string} />
                         <span class="timerange-sep" aria-hidden="true">—</span>
-                        <input class="timerange-input schedule-input" type="datetime-local" bind:value={scheduleStop} aria-label={$t('omnibox.schedule_stop') as string} />
+                        <input class="timerange-input schedule-date" type="date" value={schedulePart(scheduleStop, "date")} oninput={(e) => { scheduleStop = withSchedulePart(scheduleStop, "date", e.currentTarget.value); }} aria-label={$t('omnibox.schedule_stop') as string} />
+                        <input class="timerange-input schedule-time" type="time" step="60" value={schedulePart(scheduleStop, "time")} oninput={(e) => { scheduleStop = withSchedulePart(scheduleStop, "time", e.currentTarget.value); }} aria-label={$t('omnibox.schedule_stop') as string} />
                       </div>
                       <span class="timerange-hint">{$t('omnibox.schedule_hint')}</span>
                     </div>
@@ -1625,10 +1744,20 @@
     background: var(--button-elevated);
   }
 
-  .schedule-input {
+  .schedule-row {
+    flex-wrap: wrap;
+  }
+
+  .schedule-date {
     width: auto;
-    flex: 1;
-    min-width: 0;
+    flex: 1 1 auto;
+    min-width: 8.6em;
+  }
+
+  .schedule-time {
+    width: auto;
+    flex: 0 1 auto;
+    min-width: 5.4em;
   }
 
   .cookie-hint {

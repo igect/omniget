@@ -91,6 +91,27 @@ export type AppSettings = {
     app_id: string;
     large_image_key: string;
   };
+  league?: {
+    enabled?: boolean;
+    auto_accept?: boolean;
+    auto_accept_delay?: number;
+    notify_ready_check?: boolean;
+    auto_pick?: boolean;
+    auto_ban?: boolean;
+    auto_ban_delay?: number;
+    auto_lock?: boolean;
+    auto_lock_at_timeout?: boolean;
+    auto_runes?: boolean;
+    auto_honor?: boolean;
+    auto_play_again?: boolean;
+    auto_requeue?: boolean;
+    auto_accept_swaps?: boolean;
+    auto_reconnect?: boolean;
+    auto_trade?: string;
+    auto_message?: string;
+    pick_champions?: number[];
+    ban_champions?: number[];
+  };
   onboarding_completed: boolean;
   start_with_system: boolean;
   start_minimized: boolean;
@@ -98,6 +119,11 @@ export type AppSettings = {
   last_download_options?: {
     mode?: "auto" | "audio" | "mute" | null;
     quality?: string | null;
+  };
+  accessibility?: {
+    reduce_motion?: boolean;
+    reduce_transparency?: boolean;
+    disable_haptics?: boolean;
   };
   typography?: TypographySettings;
 };

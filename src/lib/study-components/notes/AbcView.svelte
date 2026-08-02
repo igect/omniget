@@ -84,6 +84,7 @@
     }
   }
 
+  // svelte-ignore state_referenced_locally
   let editingValue = $state(source);
 
   $effect(() => {

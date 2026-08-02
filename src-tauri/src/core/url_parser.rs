@@ -43,6 +43,7 @@ pub fn parse_url(url_str: &str) -> Option<ParsedUrl> {
         Platform::Vimeo => parse_vimeo(&segments),
         Platform::Udemy => parse_udemy(&segments),
         Platform::Bilibili => parse_bilibili(&segments),
+        Platform::Threads => parse_threads(&segments),
         Platform::Other(ref name) => match name.as_str() {
             "douyin" => parse_douyin(&segments),
             "tencentvideo" => parse_tencent(&segments),
@@ -330,6 +331,16 @@ fn parse_xiaohongshu(segments: &[&str]) -> (Option<String>, ParsedContentType) {
         );
     }
     if segments.len() >= 3 && segments[0] == "discovery" && segments[1] == "item" {
+        return (Some(segments[2].to_string()), ParsedContentType::Post);
+    }
+    (None, ParsedContentType::Post)
+}
+
+fn parse_threads(segments: &[&str]) -> (Option<String>, ParsedContentType) {
+    if segments.len() >= 2 && (segments[0] == "t" || segments[0] == "post") {
+        return (Some(segments[1].to_string()), ParsedContentType::Post);
+    }
+    if segments.len() >= 3 && segments[1] == "post" {
         return (Some(segments[2].to_string()), ParsedContentType::Post);
     }
     (None, ParsedContentType::Post)

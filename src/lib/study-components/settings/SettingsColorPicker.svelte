@@ -6,6 +6,7 @@
   };
 
   let { value, onChange, debounceMs = 500 }: Props = $props();
+  // svelte-ignore state_referenced_locally
   let local = $state(value);
   let timer: ReturnType<typeof setTimeout> | null = null;
 

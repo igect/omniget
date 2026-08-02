@@ -33,8 +33,11 @@
     onClose,
   }: Props = $props();
 
+  // svelte-ignore state_referenced_locally
   let name = $state(initialName);
+  // svelte-ignore state_referenced_locally
   let icon = $state<string | null>(initialIcon);
+  // svelte-ignore state_referenced_locally
   let color = $state<string | null>(initialColor);
   let inputRef = $state<HTMLInputElement | null>(null);
 

@@ -60,4 +60,20 @@ const config = {
 
 export const defaultLocale = "en";
 
-export const { t, locale, locales, loading, loadTranslations } = new i18n<Payload>(config);
+const instance = new i18n<Payload>(config);
+
+export const { locale, locales, loading, loadTranslations } = instance;
+
+export type TranslationFn = (key: string, ...payload: Payload) => string;
+
+export interface CallableStore extends TranslationFn {
+  subscribe: (typeof instance.t)["subscribe"];
+  get: (typeof instance.t)["get"];
+}
+
+const callableT: CallableStore = Object.assign(
+  (key: string, ...payload: Payload) => instance.t.get(key, ...payload),
+  instance.t
+);
+
+export const t = callableT;

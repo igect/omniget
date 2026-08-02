@@ -6,6 +6,7 @@
   };
 
   let { value, onChange, ariaLabel }: Props = $props();
+  // svelte-ignore state_referenced_locally
   let local = $state(value);
 
   $effect(() => {

@@ -360,7 +360,8 @@
         <h1 class="preview-h1">Aula 03 · Anatomia do coração</h1>
         <h2 class="preview-h2">Conceitos chave</h2>
         <p class="preview-body">
-          O coração tem <a class="preview-link">[[câmaras cardíacas]]</a>
+          <!-- svelte-ignore a11y_invalid_attribute -->
+          O coração tem <a class="preview-link" href="#">[[câmaras cardíacas]]</a>
           divididas em átrios e ventrículos. O ventrículo esquerdo é mais musculoso
           porque bombeia sangue contra a resistência sistêmica.
         </p>

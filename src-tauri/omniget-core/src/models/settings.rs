@@ -29,6 +29,96 @@ pub struct AppSettings {
     pub rpc: RpcSettings,
     #[serde(default)]
     pub bridge: BridgeSettings,
+    #[serde(default)]
+    pub league: LeagueSettings,
+    #[serde(default)]
+    pub accessibility: AccessibilitySettings,
+}
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct AccessibilitySettings {
+    #[serde(default)]
+    pub reduce_motion: bool,
+    #[serde(default)]
+    pub reduce_transparency: bool,
+    #[serde(default)]
+    pub disable_haptics: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LeagueSettings {
+    #[serde(default = "default_league_enabled")]
+    pub enabled: bool,
+    #[serde(default)]
+    pub auto_accept: bool,
+    #[serde(default)]
+    pub auto_accept_delay: u8,
+    #[serde(default = "default_notify_ready_check")]
+    pub notify_ready_check: bool,
+    #[serde(default)]
+    pub auto_pick: bool,
+    #[serde(default)]
+    pub auto_ban: bool,
+    #[serde(default)]
+    pub auto_ban_delay: u8,
+    #[serde(default)]
+    pub auto_lock: bool,
+    #[serde(default)]
+    pub auto_lock_at_timeout: bool,
+    #[serde(default)]
+    pub auto_runes: bool,
+    #[serde(default)]
+    pub auto_honor: bool,
+    #[serde(default)]
+    pub auto_play_again: bool,
+    #[serde(default)]
+    pub auto_requeue: bool,
+    #[serde(default)]
+    pub auto_accept_swaps: bool,
+    #[serde(default)]
+    pub auto_reconnect: bool,
+    #[serde(default)]
+    pub auto_trade: String,
+    #[serde(default)]
+    pub auto_message: String,
+    #[serde(default)]
+    pub pick_champions: Vec<i64>,
+    #[serde(default)]
+    pub ban_champions: Vec<i64>,
+}
+
+fn default_league_enabled() -> bool {
+    true
+}
+
+fn default_notify_ready_check() -> bool {
+    true
+}
+
+impl Default for LeagueSettings {
+    fn default() -> Self {
+        Self {
+            enabled: default_league_enabled(),
+            auto_accept: false,
+            auto_accept_delay: 0,
+            notify_ready_check: default_notify_ready_check(),
+            auto_pick: false,
+            auto_ban: false,
+            auto_ban_delay: 0,
+            auto_lock: false,
+            auto_lock_at_timeout: false,
+            auto_runes: false,
+            auto_honor: false,
+            auto_play_again: false,
+            auto_requeue: false,
+            auto_accept_swaps: false,
+            auto_reconnect: false,
+            auto_trade: String::new(),
+            auto_message: String::new(),
+            pick_champions: Vec::new(),
+            ban_champions: Vec::new(),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -247,6 +337,10 @@ pub struct AdvancedSettings {
     pub user_agent: String,
     #[serde(default)]
     pub github_token: String,
+    /// Desliga a verificação de certificado TLS do yt-dlp. Default `false`:
+    /// só existe para rede corporativa com TLS interceptado.
+    #[serde(default)]
+    pub insecure_tls: bool,
 }
 
 fn default_concurrent_fragments() -> u32 {
@@ -332,7 +426,7 @@ impl Default for TelegramSettings {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ProxySettings {
     #[serde(default)]
     pub enabled: bool,
@@ -346,6 +440,19 @@ pub struct ProxySettings {
     pub username: String,
     #[serde(default)]
     pub password: String,
+}
+
+impl Default for ProxySettings {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            proxy_type: default_proxy_type(),
+            host: String::new(),
+            port: default_proxy_port(),
+            username: String::new(),
+            password: String::new(),
+        }
+    }
 }
 
 fn default_proxy_type() -> String {
@@ -519,6 +626,7 @@ impl Default for AppSettings {
                 twitter_manual_cookie: String::new(),
                 user_agent: String::new(),
                 github_token: String::new(),
+                insecure_tls: false,
             },
             telegram: TelegramSettings::default(),
             proxy: ProxySettings::default(),
@@ -531,6 +639,100 @@ impl Default for AppSettings {
             typography: TypographySettings::default(),
             rpc: RpcSettings::default(),
             bridge: BridgeSettings::default(),
+            league: LeagueSettings::default(),
+            accessibility: AccessibilitySettings::default(),
         }
+    }
+}
+
+#[cfg(test)]
+mod backcompat_tests {
+    use super::*;
+
+    #[test]
+    fn settings_da_v0_7_6_carregam_com_tls_verificado() {
+        // settings.json de uma instalacao 0.7.6, antes de `insecure_tls`
+        // existir. O campo ausente precisa virar `false` (certificado
+        // verificado) sem derrubar a desserializacao nem tocar em nenhuma
+        // outra preferencia de `advanced`. Essa e a categoria de bug que ja
+        // zerou as preferencias de usuarios neste projeto.
+        let json = serde_json::json!({
+            "max_concurrent_segments": 20,
+            "max_retries": 3,
+            "max_concurrent_downloads": 4,
+            "concurrent_fragments": 8,
+            "prevent_sleep": false,
+            "cookies_from_browser": "",
+            "twitter_manual_cookie": "",
+            "user_agent": "Mozilla/5.0 teste"
+        });
+        let parsed: AdvancedSettings =
+            serde_json::from_value(json).expect("settings antigo precisa desserializar");
+
+        assert!(
+            !parsed.insecure_tls,
+            "campo ausente precisa virar verificacao de certificado LIGADA"
+        );
+        assert_eq!(parsed.max_concurrent_downloads, 4);
+        assert_eq!(parsed.concurrent_fragments, 8);
+        assert!(!parsed.prevent_sleep);
+        assert_eq!(parsed.user_agent, "Mozilla/5.0 teste");
+    }
+
+    #[test]
+    fn insecure_tls_ligado_sobrevive_ao_round_trip() {
+        let json = serde_json::json!({
+            "max_concurrent_segments": 20,
+            "max_retries": 3,
+            "insecure_tls": true
+        });
+        let parsed: AdvancedSettings = serde_json::from_value(json).expect("desserializa");
+        assert!(parsed.insecure_tls);
+        let round = serde_json::to_value(&parsed).expect("serializa");
+        let back: AdvancedSettings = serde_json::from_value(round).expect("volta");
+        assert!(back.insecure_tls);
+    }
+
+    // A #220 adicionou `accessibility` ao AppSettings sem teste de migracao.
+    // Um settings.json escrito antes da 0.8.0 nao tem esse campo; se ele perder
+    // o `serde(default)` num refactor, todo usuario existente perde a
+    // configuracao inteira, em silencio, no primeiro boot depois do update.
+    //
+    // Em vez de escrever um JSON antigo a mao (que envelhece e vira ficcao),
+    // este teste serializa o default atual e *remove* a chave nova — que e
+    // exatamente a forma de um arquivo gravado antes de o campo existir.
+    #[test]
+    fn settings_json_sem_accessibility_ainda_abre() {
+        let atual = serde_json::to_value(AppSettings::default()).expect("serializa");
+        let mut anterior = atual.clone();
+        let obj = anterior.as_object_mut().expect("objeto");
+        let removida = obj.remove("accessibility");
+        assert!(
+            removida.is_some(),
+            "o campo tem que existir hoje, senao o teste nao prova nada"
+        );
+
+        let parsed: AppSettings =
+            serde_json::from_value(anterior).expect("arquivo pre-0.8.0 tem que abrir");
+
+        assert!(!parsed.accessibility.reduce_motion);
+        assert!(!parsed.accessibility.reduce_transparency);
+        // E o que o usuario ja tinha nao pode sumir junto.
+        assert_eq!(
+            parsed.appearance.theme,
+            AppSettings::default().appearance.theme
+        );
+        assert_eq!(parsed.schema_version, AppSettings::default().schema_version);
+    }
+
+    #[test]
+    fn acessibilidade_ligada_sobrevive_ao_round_trip() {
+        let mut s = AppSettings::default();
+        s.accessibility.reduce_motion = true;
+        s.accessibility.reduce_transparency = true;
+        let round = serde_json::to_value(&s).expect("serializa");
+        let back: AppSettings = serde_json::from_value(round).expect("volta");
+        assert!(back.accessibility.reduce_motion);
+        assert!(back.accessibility.reduce_transparency);
     }
 }

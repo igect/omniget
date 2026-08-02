@@ -589,6 +589,8 @@ pub fn run() {
                     local_bridge::spawn(app_handle).await;
                 });
             }
+
+            commands::league::start_background(app.handle().clone());
             {
                 let plugins_dir = core::paths::app_data_dir()
                     .unwrap_or_else(|| std::path::PathBuf::from("."))
@@ -699,6 +701,54 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             commands::auth_webview::open_auth_webview,
+            commands::league::league_status,
+            commands::league::league_get,
+            commands::league::league_install_dir,
+            commands::league::league_set_positions,
+            commands::league::league_end_of_game_stats,
+            commands::league::league_set_icon,
+            commands::league::league_set_profile_background,
+            commands::league::league_set_status,
+            commands::league::league_owned_skins,
+            commands::league::league_summoner,
+            commands::league::league_ranked,
+            commands::league::league_gameflow,
+            commands::league::league_match_detail,
+            commands::league::league_player_history,
+            commands::league::league_perks,
+            commands::league::league_match_history,
+            commands::league::league_accept_ready_check,
+            commands::league::league_auto_accept_set,
+            commands::league::league_auto_accept_get,
+            commands::league::league_lobby_queues,
+            commands::league::league_create_lobby,
+            commands::league::league_start_matchmaking,
+            commands::league::league_stop_matchmaking,
+            commands::league::league_leave_lobby,
+            commands::league::league_play_again,
+            commands::league::league_champ_select_session,
+            commands::league::league_bench_swap,
+            commands::league::league_restart_ux,
+            commands::league::league_reroll,
+            commands::league::league_reroll_keeping_champion,
+            commands::league::league_live_game,
+            commands::league::league_game_players,
+            commands::league::league_player_report,
+            commands::league::league_match_analysis,
+            commands::league::league_live_events,
+            commands::league::league_live_metrics,
+            commands::league::league_search_player,
+            commands::league::league_duos,
+            commands::league::league_jungle_report,
+            commands::league::league_apply_runes,
+            commands::league::league_send_chat,
+            commands::league::league_rune_recommendations,
+            commands::league::league_champion_meta,
+            commands::league::league_champion_tiers,
+            commands::league::league_champion_build,
+            commands::league::league_ability_cooldowns,
+            commands::league::league_spectate,
+            commands::league::league_dodge,
             commands::bilibili_auth::bilibili_qr_generate,
             commands::bilibili_auth::bilibili_qr_poll,
             commands::bilibili_auth::bilibili_captcha_challenge,

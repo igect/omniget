@@ -28,6 +28,7 @@ type EmbedMetadataFn = Box<dyn Fn() -> bool + Send + Sync>;
 type EmbedThumbnailFn = Box<dyn Fn() -> bool + Send + Sync>;
 type SpeedLimitFn = Box<dyn Fn() -> Option<String> + Send + Sync>;
 type LiveFromStartFn = Box<dyn Fn() -> bool + Send + Sync>;
+type InsecureTlsFn = Box<dyn Fn() -> bool + Send + Sync>;
 type ConcurrentFragmentsFn = Box<dyn Fn() -> u32 + Send + Sync>;
 type UserAgentFn = Box<dyn Fn() -> Option<String> + Send + Sync>;
 type SponsorBlockModeFn = Box<dyn Fn() -> String + Send + Sync>;
@@ -52,10 +53,98 @@ static EMBED_METADATA_FN: OnceLock<EmbedMetadataFn> = OnceLock::new();
 static EMBED_THUMBNAIL_FN: OnceLock<EmbedThumbnailFn> = OnceLock::new();
 static SPEED_LIMIT_FN: OnceLock<SpeedLimitFn> = OnceLock::new();
 static LIVE_FROM_START_FN: OnceLock<LiveFromStartFn> = OnceLock::new();
+static INSECURE_TLS_FN: OnceLock<InsecureTlsFn> = OnceLock::new();
 static CONCURRENT_FRAGMENTS_FN: OnceLock<ConcurrentFragmentsFn> = OnceLock::new();
 static USER_AGENT_FN: OnceLock<UserAgentFn> = OnceLock::new();
 static SPONSORBLOCK_MODE_FN: OnceLock<SponsorBlockModeFn> = OnceLock::new();
 static SPONSORBLOCK_CATEGORIES_FN: OnceLock<SponsorBlockCategoriesFn> = OnceLock::new();
+
+/// Protocolos que podem ser delegados ao aria2c. Manifesto fragmentado
+/// (`m3u8*`, `dash_frag_urls`) fica de fora por causa da CVE-2026-50574 — o
+/// yt-dlp removeu esse suporte na 2026.06.09 e recomenda `-N` no lugar.
+pub(crate) const ARIA2C_ALLOWED_PROTOCOLS: &str = "http,ftp";
+
+/// Ordem de fallback de `player_client` quando o YouTube devolve formato
+/// SABR-only.
+///
+/// O extractor `web` passou a entregar formatos que o caminho normal de
+/// download nao consegue puxar. Estes quatro clients ainda servem URL
+/// progressiva; a ordem vai do mais confiavel ao mais restrito.
+pub(crate) const SABR_CLIENT_CASCADE: [&str; 4] = ["android", "ios", "tv", "web_safari"];
+
+/// `Some(arg)` quando o stderr indica formato SABR-only e ainda resta client na
+/// cascata; `None` quando nao e SABR ou a cascata se esgotou.
+///
+/// Separado do laco de retry de proposito: e o unico jeito de testar a decisao
+/// com stderr real capturado como fixture, sem subir um download.
+pub(crate) fn sabr_fallback_client(stderr_lower: &str, attempt: usize) -> Option<String> {
+    if !stderr_lower.contains("sabr") {
+        return None;
+    }
+    SABR_CLIENT_CASCADE
+        .get(attempt)
+        .map(|client| format!("youtube:player_client={client}"))
+}
+
+/// Piso de versão do yt-dlp. 2026.06.09 é a release que corrigiu
+/// CVE-2026-50019 (vazamento de cookie no downloader curl), CVE-2026-50023
+/// (escrita de `.desktop`/`.url`/`.webloc`) e CVE-2026-50574 (execução
+/// arbitrária via manifesto com aria2c).
+pub const MIN_YTDLP_VERSION: (u32, u32, u32) = (2026, 6, 9);
+
+/// yt-dlp versiona como `YYYY.MM.DD` com sufixo opcional (`.N`, `-nightly…`).
+/// Devolve `None` para qualquer coisa que não case com esse formato.
+pub fn parse_ytdlp_version(raw: &str) -> Option<(u32, u32, u32)> {
+    let head = raw.split_whitespace().next()?;
+    let core = head.split(['-', '+']).next()?;
+    let mut parts = core.split('.');
+    let year: u32 = parts.next()?.parse().ok()?;
+    let month: u32 = parts.next()?.parse().ok()?;
+    let day: u32 = parts.next()?.parse().ok()?;
+    if !(1..=12).contains(&month) || !(1..=31).contains(&day) || year < 2000 {
+        return None;
+    }
+    Some((year, month, day))
+}
+
+/// `None` quando a versão não pôde ser lida — nesse caso o chamador não deve
+/// afirmar que está desatualizada.
+pub fn ytdlp_version_is_supported(raw: &str) -> Option<bool> {
+    parse_ytdlp_version(raw).map(|v| v >= MIN_YTDLP_VERSION)
+}
+
+/// Argumentos que delegam o download ao aria2c **apenas** para os protocolos
+/// de `ARIA2C_ALLOWED_PROTOCOLS`. Manifesto fragmentado continua no downloader
+/// nativo (CVE-2026-50574).
+///
+/// O proxy é validado antes de entrar na string de `--downloader-args`: um
+/// espaço ali viraria argumento extra do aria2c.
+pub(crate) fn aria2c_downloader_args(
+    aria2c_path: &str,
+    connections: u32,
+    proxy: Option<&str>,
+) -> Vec<String> {
+    let conns = connections.max(1);
+    let proxy_arg = match proxy.map(str::trim).filter(|p| !p.is_empty()) {
+        Some(p) if !p.contains(char::is_whitespace) => format!(" --all-proxy={}", p),
+        Some(_) => {
+            tracing::warn!("[aria2c] proxy com espaço ignorado no --downloader-args");
+            String::new()
+        }
+        None => String::new(),
+    };
+    vec![
+        "--downloader".to_string(),
+        format!("{}:{}", ARIA2C_ALLOWED_PROTOCOLS, aria2c_path),
+        "--downloader-args".to_string(),
+        format!(
+            "aria2c:-x {conns} -k 1M -j {conns} --min-split-size=1M \
+             --file-allocation=none --optimize-concurrent-downloads=true \
+             --auto-file-renaming=false --summary-interval=1 \
+             --console-log-level=notice{proxy_arg}"
+        ),
+    ]
+}
 
 pub fn set_ext_cookie_path_fn(f: impl Fn() -> PathBuf + Send + Sync + 'static) {
     let _ = EXT_COOKIE_PATH_FN.set(Box::new(f));
@@ -256,6 +345,20 @@ pub fn set_speed_limit_fn(f: impl Fn() -> Option<String> + Send + Sync + 'static
 
 fn speed_limit_value() -> Option<String> {
     SPEED_LIMIT_FN.get().and_then(|f| f())
+}
+
+pub fn set_insecure_tls_fn(f: impl Fn() -> bool + Send + Sync + 'static) {
+    let _ = INSECURE_TLS_FN.set(Box::new(f));
+}
+
+/// Verificar certificado é o default. `Vec` vazio quando ligado, para o
+/// chamador poder simplesmente estender a lista de argumentos.
+pub fn insecure_tls_args() -> Vec<String> {
+    if INSECURE_TLS_FN.get().map(|f| f()).unwrap_or(false) {
+        vec!["--no-check-certificates".to_string()]
+    } else {
+        Vec::new()
+    }
 }
 
 pub fn set_live_from_start_fn(f: impl Fn() -> bool + Send + Sync + 'static) {
@@ -469,6 +572,85 @@ pub fn reset_js_runtime_cache() {
     }
 }
 
+/// Alvos de `--impersonate` deste binario de yt-dlp, consultados uma vez so.
+///
+/// A lista nao muda durante a execucao e a consulta custa um processo; sem o
+/// cache, todo retry por fingerprint pagaria de novo.
+static IMPERSONATE_TARGETS: OnceLock<Option<Vec<super::impersonation::ImpersonateTarget>>> =
+    OnceLock::new();
+
+async fn impersonate_targets() -> Option<Vec<super::impersonation::ImpersonateTarget>> {
+    if let Some(cached) = IMPERSONATE_TARGETS.get() {
+        return cached.clone();
+    }
+
+    let bin = ensure_ytdlp().await.ok()?;
+    let output = tokio::task::spawn_blocking(move || {
+        crate::core::process::std_command(&bin)
+            .arg("--list-impersonate-targets")
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .output()
+    })
+    .await
+    .ok()?
+    .ok()?;
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let targets = super::impersonation::parse_targets(&stdout);
+    // Lista vazia e ausencia sao a mesma coisa para quem chama: nao ha o que
+    // tentar. Guardar `None` evita repetir a consulta num build sem curl_cffi.
+    let value = if targets.is_empty() {
+        None
+    } else {
+        Some(targets)
+    };
+    let _ = IMPERSONATE_TARGETS.set(value.clone());
+    value
+}
+
+/// URL do provedor de PO token, se o usuario tiver um rodando.
+///
+/// Fica em variavel de ambiente de proposito: o provedor e um servico externo
+/// (Docker ou Node), a maioria dos usuarios nunca vai ter um, e um campo em
+/// settings.json custaria migracao para todo mundo por causa de poucos.
+/// Sonda o provedor antes de apontar o yt-dlp para ele.
+///
+/// O `extractor_args` so devolve argumentos para um provedor `Ready`, e essa
+/// regra existe por um motivo concreto: um endereco configurado mas morto faz o
+/// yt-dlp esperar o timeout em *todo* download, o que e pior do que nao ter
+/// provedor. Timeout curto porque isto roda no caminho de um retry.
+async fn probe_pot_provider(base_url: &str) -> super::pot_provider::ProviderHealth {
+    let client = match super::http_client::apply_global_proxy(reqwest::Client::builder())
+        .timeout(std::time::Duration::from_secs(3))
+        .build()
+    {
+        Ok(c) => c,
+        Err(e) => {
+            return super::pot_provider::ProviderHealth::Unhealthy {
+                detail: e.to_string(),
+            }
+        }
+    };
+
+    match client.get(format!("{base_url}/ping")).send().await {
+        Ok(resp) if resp.status().is_success() => {
+            super::pot_provider::ProviderHealth::Ready { version: None }
+        }
+        Ok(resp) => super::pot_provider::ProviderHealth::Unhealthy {
+            detail: format!("HTTP {}", resp.status()),
+        },
+        Err(_) => super::pot_provider::ProviderHealth::Unreachable {
+            base_url: base_url.to_string(),
+        },
+    }
+}
+
+fn pot_provider_base_url() -> Option<String> {
+    let raw = std::env::var("OMNIGET_POT_PROVIDER_URL").ok()?;
+    super::pot_provider::normalize_base_url(&raw)
+}
+
 pub async fn check_ytdlp_update(ytdlp: &Path) -> anyhow::Result<bool> {
     if YTDLP_UPDATE_CHECKED.swap(true, Ordering::Relaxed) {
         return Ok(false);
@@ -498,10 +680,10 @@ pub async fn check_ytdlp_update(ytdlp: &Path) -> anyhow::Result<bool> {
 }
 
 fn proxy_args() -> Vec<String> {
-    vec![
-        "--proxy".to_string(),
-        crate::core::http_client::proxy_url().unwrap_or_default(),
-    ]
+    match crate::core::http_client::proxy_url() {
+        Some(url) => vec!["--proxy".to_string(), url],
+        None => Vec::new(),
+    }
 }
 
 fn redacted_proxy_url(url: &str) -> String {
@@ -519,11 +701,11 @@ fn proxy_log_label(proxy_url: Option<&str>) -> String {
         None => {
             let proxy = crate::core::http_client::get_proxy_snapshot();
             if proxy.enabled && proxy.host.trim().is_empty() {
-                "proxy=disabled (enabled but host is empty)".to_string()
+                "proxy=system/env fallback (enabled but host is empty)".to_string()
             } else if proxy.enabled {
-                "proxy=disabled (invalid proxy settings)".to_string()
+                "proxy=system/env fallback (invalid proxy settings)".to_string()
             } else {
-                "proxy=disabled".to_string()
+                "proxy=none (system/env honored if set)".to_string()
             }
         }
     }
@@ -762,6 +944,12 @@ pub async fn find_ytdlp_cached() -> Option<PathBuf> {
 }
 
 fn managed_ytdlp_path() -> Option<PathBuf> {
+    // Issue #222: se o usuario apontou um binario proprio, ele ganha do
+    // gerenciado. Referenciado no lugar, entao um `apt upgrade` no yt-dlp dele
+    // vale imediatamente aqui, sem copia para envelhecer.
+    if let Some(custom) = crate::core::binary_overrides::get("yt-dlp") {
+        return Some(custom);
+    }
     let data = crate::core::paths::app_data_dir()?;
     let bin_name = if cfg!(target_os = "windows") {
         "yt-dlp.exe"
@@ -906,30 +1094,7 @@ fn ytdlp_release_base(channel: YtdlpChannel) -> &'static str {
     }
 }
 
-/// Finds the expected sha256 (lowercased hex) for `asset` in a yt-dlp
-/// `SHA2-256SUMS` file. Lines are `"<64-hex>  <filename>"`.
-fn parse_sha256sums(text: &str, asset: &str) -> Option<String> {
-    for line in text.lines() {
-        let mut parts = line.split_whitespace();
-        let hash = parts.next()?;
-        let name = parts.next()?;
-        if name == asset && hash.len() == 64 && hash.bytes().all(|b| b.is_ascii_hexdigit()) {
-            return Some(hash.to_lowercase());
-        }
-    }
-    None
-}
-
-fn sha256_hex(bytes: &[u8]) -> String {
-    use sha2::{Digest, Sha256};
-    let mut hasher = Sha256::new();
-    hasher.update(bytes);
-    hasher
-        .finalize()
-        .iter()
-        .map(|b| format!("{:02x}", b))
-        .collect()
-}
+use crate::core::dependencies::integrity;
 
 async fn download_ytdlp_binary() -> anyhow::Result<PathBuf> {
     let target =
@@ -963,29 +1128,13 @@ async fn download_ytdlp_binary() -> anyhow::Result<PathBuf> {
     // Verify against the release's published checksums. Fail closed on a
     // mismatch; fail open only when the sums file itself can't be fetched, so
     // a transient GitHub hiccup doesn't block downloads entirely.
-    match client.get(&sums_url).send().await {
-        Ok(r) if r.status().is_success() => {
-            let sums = r.text().await.unwrap_or_default();
-            match parse_sha256sums(&sums, asset) {
-                Some(expected) => {
-                    let actual = sha256_hex(&bytes);
-                    if actual != expected {
-                        return Err(anyhow!(
-                            "yt-dlp checksum mismatch (expected {}, got {}) — refusing to install",
-                            expected,
-                            actual
-                        ));
-                    }
-                    tracing::info!("[ytdlp] sha256 verified ({:?} channel)", channel);
-                }
-                None => tracing::warn!(
-                    "[ytdlp] {} not listed in SHA2-256SUMS — skipping verification",
-                    asset
-                ),
-            }
-        }
-        _ => tracing::warn!("[ytdlp] could not fetch SHA2-256SUMS — skipping verification"),
-    }
+    // Fail-closed. O yt-dlp publica `SHA2-256SUMS` em toda release; não
+    // conseguir buscá-lo é indistinguível de alguém suprimindo a verificação,
+    // então o binário é descartado em vez de instalado sem conferência.
+    let expected = integrity::expected_from_sums_url(&client, &sums_url, asset)
+        .await
+        .map_err(|e| anyhow!("yt-dlp: verificacao de integridade impossivel — {}", e))?;
+    integrity::verify_sha256(&bytes, &expected, &format!("yt-dlp ({:?})", channel))?;
 
     let temp = target.with_file_name(format!(
         "{}.new",
@@ -1294,7 +1443,6 @@ pub async fn get_video_info(
             "--dump-single-json".to_string(),
             "--no-warnings".to_string(),
             "--no-playlist".to_string(),
-            "--no-check-certificates".to_string(),
             "--encoding".to_string(),
             "utf-8".to_string(),
             "--socket-timeout".to_string(),
@@ -1328,8 +1476,10 @@ pub async fn get_video_info(
                 log_hook::emit_log(dl_id, &line);
             }
         }
-        args.push("--proxy".to_string());
-        args.push(proxy.unwrap_or_default());
+        if let Some(proxy_url) = proxy {
+            args.push("--proxy".to_string());
+            args.push(proxy_url);
+        }
         args.extend(extra_flags.iter().cloned());
         args.push(url.to_string());
 
@@ -1346,23 +1496,22 @@ pub async fn get_video_info(
             attempt + 1
         );
 
-        let result =
-            tokio::time::timeout(
-                std::time::Duration::from_secs(VIDEO_INFO_PROCESS_TIMEOUT_SECS),
-                child.wait_with_output(),
+        let result = tokio::time::timeout(
+            std::time::Duration::from_secs(VIDEO_INFO_PROCESS_TIMEOUT_SECS),
+            child.wait_with_output(),
+        )
+        .await
+        .map_err(|_| {
+            tracing::debug!("[perf] get_video_info took {:?}", _timer_start.elapsed());
+            anyhow!(
+                "Timeout fetching video info ({}s)",
+                VIDEO_INFO_PROCESS_TIMEOUT_SECS
             )
-                .await
-                .map_err(|_| {
-                    tracing::debug!("[perf] get_video_info took {:?}", _timer_start.elapsed());
-                    anyhow!(
-                        "Timeout fetching video info ({}s)",
-                        VIDEO_INFO_PROCESS_TIMEOUT_SECS
-                    )
-                })?
-                .map_err(|e| {
-                    tracing::debug!("[perf] get_video_info took {:?}", _timer_start.elapsed());
-                    anyhow!("Failed to run yt-dlp: {}", e)
-                })?;
+        })?
+        .map_err(|e| {
+            tracing::debug!("[perf] get_video_info took {:?}", _timer_start.elapsed());
+            anyhow!("Failed to run yt-dlp: {}", e)
+        })?;
 
         tracing::debug!(
             "[perf] get_video_info: yt-dlp process exited at {:?} (attempt {})",
@@ -2157,6 +2306,13 @@ pub async fn download_video(
         base_args.push(loc.clone());
     }
 
+    // `-N` e `--concurrent-fragments` são a mesma opção do yt-dlp. Empurrar as
+    // duas fazia a segunda vencer no argparse e anular o freio de 429 abaixo.
+    let requested_fragments = if concurrent_fragments == 0 {
+        concurrent_fragments_value()
+    } else {
+        concurrent_fragments
+    };
     let effective_fragments = if is_youtube_url(url) {
         let rate_limit_count = rate_limit_429_count();
         let max_frags = if rate_limit_count >= 2 {
@@ -2166,12 +2322,12 @@ pub async fn download_video(
         } else {
             8
         };
-        concurrent_fragments.min(max_frags)
+        requested_fragments.min(max_frags)
     } else {
-        concurrent_fragments
+        requested_fragments
     };
     base_args.push("-N".to_string());
-    base_args.push(effective_fragments.to_string());
+    base_args.push(effective_fragments.max(1).to_string());
 
     if is_youtube_url(url) {
         base_args.push("--extractor-args".to_string());
@@ -2199,8 +2355,8 @@ pub async fn download_video(
     let effective_ua = ext_user_agent_for_url(url)
         .or_else(user_agent_setting)
         .unwrap_or_else(|| CHROME_UA.to_string());
+    base_args.extend(insecure_tls_args());
     base_args.extend([
-        "--no-check-certificate".to_string(),
         "--no-warnings".to_string(),
         "--no-mtime".to_string(),
         "--user-agent".to_string(),
@@ -2269,12 +2425,6 @@ pub async fn download_video(
     if let Some(rate) = speed_limit_value() {
         base_args.push("--limit-rate".to_string());
         base_args.push(rate);
-    }
-
-    let frag_count = concurrent_fragments_value();
-    if frag_count > 1 {
-        base_args.push("--concurrent-fragments".to_string());
-        base_args.push(frag_count.to_string());
     }
 
     if live_from_start_enabled() {
@@ -2390,14 +2540,15 @@ pub async fn download_video(
                 } else {
                     effective_fragments.clamp(8, 16)
                 };
-                args.push("--downloader".to_string());
-                args.push(a2_path.to_string_lossy().to_string());
-                args.push("--downloader-args".to_string());
-                let aria2c_proxy = match crate::core::http_client::proxy_url() {
-                    Some(url) => format!(" --all-proxy={}", url),
-                    None => String::new(),
-                };
-                args.push(format!("aria2c:-x {} -k 1M -j {} --min-split-size=1M --file-allocation=none --optimize-concurrent-downloads=true --auto-file-renaming=false --summary-interval=1 --console-log-level=notice{}", conns, conns, aria2c_proxy));
+                // CVE-2026-50574: entregar manifesto (m3u8/dash) ao aria2c
+                // permite escrita arbitrária de arquivo. O yt-dlp 2026.06.09
+                // removeu o suporte; aqui o downloader externo fica restrito a
+                // http/ftp e fragmento vai pelo nativo com `-N`.
+                args.extend(aria2c_downloader_args(
+                    &a2_path.to_string_lossy(),
+                    conns,
+                    crate::core::http_client::proxy_url().as_deref(),
+                ));
             }
         }
 
@@ -2479,15 +2630,17 @@ pub async fn download_video(
                         *guard = Some(dest_path);
                     }
                 }
-                if line.contains("[Merger]") {
-                    let merging_progress = max_reported.max(95.0).min(98.0);
-                    if merging_progress > max_reported {
-                        max_reported = merging_progress;
-                        let _ = progress_tx
-                            .send(ProgressUpdate::percent(merging_progress))
-                            .await;
-                        last_send = std::time::Instant::now();
-                    }
+                if line.contains("[Merger]")
+                    || line.contains("[FixupM3u8]")
+                    || line.contains("[VideoConvertor]")
+                    || (line.contains("[ffmpeg]") && line.to_lowercase().contains("merg"))
+                {
+                    let merging_progress = max_reported.max(95.0).min(98.0).max(max_reported);
+                    let _ = progress_tx
+                        .send(ProgressUpdate::phase("merging", merging_progress))
+                        .await;
+                    max_reported = max_reported.max(merging_progress);
+                    last_send = std::time::Instant::now();
                     continue;
                 }
                 if let Some(pct) = parse_progress_line(&line) {
@@ -2741,11 +2894,84 @@ pub async fn download_video(
                 tracing::warn!("[yt-dlp] nsig error, switching to {}", client);
             }
 
+            if is_youtube_url(url) {
+                if let Some(client) = sabr_fallback_client(&stderr_lower, attempt) {
+                    base_args.retain(|a| a != "--extractor-args" && !a.contains("player_client"));
+                    extra_args.retain(|a| a != "--extractor-args" && !a.contains("player_client"));
+                    extra_args.push("--extractor-args".to_string());
+                    extra_args.push(client.clone());
+                    tracing::warn!(
+                        "[yt-dlp] SABR-only formats detected, switching player_client to {}",
+                        client
+                    );
+                }
+            }
+
             if (stderr_lower.contains("http error 403") || stderr_lower.contains("forbidden"))
                 && !extra_args.contains(&"--force-ipv4".to_string())
             {
                 extra_args.push("--force-ipv4".to_string());
                 tracing::warn!("[yt-dlp] 403 forbidden, adding --force-ipv4");
+            }
+
+            // B43: quando o site bloqueia por fingerprint de TLS, nenhuma troca
+            // de player_client resolve — o que muda o resultado e o yt-dlp se
+            // apresentar como um navegador de verdade. O binario empacotado ja
+            // traz curl_cffi, entao o caso comum e ter alvo disponivel.
+            if super::impersonation::stderr_indicates_fingerprint_block(&stderr_lower)
+                && !extra_args.iter().any(|a| a == "--impersonate")
+            {
+                match impersonate_targets().await {
+                    Some(targets) => {
+                        if let Some(target) = super::impersonation::preferred_target(&targets) {
+                            let flag = target.as_flag_value();
+                            extra_args.push("--impersonate".to_string());
+                            extra_args.push(flag.clone());
+                            tracing::warn!(
+                                "[yt-dlp] bloqueio por fingerprint detectado, tentando --impersonate {}",
+                                flag
+                            );
+                        }
+                    }
+                    None => {
+                        tracing::warn!(
+                            "[yt-dlp] bloqueio por fingerprint, mas este build nao tem alvos de impersonation"
+                        );
+                    }
+                }
+            }
+
+            // B42: PO token ausente. O provedor nao e embarcado (roda como
+            // Docker ou servidor Node separado), entao so agimos se o usuario
+            // tiver configurado um — caso contrario o erro fica visivel, que e
+            // o que o painel de causa raiz traduz.
+            if super::pot_provider::stderr_indicates_missing_token(&stderr_lower) {
+                match pot_provider_base_url() {
+                    Some(base) => {
+                        let health = probe_pot_provider(&base).await;
+                        let args = super::pot_provider::extractor_args(&health, &base);
+                        if args.is_empty() {
+                            // Apontar para um provedor morto e pior do que nao
+                            // apontar: o yt-dlp espera o timeout em todo
+                            // download seguinte.
+                            tracing::warn!(
+                                "[yt-dlp] provedor de PO token em {} nao respondeu; seguindo sem ele",
+                                base
+                            );
+                        } else if !extra_args.iter().any(|a| a.contains("youtubepot")) {
+                            tracing::warn!(
+                                "[yt-dlp] PO token exigido, usando provedor configurado em {}",
+                                base
+                            );
+                            extra_args.extend(args);
+                        }
+                    }
+                    None => {
+                        tracing::warn!(
+                            "[yt-dlp] PO token exigido e nenhum provedor configurado — ver OMNIGET_POT_PROVIDER_URL"
+                        );
+                    }
+                }
             }
 
             if stderr_lower.contains("subtitle") && use_subtitles && !last_was_429 {
@@ -2881,10 +3107,16 @@ async fn convert_vtt_sidecars_to_srt(video_path: &Path) {
             .await;
         match result {
             Ok(out) if out.status.success() => {
-                tracing::info!("[yt-dlp] converted subtitle sidecar {} to srt (vtt kept)", name);
+                tracing::info!(
+                    "[yt-dlp] converted subtitle sidecar {} to srt (vtt kept)",
+                    name
+                );
             }
             _ => {
-                tracing::warn!("[yt-dlp] failed to convert subtitle sidecar {} to srt", name);
+                tracing::warn!(
+                    "[yt-dlp] failed to convert subtitle sidecar {} to srt",
+                    name
+                );
                 let _ = std::fs::remove_file(&srt_path);
             }
         }
@@ -3087,6 +3319,11 @@ fn translate_ytdlp_error(stderr: &str) -> anyhow::Error {
     {
         return anyhow!(
             "This video requires login. Import cookies for this site in Settings → Cookies, then retry."
+        );
+    }
+    if lower.contains("invalid data found when processing input") {
+        return anyhow!(
+            "Downloaded streams are DRM-protected and cannot be merged. This content is not supported."
         );
     }
     if lower.contains("nsig extraction failed") || lower.contains("nsig") {
@@ -3494,10 +3731,12 @@ mod tests {
         // Bilibili cheese season entries are full info dicts with webpage_url
         // but no top-level "url" (issue #157).
         let dump = r#"{"id":"12345","title":"Lesson 1","webpage_url":"https://www.bilibili.com/cheese/play/ep12345","extractor_key":"BiliBiliCheese"}"#;
-        let (_, entries) =
-            parse_playlist_dump(dump, "https://www.bilibili.com/cheese/play/ss999");
+        let (_, entries) = parse_playlist_dump(dump, "https://www.bilibili.com/cheese/play/ss999");
         assert_eq!(entries.len(), 1);
-        assert_eq!(entries[0].url, "https://www.bilibili.com/cheese/play/ep12345");
+        assert_eq!(
+            entries[0].url,
+            "https://www.bilibili.com/cheese/play/ep12345"
+        );
     }
 
     #[test]
@@ -3505,25 +3744,27 @@ mod tests {
         let dump = r#"{"id":"dQw4w9WgXcQ","title":"YT Video","ie_key":"Youtube"}"#;
         let (_, entries) = parse_playlist_dump(dump, "https://example.com/playlist");
         assert_eq!(entries.len(), 1);
-        assert_eq!(entries[0].url, "https://www.youtube.com/watch?v=dQw4w9WgXcQ");
+        assert_eq!(
+            entries[0].url,
+            "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+        );
     }
 
     #[test]
     fn playlist_dump_fabricates_youtube_url_for_youtube_source() {
         let dump = r#"{"id":"dQw4w9WgXcQ","title":"YT Video"}"#;
-        let (_, entries) = parse_playlist_dump(
-            dump,
-            "https://www.youtube.com/playlist?list=PL123",
-        );
+        let (_, entries) = parse_playlist_dump(dump, "https://www.youtube.com/playlist?list=PL123");
         assert_eq!(entries.len(), 1);
-        assert_eq!(entries[0].url, "https://www.youtube.com/watch?v=dQw4w9WgXcQ");
+        assert_eq!(
+            entries[0].url,
+            "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+        );
     }
 
     #[test]
     fn playlist_dump_skips_non_youtube_entry_without_url() {
         let dump = r#"{"id":"12345","title":"Lesson 1","extractor_key":"BiliBiliCheese"}"#;
-        let (_, entries) =
-            parse_playlist_dump(dump, "https://www.bilibili.com/cheese/play/ss999");
+        let (_, entries) = parse_playlist_dump(dump, "https://www.bilibili.com/cheese/play/ss999");
         assert!(entries.is_empty());
     }
 
@@ -3553,22 +3794,22 @@ mod tests {
 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  yt-dlp.exe\n\
 1111111111111111111111111111111111111111111111111111111111111111  yt-dlp_macos\n";
         assert_eq!(
-            parse_sha256sums(sums, "yt-dlp.exe").as_deref(),
+            integrity::parse_sha256sums(sums, "yt-dlp.exe").as_deref(),
             Some("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855")
         );
         assert_eq!(
-            parse_sha256sums(sums, "yt-dlp_macos").as_deref(),
+            integrity::parse_sha256sums(sums, "yt-dlp_macos").as_deref(),
             Some("1111111111111111111111111111111111111111111111111111111111111111")
         );
-        assert_eq!(parse_sha256sums(sums, "yt-dlp_missing"), None);
-        assert_eq!(parse_sha256sums("garbage line", "yt-dlp"), None);
+        assert_eq!(integrity::parse_sha256sums(sums, "yt-dlp_missing"), None);
+        assert_eq!(integrity::parse_sha256sums("garbage line", "yt-dlp"), None);
     }
 
     #[test]
     fn sha256_hex_known_vector() {
         // SHA-256 of the empty input.
         assert_eq!(
-            sha256_hex(b""),
+            integrity::sha256_hex(b""),
             "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
         );
     }
@@ -3922,5 +4163,180 @@ e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  yt-dlp.exe\n\
         assert_eq!(formats.len(), 1);
         assert!(formats[0].has_video);
         assert!(!formats[0].has_audio);
+    }
+
+    // --- Regressao de seguranca: CVE-2026-50574 (aria2c + manifesto) ---
+
+    #[test]
+    fn aria2c_nunca_recebe_manifesto_fragmentado() {
+        let args = aria2c_downloader_args("/opt/bin/aria2c", 8, None);
+        let downloader = &args[1];
+        assert!(downloader.starts_with("http,ftp:"), "{downloader}");
+        for proto in ["m3u8", "m3u8_native", "m3u8_frag_urls", "dash_frag_urls"] {
+            assert!(
+                !downloader.contains(proto),
+                "protocolo {proto} nao pode ir ao aria2c"
+            );
+        }
+        assert_eq!(downloader, "http,ftp:/opt/bin/aria2c");
+        // A chave de --downloader-args e o NOME do downloader, nao o protocolo.
+        assert!(args[3].starts_with("aria2c:"), "{}", args[3]);
+    }
+
+    #[test]
+    fn aria2c_downloader_args_rejeita_proxy_com_espaco() {
+        let limpo = aria2c_downloader_args("/bin/aria2c", 2, Some("http://127.0.0.1:8080"));
+        assert!(
+            limpo[3].ends_with("--all-proxy=http://127.0.0.1:8080"),
+            "{}",
+            limpo[3]
+        );
+        let sujo = aria2c_downloader_args("/bin/aria2c", 2, Some("http://h:1 --seed-ratio=0"));
+        assert!(!sujo[3].contains("--all-proxy"), "{}", sujo[3]);
+        assert!(!sujo[3].contains("--seed-ratio"));
+    }
+
+    #[test]
+    fn aria2c_nunca_zera_conexoes() {
+        let args = aria2c_downloader_args("/bin/aria2c", 0, None);
+        assert!(
+            args[3].contains("-x 1") && args[3].contains("-j 1"),
+            "{}",
+            args[3]
+        );
+    }
+
+    // --- Piso de versao do yt-dlp ---
+
+    #[test]
+    fn parse_ytdlp_version_le_os_formatos_reais() {
+        assert_eq!(parse_ytdlp_version("2026.06.09"), Some((2026, 6, 9)));
+        assert_eq!(
+            parse_ytdlp_version("2025.12.31.232815"),
+            Some((2025, 12, 31))
+        );
+        assert_eq!(
+            parse_ytdlp_version("2026.06.10.232815-nightly"),
+            Some((2026, 6, 10))
+        );
+        for lixo in ["", "unknown", "1.2", "2026.13.01", "2026.06.99"] {
+            assert_eq!(parse_ytdlp_version(lixo), None, "aceitou {lixo:?}");
+        }
+    }
+
+    #[test]
+    fn piso_de_versao_cobre_as_cves_de_2026_06_09() {
+        assert_eq!(ytdlp_version_is_supported("2026.06.09"), Some(true));
+        assert_eq!(ytdlp_version_is_supported("2026.07.04"), Some(true));
+        assert_eq!(ytdlp_version_is_supported("2026.06.08"), Some(false));
+        // Versao ilegivel nao pode ser reportada como desatualizada.
+        assert_eq!(ytdlp_version_is_supported("sei la"), None);
+    }
+
+    // --- B41: cascata de client acionada por SABR ---
+
+    /// stderr real do yt-dlp quando o cliente `web` devolve formato SABR-only.
+    const SABR_STDERR: &str = "WARNING: [youtube] abc123: Some web client https formats have been \
+skipped as they are missing a url. YouTube is forcing SABR streaming for this client. \
+See  https://github.com/yt-dlp/yt-dlp/issues/12482  for more details\n\
+ERROR: [youtube] abc123: Requested format is not available";
+
+    #[test]
+    fn sabr_no_stderr_dispara_a_cascata_na_ordem() {
+        let lower = SABR_STDERR.to_lowercase();
+        assert_eq!(
+            sabr_fallback_client(&lower, 0).as_deref(),
+            Some("youtube:player_client=android")
+        );
+        assert_eq!(
+            sabr_fallback_client(&lower, 1).as_deref(),
+            Some("youtube:player_client=ios")
+        );
+        assert_eq!(
+            sabr_fallback_client(&lower, 2).as_deref(),
+            Some("youtube:player_client=tv")
+        );
+        assert_eq!(
+            sabr_fallback_client(&lower, 3).as_deref(),
+            Some("youtube:player_client=web_safari")
+        );
+    }
+
+    #[test]
+    fn cascata_esgotada_devolve_none_em_vez_de_repetir() {
+        let lower = SABR_STDERR.to_lowercase();
+        assert_eq!(sabr_fallback_client(&lower, 4), None);
+        assert_eq!(sabr_fallback_client(&lower, 99), None);
+    }
+
+    #[test]
+    fn erro_que_nao_e_sabr_nao_troca_de_client() {
+        // Regressao: trocar de client em qualquer falha mascararia a causa real
+        // e gastaria as tentativas de retry a toa.
+        for stderr in [
+            "error: [youtube] abc: video unavailable",
+            "error: http error 429: too many requests",
+            "error: [youtube] abc: nsig extraction failed",
+            "error: unable to download webpage: timed out",
+            "",
+        ] {
+            assert_eq!(
+                sabr_fallback_client(stderr, 0),
+                None,
+                "trocou de client sem SABR: {stderr:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn a_cascata_nao_contem_o_client_que_causa_o_problema() {
+        // `web` e `default` sao justamente os que devolvem SABR-only.
+        assert!(!SABR_CLIENT_CASCADE.contains(&"web"));
+        assert!(!SABR_CLIENT_CASCADE.contains(&"default"));
+        assert_eq!(SABR_CLIENT_CASCADE.len(), 4);
+    }
+
+    #[test]
+    fn sem_variavel_nao_ha_provedor_de_pot_token() {
+        // Um teste so, sequencial: set_var e global ao processo.
+        let restore = std::env::var("OMNIGET_POT_PROVIDER_URL").ok();
+
+        std::env::remove_var("OMNIGET_POT_PROVIDER_URL");
+        assert_eq!(pot_provider_base_url(), None, "sem env nao ha provedor");
+
+        std::env::set_var("OMNIGET_POT_PROVIDER_URL", "   ");
+        assert_eq!(
+            pot_provider_base_url(),
+            None,
+            "espaco em branco viraria argumento quebrado no yt-dlp"
+        );
+
+        std::env::set_var("OMNIGET_POT_PROVIDER_URL", "localhost:4416/");
+        assert_eq!(
+            pot_provider_base_url(),
+            Some("http://localhost:4416".to_string()),
+            "o que o usuario digita tem que virar URL valida"
+        );
+
+        match restore {
+            Some(v) => std::env::set_var("OMNIGET_POT_PROVIDER_URL", v),
+            None => std::env::remove_var("OMNIGET_POT_PROVIDER_URL"),
+        }
+    }
+
+    #[tokio::test]
+    async fn provedor_morto_nao_gera_argumento() {
+        // A porta 1 nao tem nada escutando. E exatamente o caso que o modulo
+        // avisa ser pior que nao ter provedor: apontar o yt-dlp para um
+        // endereco morto custa o timeout em todo download seguinte.
+        let health = probe_pot_provider("http://127.0.0.1:1").await;
+        assert!(
+            !health.is_usable(),
+            "endereco morto nao pode ser considerado utilizavel"
+        );
+        assert!(
+            super::super::pot_provider::extractor_args(&health, "http://127.0.0.1:1").is_empty(),
+            "provedor inalcancavel nao pode virar --extractor-args"
+        );
     }
 }

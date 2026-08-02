@@ -217,6 +217,7 @@
   }
 </script>
 
+<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
 <article
   class="bucket-card"
   class:selectable={!!onToggleSelection && !!primaryAccount}
@@ -334,6 +335,7 @@
     {#if extraAccounts.length > 0}
       <ul class="extra-accounts">
         {#each extraAccounts as account (account.slug)}
+          <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
           <li
             class="extra-account"
             class:selectable={!!onToggleSelection}

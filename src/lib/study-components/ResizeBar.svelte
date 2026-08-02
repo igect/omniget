@@ -11,7 +11,7 @@
 
   let dragging = $state(false);
   let startX = 0;
-  let startWidth = defaultWidth;
+  let startWidth = 0;
 
   function applyWidth(w: number) {
     const clamped = Math.max(min, Math.min(max, w));

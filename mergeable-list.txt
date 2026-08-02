@@ -1,0 +1,667 @@
+================================================================================
+ MERGEABLE ITEMS FROM tonhowtf/omniget (G:\omniget) TO copyrightnews/omniget (E:\omniget)
+================================================================================
+Source: https://github.com/tonhowtf/omniget (v0.8.2)
+Target: E:\omniget (v0.7.2)
+
+================================================================================
+ SECTION 1: CLEAN MERGE — NEW FILES (NO CONFLICTS)
+================================================================================
+These files don't exist in E:\omniget at all, so they merge cleanly.
+
+--- 1A. League of Legends Frontend (src/lib/) ---
+
+  FILE: src/lib/platform.ts (36 lines)
+  DESC: macOS vs Windows/Linux keyboard utility (isMac, modKey, shortcut)
+  COPY TO: E:\omniget\src\lib\platform.ts
+
+  FILE: src/lib/league-history.ts (77 lines)
+  DESC: HistoryGame types, summarise(), queuesInGames(), filterByQueue()
+  COPY TO: E:\omniget\src\lib\league-history.ts
+
+  FILE: src/lib/league-match-detail.ts (46 lines)
+  DESC: MatchTeam types, teamObjectives(), teamBans(), findTeam()
+  COPY TO: E:\omniget\src\lib\league-match-detail.ts
+
+  FILE: src/lib/league-scouting.ts (50 lines)
+  DESC: ScoutedPlayer types, markedPlayers(), winrateSquad()
+  COPY TO: E:\omniget\src\lib\league-scouting.ts
+
+  FILE: src/lib/league-history.test.ts (80 lines)
+  DESC: Vitest tests for league-history
+  COPY TO: E:\omniget\src\lib\league-history.test.ts
+
+  FILE: src/lib/league-match-detail.test.ts (71 lines)
+  DESC: Vitest tests for league-match-detail
+  COPY TO: E:\omniget\src\lib\league-match-detail.test.ts
+
+  FILE: src/lib/league-scouting.test.ts (80 lines)
+  DESC: Vitest tests for league-scouting
+  COPY TO: E:\omniget\src\lib\league-scouting.test.ts
+
+--- 1B. League of Legends Components (src/components/league/) ---
+
+  FILE: src/components/league/shared.ts (59 lines)
+  DESC: Constants (CDRAGON, RAW_CDRAGON), types (Champion, RankedEntry,
+        ScoutPlayer, LobbyQueue), helpers (assetUrl, formatGameTime)
+
+  FILE: src/components/league/registry.ts (72 lines)
+  DESC: Feature registry system: FeatureState, Feature, availability(),
+        featureById(), LEAGUE_FEATURES (13 features: scouting, analysis,
+        build-reference, tier-list, live-metrics, objectives, profile-tools,
+        restart-ux, auto-accept, auto-pick, auto-ban, auto-swaps, auto-requeue)
+
+  FILE: src/components/league/registry.test.ts (77 lines)
+  DESC: Vitest tests for registry
+
+  FILE: src/components/league/OverviewTab.svelte (399 lines)
+  DESC: Main tab — summoner profile card, ranked display, champ select
+        session with bench/reroll, live game tracking, lobby management
+        (create/start/stop/leave), role preferences, restart UX, dodge
+
+  FILE: src/components/league/AnalysisTab.svelte (270 lines)
+  DESC: Win probability analysis, scouting report with per-player stats
+        (WR, KDA, impact score, insights/tags), premade detection,
+        chat summary builder, player notes, Riot ID copy
+
+  FILE: src/components/league/MetaTab.svelte (433 lines)
+  DESC: Auto runes toggle, rune recommendations per champion/position,
+        champion build reference (skill order, items by phase, summoner
+        spells, counters), tier list by position (op.gg API)
+
+  FILE: src/components/league/SearchTab.svelte (262 lines)
+  DESC: Player search by Riot ID, ranked stats, champion mastery,
+        recent performance, jungle report (lane preference, invade rate),
+        spectate, duo detection
+
+  FILE: src/components/league/LiveTab.svelte (321 lines)
+  DESC: Live game metrics (gold, CS, KDA, item diff), enemy cooldown
+        tracking with spell timers, objective timers (dragon, baron,
+        herald), event feed, goals per role (CS/min, gold/min, KDA,
+        vision/min)
+
+  FILE: src/components/league/GoalsTab.svelte (44 lines)
+  DESC: Per-role goal configuration (CS/min, gold/min, KDA, vision/min)
+        with reset
+
+  FILE: src/components/league/AutomationTab.svelte (352 lines)
+  DESC: Auto-accept with delay slider, ready check notification,
+        auto-pick/auto-ban with champion lists, pick confirmation mode
+        (declare/timeout/immediate), auto-honor, auto-play-again,
+        auto-requeue, auto-reconnect, auto-trade, auto-swaps,
+        auto-chat message
+
+  FILE: src/components/league/HistoryTab.svelte (344 lines)
+  DESC: Match history with queue filter, aggregate stats (WR, KDA),
+        per-game detail (scoreboard, items, runes, spells, stats),
+        player lookup by clicking on scoreboard
+
+--- 1C. League of Legends Route ---
+
+  FILE: src/routes/league/+page.svelte (2374 lines)
+  DESC: Main league page — orchestrates all 7 tabs, connects to LCU via
+        Tauri invoke/listen, manages champions, queues, scout state,
+        encounters tracking, WebSocket events for auto-actions
+
+--- 1D. League of Legends Rust Backend (src-tauri/src/commands/league/) ---
+
+  FILE: src-tauri/src/commands/league/mod.rs (127473 bytes, ~3300 lines)
+  DESC: Core LCU client -> Tauri bridge. Contains:
+        - LcuClient discovery (lockfile + command line)
+        - LCU HTTP helpers with caching (patch-static, immutable)
+        - 30+ #[tauri::command] functions:
+          league_status, league_get, league_restart_ux, league_summoner,
+          league_ranked, league_gameflow, league_match_history,
+          league_accept_ready_check, league_lobby_queues,
+          league_create_lobby, league_start_matchmaking,
+          league_stop_matchmaking, league_leave_lobby, league_play_again,
+          league_champ_select_session, league_bench_swap, league_reroll,
+          league_reroll_keeping_champion, league_live_game,
+          league_game_players, league_player_report, league_match_analysis,
+          league_champion_meta, league_set_icon, league_set_profile_background,
+          league_set_status, league_owned_skins, league_set_positions,
+          league_end_of_game_stats, league_install_dir, league_match_detail,
+          league_dodge, league_send_chat, league_perks, league_auto_accept_set,
+          league_auto_accept_get, league_champion_build, league_champion_tiers,
+          league_search_player, league_jungle_report, league_duos,
+          league_player_history, league_rune_recommendations,
+          league_apply_runes, league_spectate
+
+  FILE: src-tauri/src/commands/league/locator.rs (11143 bytes, 320 lines)
+  DESC: LCU process discovery — reads command line args, parses lockfile,
+        find install directory (macOS/Win/Linux)
+
+  FILE: src-tauri/src/commands/league/analysis.rs (11545 bytes)
+  DESC: Match analysis scoring — player_strength, team_win_probability,
+        premade_groups from shared game histories, wilson_interval
+
+  FILE: src-tauri/src/commands/league/champ_select.rs (6943 bytes)
+  DESC: Auto-pick, auto-ban logic — champion selection from configured
+        lists, ban on timer, auto-accept champ select trades
+
+  FILE: src-tauri/src/commands/league/live.rs (8729 bytes)
+  DESC: Live game data — gold/cs diffs, ability cooldowns with haste
+        calculation, summoner spell timers
+
+  FILE: src-tauri/src/commands/league/lobby.rs (2689 bytes)
+  DESC: Lobby queue management — auto-requeue on play-again
+
+  FILE: src-tauri/src/commands/league/meta.rs (4988 bytes)
+  DESC: op.gg API helpers — most_played, skill_order, counters,
+        variant_winrate parsing
+
+  FILE: src-tauri/src/commands/league/stats.rs (37138 bytes)
+  DESC: Rating system — TrueSkill-like rating, player_score,
+        party_groups, rank_rating, shrunk_winrate
+
+  FILE: src-tauri/src/commands/league/ws.rs (28793 bytes)
+  DESC: WebSocket connection to LCU — event subscriptions, auto-actions
+        (accept, pick, ban, honor, play-again, reconnect, trade)
+
+--- 1E. Cargo.toml Changes ---
+
+  FILE: src-tauri/Cargo.toml (103 lines)
+  CHANGES NEEDED:
+    - members: add "omniget-cli"
+    - version: "0.7.2" -> "0.8.2"
+    - authors: "sayfalse" -> "you"
+    - ADD dependencies:
+        tokio-tungstenite = { version = "0.30.0", features = ["native-tls"] }
+        native-tls = "0.2.18"
+        fs4 = "1"
+
+--- 1F. Scripts ---
+
+  FILE: scripts/clippy-baseline.mjs
+  DESC: Rust clippy baseline management
+
+  FILE: scripts/a11y-audit.mjs
+  DESC: Accessibility audit script
+
+  FILE: scripts/contrast-audit.mjs
+  DESC: Color contrast audit script
+
+  FILE: scripts/shots.mjs
+  DESC: Screenshot tool
+
+  FILE: scripts/smoke-test.mjs
+  DESC: Smoke test runner
+
+  FILE: scripts/wal-kill9.py
+  DESC: WAL kill utility
+
+  FILE: scripts/add-i18n-keys.mjs (optional — you already have i18n done)
+
+--- 1G. Kitchen Sink (dev/test route) ---
+
+  FILE: src/routes/_kitchen-sink/+page.svelte
+  DESC: UI component test page (dev tool)
+
+--- 1H. Docs ---
+
+  FILE: docs/plugin-development.md
+  DESC: Plugin development documentation
+  FILE: docs/backlog.md
+  FILE: docs/VALIDACAO-0.8.0.md
+
+
+================================================================================
+ SECTION 2: FILES NEEDING MANUAL MERGE (CONFLICTS)
+================================================================================
+These files exist in BOTH repos with different content. They need manual
+reconciliation because E: has i18n conversion and G: has feature changes.
+
+--- 2A. Anki Files (src/routes/study/anki/) ---
+  E:\ has i18n ($t()/t()) conversion; G:\ still has hardcoded PT strings.
+  When merging G: changes, PRESERVE the E:\ i18n calls.
+
+  +layout.svelte       — E: 15011 bytes (i18n) / G: 14368 bytes (different)
+  +page.svelte         — E: 14989 bytes (i18n) / G: 14445 bytes (different)
+  _ReviewSession.svelte — E: 18317 bytes (i18n) / G: 17897 bytes (different)
+  _StubPage.svelte     — E: 2375 bytes (i18n) / G: 2302 bytes (different)
+  browse/+page.svelte  — differs
+  decks/+page.svelte   — differs
+  decks/filtered/+page.svelte — differs
+  decks/presets/+page.svelte — differs
+  import/+page.svelte  — differs
+  media/+page.svelte   — differs
+  notetypes/+page.svelte — G: has hardcoded PT strings like "Modelo precisa
+                          ter ao menos 1 field", E: has i18n
+  settings/+page.svelte — differs
+  stats/+page.svelte   — differs
+  stats/revlog/+page.svelte — differs
+  sync/+page.svelte    — differs
+  tags/+page.svelte    — differs
+
+--- 2B. Notes Files (src/lib/study-components/notes/) ---
+  Same situation: E: has i18n, G: has hardcoded PT.
+  All 25 root files + 22 shell files need careful merge.
+
+--- 2C. i18n Files ---
+  keys.ts  — E: 5374 lines / G: 3842 lines  (KEEP E: version)
+  en.json  — E: 279KB / G: 206KB  (KEEP E: version)
+  All other locale JSON files — E: versions are larger (KEEP E: version)
+  index.ts — 1437 bytes in both (identical)
+
+--- 2D. app.css ---
+  E: 34796 bytes / G: 36996 bytes
+  G: has slightly more styles (league-related?)
+
+--- 2E. +page.svelte (main dashboard) ---
+  E: 56556 bytes — i18n + openmint
+  G: 62140 bytes — larger, has league integration
+
+--- 2F. +layout.svelte (root) ---
+  E: 15011 bytes — i18n + openmint
+  G: 14368 bytes — league navigation
+
+--- 2G. tauri.conf.json ---
+  E: 71 lines / G: 76 lines — need to diff
+
+
+================================================================================
+ SECTION 3: RECOMMENDED MERGE ORDER
+================================================================================
+ 1. Copy all NEW files (Section 1A-1G) — no conflicts
+ 2. Update Cargo.toml — add deps + omniget-cli workspace member
+ 3. Update version in package.json (0.7.2 -> 0.8.2)
+ 4. Manually merge Section 2 files:
+    a. app.css — diff and reconcile
+    b. tauri.conf.json — diff
+    c. Anki files — preserve E: i18n, add G: logic changes
+    d. Notes files — preserve E: i18n, add G: logic changes
+    e. Main layout/page — preserve i18n + openmint, add league nav
+
+================================================================================
+ SECTION 4: SMALL FILE FULL CONTENTS (for easy copy-paste)
+================================================================================
+
+--- src/lib/platform.ts ---
+export function isMac(): boolean {
+  if (typeof navigator === "undefined") return false;
+  const uaData = (navigator as Navigator & { userAgentData?: { platform?: string } }).userAgentData;
+  const raw = uaData?.platform || navigator.platform || "";
+  return /mac/i.test(raw);
+}
+
+export function modKey(): string {
+  return isMac() ? "⌘" : "Ctrl";
+}
+
+export function shortcut(...keys: string[]): string {
+  return isMac() ? `${modKey()}${keys.join("")}` : [modKey(), ...keys].join("+");
+}
+
+--- src/lib/league-history.ts ---
+export type HistoryGame = {
+  gameId?: number;
+  queueId?: number;
+  gameMode?: string;
+  gameDuration?: number;
+  participants?: { stats?: { kills?: number; deaths?: number; assists?: number; win?: boolean } }[];
+};
+
+export type HistorySummary = {
+  total: number;
+  counted: number;
+  wins: number;
+  losses: number;
+  winrate: number | null;
+  kda: number | null;
+  remakes: number;
+};
+
+const REMAKE_SECONDS = 180;
+
+export function isRemake(game: HistoryGame): boolean {
+  return (game.gameDuration ?? 0) < REMAKE_SECONDS;
+}
+
+export function queuesInGames(games: readonly HistoryGame[]): number[] {
+  const counts = new Map<number, number>();
+  for (const game of games) {
+    const id = game.queueId;
+    if (typeof id !== "number" || id <= 0) continue;
+    counts.set(id, (counts.get(id) ?? 0) + 1);
+  }
+  return [...counts.entries()]
+    .sort((a, b) => b[1] - a[1] || a[0] - b[0])
+    .map(([id]) => id);
+}
+
+export function filterByQueue<T extends HistoryGame>(games: readonly T[], queueId: number | null): T[] {
+  if (queueId === null) return [...games];
+  return games.filter((game) => game.queueId === queueId);
+}
+
+export function summarise(games: readonly HistoryGame[]): HistorySummary {
+  let wins = 0, losses = 0, kills = 0, deaths = 0, assists = 0, remakes = 0;
+  for (const game of games) {
+    if (isRemake(game)) { remakes += 1; continue; }
+    const stats = game.participants?.[0]?.stats;
+    if (!stats) continue;
+    if (stats.win) wins += 1; else losses += 1;
+    kills += stats.kills ?? 0; deaths += stats.deaths ?? 0; assists += stats.assists ?? 0;
+  }
+  const counted = wins + losses;
+  return {
+    total: games.length, counted, wins, losses,
+    winrate: counted > 0 ? Math.round((wins / counted) * 100) : null,
+    kda: counted > 0 ? (deaths > 0 ? (kills + assists) / deaths : kills + assists) : null,
+    remakes,
+  };
+}
+
+--- src/lib/league-match-detail.ts ---
+export type MatchTeam = {
+  teamId?: number; towerKills?: number; inhibitorKills?: number;
+  baronKills?: number; dragonKills?: number; riftHeraldKills?: number;
+  bans?: { championId?: number; pickTurn?: number }[];
+};
+
+export type TeamObjectives = {
+  teamId: number; towers: number; inhibitors: number;
+  barons: number; dragons: number; heralds: number;
+};
+
+export function teamObjectives(team: MatchTeam | undefined): TeamObjectives | null {
+  if (!team || typeof team.teamId !== "number") return null;
+  return {
+    teamId: team.teamId, towers: team.towerKills ?? 0, inhibitors: team.inhibitorKills ?? 0,
+    barons: team.baronKills ?? 0, dragons: team.dragonKills ?? 0, heralds: team.riftHeraldKills ?? 0,
+  };
+}
+
+export function teamBans(team: MatchTeam | undefined): number[] {
+  return (team?.bans ?? [])
+    .slice().sort((a, b) => (a.pickTurn ?? 0) - (b.pickTurn ?? 0))
+    .map((ban) => ban.championId ?? -1).filter((id) => id > 0);
+}
+
+export function findTeam(teams: readonly MatchTeam[] | undefined, teamId: number): MatchTeam | undefined {
+  return (teams ?? []).find((team) => team.teamId === teamId);
+}
+
+--- src/lib/league-scouting.ts ---
+export type ScoutedPlayer = { puuid?: string; isAlly?: boolean; gameName?: string };
+export type PremadeGroup = { label?: string; puuids?: (string | null)[] };
+export type ScoutReport = { privateProfile?: boolean } | null | undefined;
+export type MarkedPlayers = { ally: string[]; enemy: string[] };
+
+export function markedPlayers(
+  players: readonly ScoutedPlayer[],
+  notes: Record<string, string>,
+): MarkedPlayers {
+  const marked: MarkedPlayers = { ally: [], enemy: [] };
+  for (const player of players) {
+    const puuid = player.puuid;
+    if (!puuid) continue;
+    if ((notes[puuid] ?? "").trim() === "") continue;
+    const label = player.gameName?.trim() || puuid.slice(0, 8);
+    (player.isAlly ? marked.ally : marked.enemy).push(label);
+  }
+  return marked;
+}
+
+function sideOf(players: readonly ScoutedPlayer[], puuids: readonly string[]): boolean | null {
+  const sides = new Set(
+    puuids.map((puuid) => players.find((p) => p.puuid === puuid)?.isAlly)
+      .filter((side): side is boolean => typeof side === "boolean"),
+  );
+  return sides.size === 1 ? [...sides][0] : null;
+}
+
+export function winrateSquad(
+  players: readonly ScoutedPlayer[],
+  premades: readonly PremadeGroup[],
+  reports: Record<string, ScoutReport>,
+): "ally" | "enemy" | null {
+  for (const group of premades) {
+    const puuids = (group.puuids ?? []).filter((p): p is string => typeof p === "string" && p !== "");
+    if (puuids.length < 5) continue;
+    const side = sideOf(players, puuids);
+    if (side === null) continue;
+    const allHidden = puuids.every((puuid) => reports[puuid]?.privateProfile === true);
+    if (allHidden) return side ? "ally" : "enemy";
+  }
+  return null;
+}
+
+--- src/components/league/shared.ts ---
+export const CDRAGON = "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1";
+export const RAW_CDRAGON = "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default";
+
+export function assetUrl(path: string | null | undefined): string {
+  if (!path) return "";
+  const clean = path.replace(/^\/lol-game-data\/assets/i, "").toLowerCase();
+  return `${RAW_CDRAGON}${clean}`;
+}
+
+export function formatGameTime(seconds: number): string {
+  const m = Math.floor(seconds / 60);
+  const s = Math.floor(seconds % 60);
+  return `${m}:${String(s).padStart(2, "0")}`;
+}
+
+export const TAG_KEYS: Record<string, string> = {
+  hot_streak: "league.tag_hot_streak", cold_streak: "league.tag_cold_streak",
+  high_winrate: "league.tag_high_winrate", low_winrate: "league.tag_low_winrate",
+  one_trick: "league.tag_one_trick", high_kda: "league.tag_high_kda",
+  low_kda: "league.tag_low_kda", flash_swap: "league.tag_flash_swap",
+  high_damage_efficiency: "league.tag_high_damage_efficiency",
+  low_damage_efficiency: "league.tag_low_damage_efficiency",
+};
+
+export const ROLES = ["TOP", "JUNGLE", "MIDDLE", "BOTTOM", "UTILITY"] as const;
+export type Role = (typeof ROLES)[number];
+
+export const GOAL_FIELDS = [
+  { key: "csPerMin", labelKey: "league.goal_cs", step: 0.1 },
+  { key: "goldPerMin", labelKey: "league.goal_gold", step: 10 },
+  { key: "kda", labelKey: "league.goal_kda", step: 0.1 },
+  { key: "visionPerMin", labelKey: "league.goal_vision", step: 0.1 },
+] as const;
+export type GoalKey = (typeof GOAL_FIELDS)[number]["key"];
+
+export type Champion = { id: number; name: string; alias: string };
+export type RankedEntry = {
+  tier?: string; division?: string; leaguePoints?: number;
+  wins?: number; losses?: number;
+};
+export type ScoutPlayer = {
+  puuid: string; gameName: string; tagLine: string;
+  championId: number; cellId: number | null; isAlly: boolean; summonerLevel?: number;
+};
+export type LobbyQueue = { id: number; name: string; shortName: string; gameMode: string };
+
+--- src/components/league/registry.ts ---
+export type FeatureState = "stable" | "beta" | "experimental" | "unavailable";
+export type Platform = "windows" | "macos" | "linux";
+
+export type Feature = {
+  id: string; labelKey: string; state: FeatureState; platforms: Platform[];
+  flag?: string; requiresClient?: boolean; requiresGame?: boolean;
+};
+
+export const LEAGUE_FEATURES: readonly Feature[] = [
+  { id: "scouting", labelKey: "league.scout_title", state: "stable", platforms: ["windows", "macos"], requiresClient: true },
+  { id: "analysis", labelKey: "league.win_title", state: "stable", platforms: ["windows", "macos"], requiresClient: true },
+  { id: "build-reference", labelKey: "league.meta_reference", state: "beta", platforms: ["windows", "macos", "linux"] },
+  { id: "tier-list", labelKey: "league.tiers_title", state: "stable", platforms: ["windows", "macos", "linux"] },
+  { id: "live-metrics", labelKey: "league.gold_title", state: "stable", platforms: ["windows", "macos"], requiresGame: true },
+  { id: "objectives", labelKey: "league.objectives_title", state: "beta", platforms: ["windows", "macos"], requiresGame: true },
+  { id: "profile-tools", labelKey: "league.profile_tools", state: "beta", platforms: ["windows", "macos"], requiresClient: true },
+  { id: "restart-ux", labelKey: "league.restart_ux", state: "stable", platforms: ["windows", "macos"], requiresClient: true },
+  { id: "auto-accept", labelKey: "league.auto_accept", state: "stable", platforms: ["windows", "macos"], flag: "auto_accept", requiresClient: true },
+  { id: "auto-pick", labelKey: "league.auto_pick", state: "stable", platforms: ["windows", "macos"], flag: "auto_pick", requiresClient: true },
+  { id: "auto-ban", labelKey: "league.auto_ban", state: "stable", platforms: ["windows", "macos"], flag: "auto_ban", requiresClient: true },
+  { id: "auto-swaps", labelKey: "league.auto_swaps", state: "experimental", platforms: ["windows", "macos"], flag: "auto_accept_swaps", requiresClient: true },
+  { id: "auto-requeue", labelKey: "league.auto_requeue", state: "experimental", platforms: ["windows", "macos"], flag: "auto_requeue", requiresClient: true },
+];
+
+export type Availability = { available: true } | { available: false; reasonKey: string };
+export type Context = { platform: Platform; clientConnected: boolean; inGame: boolean };
+
+export function availability(feature: Feature, context: Context): Availability {
+  if (!feature.platforms.includes(context.platform)) return { available: false, reasonKey: "league.unavailable_platform" };
+  if (feature.requiresClient && !context.clientConnected) return { available: false, reasonKey: "league.unavailable_client" };
+  if (feature.requiresGame && !context.inGame) return { available: false, reasonKey: "league.unavailable_game" };
+  return { available: true };
+}
+
+export function featureById(id: string): Feature | undefined {
+  return LEAGUE_FEATURES.find((feature) => feature.id === id);
+}
+
+export function needsBadge(feature: Feature): boolean {
+  return feature.state === "beta" || feature.state === "experimental";
+}
+
+--- src/components/league/GoalsTab.svelte ---
+<script lang="ts">
+  import { t } from "$lib/i18n";
+  import { GOAL_FIELDS, ROLES, type GoalKey, type Role } from "./shared";
+
+  let {
+    goalValue, setGoal, resetGoals,
+  }: {
+    goalValue: (role: Role, key: GoalKey) => number;
+    setGoal: (role: Role, key: GoalKey, value: number) => void;
+    resetGoals: (role: Role) => void;
+  } = $props();
+
+  let goalRole = $state<Role>("MIDDLE");
+</script>
+
+<section class="card">
+  <div class="card-head">
+    <h3>{$t("league.goals_title")}</h3>
+    <select class="select-role" bind:value={goalRole} aria-label={$t("league.goals_role") as string}>
+      {#each ROLES as r (r)}
+        <option value={r}>{$t(`league.role_${r.toLowerCase()}`)}</option>
+      {/each}
+    </select>
+  </div>
+  <p class="win-disclaimer">{$t("league.goals_desc")}</p>
+  <div class="goal-config">
+    {#each GOAL_FIELDS as field (field.key)}
+      <label class="goal-field">
+        <span class="goal-field-label">{$t(field.labelKey)}</span>
+        <input type="number" class="input-text" min="0" step={field.step}
+          value={goalValue(goalRole, field.key)}
+          onchange={(e) => setGoal(goalRole, field.key, Number(e.currentTarget.value))} />
+      </label>
+    {/each}
+  </div>
+  <button class="button" onclick={() => resetGoals(goalRole)}>{$t("league.goals_reset")}</button>
+</section>
+
+--- Cargo.toml (full G: version — for reference) ---
+[workspace]
+members = [".", "omniget-core", "omniget-plugin-sdk", "omniget-cli"]
+resolver = "2"
+
+[package]
+name = "omniget"
+version = "0.8.2"
+description = "A Tauri App"
+authors = ["you"]
+edition = "2021"
+
+[lib]
+name = "omniget_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = ["protocol-asset", "tray-icon"] }
+tauri-plugin-shell = "2"
+tauri-plugin-store = "2"
+tauri-plugin-dialog = "2"
+tauri-plugin-notification = "2"
+tauri-plugin-fs = "2"
+tokio = { version = "1", features = ["full"] }
+reqwest = { version = "0.12", default-features = false, features = ["json", "cookies", "stream", "http2", "gzip", "brotli", "deflate", "rustls-tls", "socks"] }
+futures = "0.3"
+async-trait = "0.1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+regex = "1"
+m3u8-rs = "6"
+aes = "0.8"
+cbc = "0.1"
+anyhow = "1"
+tracing = "0.1"
+tracing-subscriber = "0.3"
+uuid = { version = "1", features = ["v4"] }
+axum = { version = "0.8", default-features = false, features = ["http1", "json", "tokio"] }
+tower-http = { version = "0.6", features = ["cors"] }
+constant_time_eq = "0.4"
+socket2 = "0.6"
+chrono = { version = "0.4", features = ["serde"] }
+dirs = "6"
+sanitize-filename = "0.6"
+unicode-normalization = "0.1"
+tokio-util = { version = "0.7", features = ["rt"] }
+url = "2"
+urlencoding = "2"
+rand = "0.10.0"
+rusqlite = { version = "0.32", features = ["bundled"] }
+base64 = "0.22.1"
+filetime = "0.2.27"
+zip = { version = "2", default-features = false, features = ["deflate"] }
+tar = "0.4"
+xz2 = { version = "0.1", features = ["static"] }
+sha2 = "0.10"
+md-5 = "0.10"
+murmur3 = "0.5"
+hex = "0.4"
+thiserror = "1"
+hmac = "0.12"
+qrcode = { version = "0.14", default-features = false, features = ["svg"] }
+open = "5"
+omniget-core = { path = "omniget-core", features = ["desktop"] }
+omniget-plugin-sdk = { path = "omniget-plugin-sdk" }
+libloading = "0.8"
+which = "7"
+librqbit = "8.1.1"
+keepawake = "0.5"
+discord-rich-presence = "0.2"
+once_cell = "1"
+tokio-tungstenite = { version = "0.30.0", features = ["native-tls"] }
+native-tls = "0.2.18"
+fs4 = "1"
+
+[target.'cfg(windows)'.dependencies]
+webview2-com = "0.38"
+windows = { version = "0.61", features = ["Win32_System_Com", "Win32_UI_WindowsAndMessaging"] }
+
+[target.'cfg(any(target_os = "macos", windows, target_os = "linux"))'.dependencies]
+tauri-plugin-process = "2.3.1"
+tauri-plugin-updater = "2.10.0"
+tauri-plugin-global-shortcut = "2"
+tauri-plugin-clipboard-manager = "2"
+tauri-plugin-single-instance = "2"
+tauri-plugin-deep-link = "2"
+tauri-plugin-autostart = "2"
+
+[profile.dev]
+debug = 0
+codegen-units = 256
+incremental = true
+
+[profile.dev.package."*"]
+debug = false
+opt-level = 1
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+strip = true
+
+
+================================================================================
+ END OF MERGEABLE LIST
+================================================================================

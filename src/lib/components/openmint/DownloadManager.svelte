@@ -271,7 +271,7 @@
   </div>
 
   <div class="form-group">
-    <label>Content Type</label>
+    <span class="form-group-label">Content Type</span>
     <div class="segmented">
       <button type="button" class:active={contentType === 'all'} onclick={() => contentType = 'all'} disabled={downloading}>All</button>
       <button type="button" class:active={contentType === 'photos'} onclick={() => contentType = 'photos'} disabled={downloading}>Photos</button>
@@ -436,8 +436,15 @@
     font-size: 0.875rem;
   }
 
-  .form-group input,
-  .form-group select {
+  .form-group-label {
+    display: block;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    margin-bottom: 0.375rem;
+    color: var(--text-secondary);
+  }
+
+  .form-group input {
     width: 100%;
     padding: 0.625rem;
     background: var(--input-bg);
@@ -448,8 +455,7 @@
     transition: border-color 0.2s;
   }
 
-  .form-group input:focus,
-  .form-group select:focus {
+  .form-group input:focus {
     outline: none;
     border-color: var(--accent);
   }
@@ -484,8 +490,7 @@
     cursor: not-allowed;
   }
 
-  .form-group input:disabled,
-  .form-group select:disabled {
+  .form-group input:disabled {
     opacity: 0.6;
     cursor: not-allowed;
   }

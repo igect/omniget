@@ -11,6 +11,100 @@ fn managed_bin_dir() -> Option<PathBuf> {
     Some(crate::core::paths::app_data_dir()?.join("bin"))
 }
 
+/// Verificação de integridade dos binários gerenciados.
+///
+/// Regra: **fail-closed**. Se a origem publica um hash e ele não confere, ou
+/// se o hash esperado não pôde ser obtido de uma origem que sabidamente o
+/// publica, o binário é descartado.
+pub mod integrity {
+    use anyhow::anyhow;
+
+    pub fn sha256_hex(bytes: &[u8]) -> String {
+        use sha2::{Digest, Sha256};
+        let mut hasher = Sha256::new();
+        hasher.update(bytes);
+        hasher
+            .finalize()
+            .iter()
+            .map(|b| format!("{:02x}", b))
+            .collect()
+    }
+
+    fn is_sha256(candidate: &str) -> bool {
+        candidate.len() == 64 && candidate.bytes().all(|b| b.is_ascii_hexdigit())
+    }
+
+    /// Lê um arquivo estilo `sha256sum`: `<64-hex><espaços>[*]<nome>`.
+    /// Linha em branco ou malformada é pulada — não interrompe a busca.
+    pub fn parse_sha256sums(text: &str, asset: &str) -> Option<String> {
+        for line in text.lines() {
+            let mut parts = line.split_whitespace();
+            let (Some(hash), Some(name)) = (parts.next(), parts.next()) else {
+                continue;
+            };
+            let name = name.trim_start_matches('*');
+            if name == asset && is_sha256(hash) {
+                return Some(hash.to_lowercase());
+            }
+        }
+        None
+    }
+
+    /// Arquivo `.sha256sum` de asset único (o Deno publica um por asset).
+    pub fn parse_single_sha256(text: &str) -> Option<String> {
+        let first = text.split_whitespace().next()?;
+        is_sha256(first).then(|| first.to_lowercase())
+    }
+
+    /// `digest` da API de releases do GitHub, no formato `sha256:<hex>`.
+    pub fn parse_github_digest(digest: &str) -> Option<String> {
+        let hex = digest.trim().strip_prefix("sha256:")?;
+        is_sha256(hex).then(|| hex.to_lowercase())
+    }
+
+    pub fn verify_sha256(bytes: &[u8], expected: &str, label: &str) -> anyhow::Result<()> {
+        let actual = sha256_hex(bytes);
+        if actual == expected.to_lowercase() {
+            tracing::info!("[integrity] {} verificado (sha256 confere)", label);
+            return Ok(());
+        }
+        Err(anyhow!(
+            "{}: hash nao confere — esperado {}, obtido {}. Download descartado.",
+            label,
+            expected,
+            actual
+        ))
+    }
+
+    /// Busca o hash esperado num arquivo de sums remoto. `Err` quando a origem
+    /// publica sums mas não conseguimos obtê-los — o chamador deve abortar.
+    pub async fn expected_from_sums_url(
+        client: &reqwest::Client,
+        sums_url: &str,
+        asset: &str,
+    ) -> anyhow::Result<String> {
+        let response = client
+            .get(sums_url)
+            .send()
+            .await
+            .map_err(|e| anyhow!("nao foi possivel buscar {}: {}", sums_url, e))?;
+        if !response.status().is_success() {
+            return Err(anyhow!(
+                "nao foi possivel buscar {}: HTTP {}",
+                sums_url,
+                response.status()
+            ));
+        }
+        let text = response
+            .text()
+            .await
+            .map_err(|e| anyhow!("corpo ilegivel de {}: {}", sums_url, e))?;
+        parse_sha256sums(&text, asset)
+            .or_else(|| parse_single_sha256(&text))
+            .ok_or_else(|| anyhow!("{} nao esta listado em {}", asset, sums_url))
+    }
+}
+
 pub fn bin_name(tool: &str) -> String {
     if cfg!(target_os = "windows") {
         format!("{}.exe", tool)
@@ -19,8 +113,29 @@ pub fn bin_name(tool: &str) -> String {
     }
 }
 
+/// Traduz o nome interno da ferramenta para o nome que a UI e o arquivo de
+/// overrides usam. `find_tool` recebe "ffmpeg"; a tabela mostra "FFmpeg".
+fn override_name(tool: &str) -> &str {
+    match tool {
+        "ffmpeg" => "FFmpeg",
+        "yt-dlp" => "yt-dlp",
+        other => other,
+    }
+}
+
 pub async fn find_tool(tool: &str) -> Option<PathBuf> {
-    let _timer_start = std::time::Instant::now();
+    find_tool_with_source(tool).await.map(|(path, _)| path)
+}
+
+/// Like `find_tool` but also returns a source tag: "flatpak", "managed", or "system".
+/// Returns `None` if the tool is not found anywhere.
+pub async fn find_tool_with_source(tool: &str) -> Option<(PathBuf, &'static str)> {
+    // Issue #222. Antes de tudo: o caminho que o usuario escolheu. "custom" e
+    // uma origem propria para a tabela de dependencias poder mostrar de onde o
+    // binario veio, em vez de mentir "managed".
+    if let Some(custom) = crate::core::binary_overrides::get(override_name(tool)) {
+        return Some((custom, "custom"));
+    }
     let name = bin_name(tool);
     let version_flag = version_flag_for(tool);
 
@@ -28,18 +143,12 @@ pub async fn find_tool(tool: &str) -> Option<PathBuf> {
     {
         let flatpak_path = PathBuf::from("/app/bin").join(&name);
         if flatpak_path.exists() {
-            tracing::debug!(
-                "[perf] find_tool({}) took {:?}",
-                tool,
-                _timer_start.elapsed()
-            );
-            return Some(flatpak_path);
+            return Some((flatpak_path, "flatpak"));
         }
     }
 
-    // Check managed bin dir first — managed binaries are known-good.
-    let managed = managed_bin_dir().map(|d| d.join(&name));
-    if let Some(ref managed_path) = managed {
+    // Check managed bin dir
+    if let Some(managed_path) = managed_bin_dir().map(|d| d.join(&name)) {
         if managed_path.exists() {
             let check = {
                 let managed = managed_path.clone();
@@ -57,30 +166,18 @@ pub async fn find_tool(tool: &str) -> Option<PathBuf> {
                 .ok()
                 .flatten()
             };
-
             if check.is_some() {
-                tracing::debug!(
-                    "[perf] find_tool({}) took {:?}",
-                    tool,
-                    _timer_start.elapsed()
-                );
-                return Some(managed_path.clone());
+                return Some((managed_path, "managed"));
             }
-            tracing::warn!(
-                "find_tool({}): binary exists at {} but failed to execute",
-                tool,
-                managed_path.display()
-            );
         }
     }
 
-    // Fall back to system PATH. Resolve to an absolute path so callers
-    // (e.g. find_ffmpeg_location) can derive the parent directory.
+    // System PATH
     let result = {
-        let name = name.clone();
+        let name2 = name.clone();
         let vf = version_flag.to_string();
         tokio::task::spawn_blocking(move || {
-            crate::core::process::std_command(&name)
+            crate::core::process::std_command(&name2)
                 .arg(&vf)
                 .stdout(Stdio::null())
                 .stderr(Stdio::null())
@@ -95,19 +192,9 @@ pub async fn find_tool(tool: &str) -> Option<PathBuf> {
 
     if result.is_some() {
         let abs = resolve_absolute_path(&name);
-        tracing::debug!(
-            "[perf] find_tool({}) took {:?}",
-            tool,
-            _timer_start.elapsed()
-        );
-        return Some(abs);
+        return Some((abs, "system"));
     }
 
-    tracing::debug!(
-        "[perf] find_tool({}) took {:?}",
-        tool,
-        _timer_start.elapsed()
-    );
     None
 }
 
@@ -144,47 +231,43 @@ fn version_flag_for(tool: &str) -> &'static str {
     }
 }
 
-pub async fn check_version(tool: &str) -> Option<String> {
-    let _timer_start = std::time::Instant::now();
-    let path = find_tool(tool).await?;
+/// Read the version string from a tool binary at a known path.
+/// This avoids re-running tool discovery when the path is already known.
+pub async fn check_version_at_path(path: &std::path::Path, tool: &str) -> Option<String> {
     let version_flag = version_flag_for(tool);
-    let output = {
-        let path = path.clone();
-        let vf = version_flag.to_string();
-        tokio::task::spawn_blocking(move || {
-            crate::core::process::std_command(&path)
-                .arg(&vf)
-                .stdout(Stdio::piped())
-                .stderr(Stdio::piped())
-                .output()
-        })
-        .await
-        .ok()?
-        .ok()?
-    };
+    let path = path.to_path_buf();
+    let vf = version_flag.to_string();
+    let output = tokio::task::spawn_blocking(move || {
+        crate::core::process::std_command(&path)
+            .arg(&vf)
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .output()
+    })
+    .await
+    .ok()?
+    .ok()?;
 
     if !output.status.success() {
-        tracing::debug!(
-            "[perf] check_version({}) took {:?}",
-            tool,
-            _timer_start.elapsed()
-        );
         return None;
     }
 
     let stdout = String::from_utf8_lossy(&output.stdout);
     let first_line = stdout.lines().next().unwrap_or("");
 
-    let result = if tool == "ffmpeg" || tool == "ffprobe" {
+    if tool == "ffmpeg" || tool == "ffprobe" {
         first_line.split_whitespace().nth(2).map(|s| s.to_string())
-    } else if tool == "yt-dlp" {
-        Some(first_line.trim().to_string())
     } else if tool == "aria2c" {
         first_line.split_whitespace().nth(2).map(|s| s.to_string())
     } else {
         Some(first_line.trim().to_string())
-    };
+    }
+}
 
+pub async fn check_version(tool: &str) -> Option<String> {
+    let _timer_start = std::time::Instant::now();
+    let path = find_tool(tool).await?;
+    let result = check_version_at_path(&path, tool).await;
     tracing::debug!(
         "[perf] check_version({}) took {:?}",
         tool,
@@ -805,4 +888,66 @@ async fn download_aria2c() -> anyhow::Result<PathBuf> {
     }
 
     Ok(aria2c_target)
+}
+
+#[cfg(test)]
+mod integrity_tests {
+    use super::integrity::*;
+
+    const VAZIO: &str = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
+
+    #[test]
+    fn sha256_de_vetor_conhecido() {
+        assert_eq!(sha256_hex(b""), VAZIO);
+    }
+
+    #[test]
+    fn verify_sha256_recusa_binario_adulterado() {
+        assert!(verify_sha256(b"", VAZIO, "t").is_ok());
+        assert!(verify_sha256(b"", &VAZIO.to_uppercase(), "t").is_ok());
+        let erro = verify_sha256(b"binario trocado", VAZIO, "yt-dlp").unwrap_err();
+        assert!(erro.to_string().contains("yt-dlp"));
+    }
+
+    #[test]
+    fn linha_em_branco_nao_interrompe_a_busca_no_sums() {
+        // Regressao: a versao anterior usava `?` dentro do laco, entao a
+        // primeira linha vazia ou de um token so abortava a funcao inteira e o
+        // asset seguinte nunca era encontrado -> instalacao sem verificacao.
+        let sums = format!(
+            "\n\ncomentario\n{}  yt-dlp.exe\n\n{}  yt-dlp_macos\n",
+            VAZIO,
+            "1".repeat(64)
+        );
+        assert_eq!(
+            parse_sha256sums(&sums, "yt-dlp.exe").as_deref(),
+            Some(VAZIO)
+        );
+        assert_eq!(
+            parse_sha256sums(&sums, "yt-dlp_macos").as_deref(),
+            Some("1".repeat(64).as_str())
+        );
+        assert_eq!(parse_sha256sums(&sums, "ausente"), None);
+    }
+
+    #[test]
+    fn sums_aceita_marcador_binario_e_recusa_hash_invalido() {
+        let bin = format!("{} *ffmpeg.zip\n", VAZIO);
+        assert_eq!(parse_sha256sums(&bin, "ffmpeg.zip").as_deref(), Some(VAZIO));
+        assert_eq!(parse_sha256sums("abc  yt-dlp.exe\n", "yt-dlp.exe"), None);
+        assert_eq!(
+            parse_sha256sums(&format!("{}  yt-dlp.exe\n", "z".repeat(64)), "yt-dlp.exe"),
+            None
+        );
+    }
+
+    #[test]
+    fn digest_da_api_do_github() {
+        assert_eq!(
+            parse_github_digest(&format!("sha256:{}", VAZIO)).as_deref(),
+            Some(VAZIO)
+        );
+        assert_eq!(parse_github_digest(VAZIO), None);
+        assert_eq!(parse_github_digest("sha512:abc"), None);
+    }
 }

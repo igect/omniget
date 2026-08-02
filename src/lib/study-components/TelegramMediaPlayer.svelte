@@ -31,6 +31,7 @@
   let flipRoot: HTMLElement | null = $state(null);
   let flipPlayed = $state(false);
 
+  // svelte-ignore state_referenced_locally
   let idx = $state(initialIdx);
   let streamUrl = $state("");
   let loading = $state(false);
@@ -173,6 +174,10 @@
       setSpeed(el.playbackRate);
     }
   }
+
+  $effect(() => {
+    idx = initialIdx;
+  });
 
   $effect(() => {
     void rebuildUrl();

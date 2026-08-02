@@ -11,6 +11,7 @@
 
   let { nextLessonId, nextLessonTitle, courseId: _courseId, durationMs = 5000, onCancel, onGo }: Props = $props();
 
+  // svelte-ignore state_referenced_locally
   let remaining = $state(Math.ceil(durationMs / 1000));
   let cancelled = $state(false);
   let timer: number | null = null;

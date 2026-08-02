@@ -2,8 +2,8 @@ import { describe, it, expect } from "vitest";
 import { CORE_NAV_ITEMS } from "./nav-config";
 
 describe("CORE_NAV_ITEMS", () => {
-  it("has the expected 5 core entries", () => {
-    expect(CORE_NAV_ITEMS).toHaveLength(5);
+  it("has the expected 6 core entries", () => {
+    expect(CORE_NAV_ITEMS).toHaveLength(6);
   });
 
   it("Home is first in primary group", () => {
@@ -17,10 +17,10 @@ describe("CORE_NAV_ITEMS", () => {
     expect(downloads?.badge).toBe("downloads");
   });
 
-  it("About is in the secondary group and sorted last", () => {
+  it("About is in the app group and sorted last", () => {
     const about = CORE_NAV_ITEMS.find((i) => i.href === "/about");
-    expect(about?.group).toBe("secondary");
-    expect(about?.order).toBe(999);
+    expect(about?.group).toBe("app");
+    expect(about?.order).toBe(50);
   });
 
   it("order is strictly increasing among primary items", () => {
