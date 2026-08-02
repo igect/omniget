@@ -1405,11 +1405,11 @@
   "about": {
     "tab": {
       "overview": "Overview",
-      "terms": "términos",
-      "project": "proyecto",
-      "roadmap": "roadmap",
-      "changelog": "changelog",
-      "debug": "info de depuración"
+      "terms": "Términos",
+      "project": "Proyecto",
+      "roadmap": "Roadmap",
+      "changelog": "Changelog",
+      "debug": "Info de depuración"
     },
     "debug": {
       "title": "Info de depuración",
@@ -1457,7 +1457,7 @@
     "roadmap_community_discord": "habla con nosotros en discord:",
     "roadmap_community_issue": "o abre un issue en el repositorio:",
     "tagline": "Descarga lo que sea, desde donde sea.",
-    "credit": "Hecho con cariño por tonho.wtf"
+    "credit": "Hecho con cariño por igect"
   },
   "marketplace": {
     "title": "Marketplace",

@@ -6,7 +6,7 @@ resolver = "2"
 name = "omniget"
 version = "0.8.5"
 description = "A Tauri App"
-authors = ["you"]
+authors = ["igect"]
 edition = "2021"
 
 [lib]

@@ -41,6 +41,10 @@
   {:else if icon === "about"}
     <circle cx="12" cy="12" r="10" />
     <path d="M12 16v-4m0-4h.01" />
+  {:else if icon === "open_omni"}
+    <rect x="4" y="4" width="16" height="16" rx="4" />
+    <circle cx="12" cy="12" r="3" />
+    <circle cx="16.5" cy="7.5" r=".5" fill="currentColor" />
   {:else}
     <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
   {/if}

@@ -1008,6 +1008,15 @@ pub fn run() {
             commands::app_lifecycle::force_exit_app,
             commands::app_lifecycle::get_debug_info,
             commands::app_lifecycle::get_portable_info,
+            commands::open_omni::open_omni_check_python_dependencies,
+            commands::open_omni::open_omni_run_gallery_dl_download,
+            commands::open_omni::open_omni_cancel_download,
+            commands::open_omni::open_omni_save_app_settings,
+            commands::open_omni::open_omni_load_app_settings,
+            commands::open_omni::open_omni_load_profiles,
+            commands::open_omni::open_omni_save_profile,
+            commands::open_omni::open_omni_delete_profile,
+            commands::open_omni::open_omni_setup_folders,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")

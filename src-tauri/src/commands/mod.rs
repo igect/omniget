@@ -24,6 +24,7 @@ pub mod subtitle_ws;
 pub mod torrent_playback;
 pub mod video_ops;
 pub mod yt_templates;
+pub mod open_omni;
 
 #[cfg(not(target_os = "android"))]
 pub mod dependencies;

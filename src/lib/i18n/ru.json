@@ -1404,11 +1404,11 @@
   },
   "about": {
     "tab": {
-      "terms": "условия",
-      "project": "проект",
-      "roadmap": "план",
-      "changelog": "история изменений",
-      "debug": "отладочная информация",
+      "terms": "Условия",
+      "project": "Проект",
+      "roadmap": "План",
+      "changelog": "Changelog",
+      "debug": "Отладочная информация",
       "overview": "Overview"
     },
     "debug": {
@@ -1451,7 +1451,7 @@
     "roadmap_community_discord": "свяжитесь с нами в Discord:",
     "roadmap_community_issue": "или откройте задачу в репозитории:",
     "tagline": "Скачивайте что угодно, откуда угодно.",
-    "credit": "Сделано с любовью tonho.wtf",
+    "credit": "Сделано с любовью igect",
     "card_changelog_title": "What's new",
     "card_changelog_desc": "Release notes for every version.",
     "card_project_title": "The project",

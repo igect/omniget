@@ -1405,11 +1405,11 @@
   "about": {
     "tab": {
       "overview": "Overview",
-      "terms": "όροι",
-      "project": "σχέδιο",
-      "roadmap": "πλάνο",
-      "changelog": "αρχείο καταγραφής",
-      "debug": "πληροφορίες debug"
+      "terms": "Όροι",
+      "project": "Σχέδιο",
+      "roadmap": "Πλάνο",
+      "changelog": "Changelog",
+      "debug": "Πληροφορίες Debug"
     },
     "debug": {
       "title": "Πληροφορίες Debug",
@@ -1457,7 +1457,7 @@
     "roadmap_community_discord": "βρείτε μας στο discord:",
     "roadmap_community_issue": "ή ανοίξτε ένα θέμα (issue) στο αποθετήριο:",
     "tagline": "Κατεβάστε οτιδήποτε, από οπουδήποτε.",
-    "credit": "Φτιαγμένο με αγάπη από tonho.wtf"
+    "credit": "Φτιαγμένο με αγάπη από igect"
   },
   "marketplace": {
     "title": "Marketplace",
