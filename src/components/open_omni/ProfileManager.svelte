@@ -172,21 +172,25 @@
 {/if}
 
 <style>
+  /* Centered column, same width budget as DownloadManager so tabs
+     don't visibly jump width when switching. */
   .profile-manager {
-    padding: var(--padding);
-    max-width: 600px;
+    padding: 0;
+    max-width: 460px;
     width: 100%;
+    margin: 0 auto;
   }
 
   .pill-group {
     display: flex;
     flex-wrap: wrap;
-    gap: 6px;
-    margin-bottom: 14px;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 20px;
   }
 
   .pill-group button {
-    padding: 6px 14px;
+    padding: 7px 16px;
     border-radius: 16px;
     border: 1px solid var(--input-border);
     background: var(--button-elevated);
@@ -209,22 +213,23 @@
 
   .error-message {
     padding: 10px 14px;
-    margin-bottom: var(--padding);
+    margin-bottom: 20px;
     background: var(--error);
     color: var(--on-error);
     border-radius: var(--border-radius);
     font-size: 13px;
+    text-align: center;
   }
 
   .field-card {
     background: var(--bg);
     border: 1px solid var(--input-border);
-    border-radius: 8px;
-    padding: 12px 14px;
+    border-radius: 10px;
+    padding: 16px 18px;
   }
 
   .add-profile-card {
-    margin-bottom: 14px;
+    margin-bottom: 20px;
   }
 
   .input-with-button {
@@ -234,10 +239,10 @@
 
   .input-with-button input {
     flex: 1;
-    padding: 8px 12px;
+    padding: 10px 14px;
     background: var(--input-bg);
     border: 1px solid var(--input-border);
-    border-radius: 6px;
+    border-radius: 8px;
     color: var(--text);
     font-size: 14px;
     box-sizing: border-box;
@@ -249,7 +254,7 @@
   }
 
   .add-btn {
-    padding: 6px 14px;
+    padding: 6px 16px;
     border-radius: 16px;
     border: none;
     background: var(--accent);
@@ -275,29 +280,29 @@
     margin: 0;
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 8px;
   }
 
   .profile-item {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 8px 12px;
+    padding: 10px 14px;
     background: var(--bg);
     border: 1px solid var(--input-border);
-    border-radius: 8px;
+    border-radius: 10px;
   }
 
   .profile-info {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
     min-width: 0;
   }
 
   .avatar {
-    width: 34px;
-    height: 34px;
+    width: 36px;
+    height: 36px;
     border-radius: 50%;
     background: var(--accent);
     color: var(--on-accent);
@@ -322,14 +327,14 @@
   .profile-url {
     font-size: 11.5px;
     color: var(--text-secondary);
-    margin: 2px 0 0;
+    margin: 3px 0 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
 
   .delete-btn {
-    padding: 4px 10px;
+    padding: 5px 12px;
     border-radius: 12px;
     border: 1px solid var(--error);
     background: transparent;
@@ -347,7 +352,7 @@
   .loading, .empty {
     text-align: center;
     color: var(--text-secondary);
-    padding: 24px 0;
+    padding: 28px 0;
     font-size: 13px;
     margin: 0;
   }
@@ -366,7 +371,7 @@
     background: var(--popup-bg, var(--button-elevated));
     border: 1px solid var(--content-border);
     border-radius: var(--border-radius);
-    padding: 20px;
+    padding: 22px;
     max-width: 380px;
     width: 90%;
     text-align: center;
@@ -384,7 +389,7 @@
     word-break: break-all;
     font-size: 12.5px;
     color: var(--text-secondary);
-    margin: 0 0 16px;
+    margin: 0 0 18px;
   }
 
   .confirm-actions {
@@ -395,7 +400,7 @@
 
   .confirm-actions button {
     flex: 1;
-    padding: 8px 12px;
+    padding: 9px 12px;
     border-radius: 16px;
     font-weight: 500;
     font-size: 13px;

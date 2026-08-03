@@ -96,6 +96,43 @@ fn detect_platform_name(url: &str) -> &'static str {
     else { "Other" }
 }
 
+/// SECURITY: strips any character that isn't safe inside a single path
+/// segment, and collapses ".." sequences so a crafted/malformed URL can
+/// never make the extracted "username" walk outside the intended
+/// output directory (path traversal). This is the ONLY place raw,
+/// user-influenced text becomes part of a filesystem path in this
+/// module, so sanitizing here closes the issue everywhere it's used.
+fn sanitize_path_component(input: &str) -> String {
+    let mut cleaned: String = input
+        .chars()
+        .map(|c| {
+            if c.is_ascii_alphanumeric() || c == '_' || c == '-' || c == '.' {
+                c
+            } else {
+                '_'
+            }
+        })
+        .collect();
+
+    // Leading dots/dashes and any ".." run are how traversal or hidden
+    // files sneak in even after the character filter above.
+    while cleaned.starts_with('.') || cleaned.starts_with('-') {
+        cleaned.remove(0);
+    }
+    while cleaned.contains("..") {
+        cleaned = cleaned.replace("..", "_");
+    }
+
+    cleaned = cleaned.trim_matches('_').to_string();
+
+    if cleaned.is_empty() {
+        return "unknown_user".to_string();
+    }
+
+    // Cap length so we never hit filesystem path-length limits.
+    cleaned.chars().take(120).collect()
+}
+
 fn extract_username_generic(url: &str) -> Option<String> {
     let trimmed = url.trim().trim_end_matches('/');
     if trimmed.is_empty() {
@@ -118,7 +155,9 @@ fn extract_username_generic(url: &str) -> Option<String> {
         return None;
     }
 
-    Some(cleaned.to_string())
+    // SECURITY: sanitize before this value ever gets used to build a
+    // filesystem path (see run_single_content_download).
+    Some(sanitize_path_component(cleaned))
 }
 
 fn canonicalize_profile_url(platform: &str, raw_input: &str) -> String {
@@ -265,6 +304,8 @@ fn run_single_content_download(
         ));
     }
 
+    // SECURITY: already sanitized inside extract_username_generic, so
+    // this can never contain path separators or ".." sequences.
     let username = extract_username_generic(url).unwrap_or_else(|| "unknown_user".to_string());
 
     let media_type_name = match content_type {

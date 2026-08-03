@@ -46,38 +46,45 @@
 </div>
 
 <style>
+  /* Whole page is centered as a column, capped width, generous
+     top/bottom breathing room instead of hugging the left edge. */
   .open-omni-page {
-    padding: var(--padding);
-    max-width: 900px;
+    padding: var(--padding) var(--padding) 3rem;
+    max-width: 720px;
     margin: 0 auto;
     width: 100%;
     box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
   }
 
   .page-header {
-    margin-bottom: 1.5rem;
+    margin: 1rem 0 2rem;
+    text-align: center;
   }
 
   .page-header h1 {
-    font-size: 22px;
+    font-size: 24px;
     margin: 0;
     font-weight: 500;
     color: var(--text);
+    letter-spacing: -0.01em;
   }
 
   .subtitle {
     color: var(--text-secondary);
-    margin: 4px 0 0;
-    font-size: 13.5px;
+    margin: 6px 0 0;
+    font-size: 14px;
   }
 
   .tab-switcher {
     display: inline-flex;
     gap: 4px;
     background: var(--button-elevated);
-    border-radius: var(--border-radius);
-    padding: 4px;
-    margin-bottom: 1.5rem;
+    border-radius: 999px;
+    padding: 5px;
+    margin-bottom: 2rem;
     border: 1px solid var(--content-border);
   }
 
@@ -85,9 +92,9 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    padding: 6px 16px;
+    padding: 8px 20px;
     border: none;
-    border-radius: 8px;
+    border-radius: 999px;
     background: transparent;
     color: var(--text-secondary);
     font-size: 13.5px;
@@ -109,7 +116,11 @@
   .content {
     background: var(--button-elevated);
     border: 1px solid var(--content-border);
-    border-radius: var(--border-radius);
-    padding: var(--padding);
+    border-radius: 16px;
+    padding: 2rem;
+    width: 100%;
+    box-sizing: border-box;
+    display: flex;
+    justify-content: center;
   }
 </style>

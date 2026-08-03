@@ -55,7 +55,7 @@
   {/if}
 
   <div class="field-card">
-    <label for="output-dir">Output Directory</label>
+    <label for="output-dir">Output directory</label>
     <div class="input-with-button">
       <input id="output-dir" type="text" bind:value={outputDir} placeholder="E:\OmniGet" />
       <button type="button" class="browse-btn" onclick={browseOutputDir}>
@@ -65,7 +65,7 @@
   </div>
 
   <div class="field-card">
-    <label for="cookies-file">Cookies File <span class="optional-tag">(optional, needed for Stories and Highlights)</span></label>
+    <label for="cookies-file">Cookies file <span class="optional-tag">(optional, needed for Stories and Highlights)</span></label>
     <div class="input-with-button">
       <input id="cookies-file" type="text" bind:value={cookiesFile} placeholder="instagram.com_cookies.txt" />
       <button type="button" class="browse-btn" onclick={browseCookiesFile}>
@@ -75,22 +75,25 @@
   </div>
 
   <button type="button" class="primary-btn" onclick={handleSave} disabled={saving}>
-    {saving ? 'Saving…' : 'Save Settings'}
+    {saving ? 'Saving…' : 'Save settings'}
   </button>
 </div>
 
 <style>
+  /* Centered column, same width budget as the other tabs. */
   .settings-manager {
-    padding: var(--padding);
-    max-width: 600px;
+    padding: 0;
+    max-width: 460px;
     width: 100%;
+    margin: 0 auto;
   }
 
   .status-alert {
     padding: 10px 14px;
-    margin-bottom: var(--padding);
+    margin-bottom: 20px;
     border-radius: var(--border-radius);
     font-size: 13px;
+    text-align: center;
   }
 
   .status-alert.success {
@@ -106,9 +109,9 @@
   .field-card {
     background: var(--bg);
     border: 1px solid var(--input-border);
-    border-radius: 8px;
-    padding: 12px 14px;
-    margin-bottom: 14px;
+    border-radius: 10px;
+    padding: 16px 18px;
+    margin-bottom: 20px;
   }
 
   .field-card label {
@@ -116,7 +119,8 @@
     font-size: 13px;
     font-weight: 500;
     color: var(--text);
-    margin-bottom: 6px;
+    margin-bottom: 8px;
+    text-align: center;
   }
 
   .optional-tag {
@@ -131,10 +135,10 @@
 
   .input-with-button input {
     flex: 1;
-    padding: 8px 12px;
+    padding: 10px 14px;
     background: var(--input-bg);
     border: 1px solid var(--input-border);
-    border-radius: 6px;
+    border-radius: 8px;
     color: var(--text);
     font-size: 14px;
     box-sizing: border-box;
@@ -146,7 +150,7 @@
   }
 
   .browse-btn {
-    padding: 6px 14px;
+    padding: 6px 16px;
     border-radius: 16px;
     border: 1px solid var(--input-border);
     background: var(--button-elevated);
@@ -162,7 +166,7 @@
 
   .primary-btn {
     width: 100%;
-    padding: 10px;
+    padding: 12px;
     border: none;
     border-radius: var(--border-radius);
     font-weight: 500;

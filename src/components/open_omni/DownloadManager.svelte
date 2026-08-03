@@ -107,17 +107,18 @@
   }
 
   async function checkDeps() {
+    // Only surface this banner when a dependency is actually missing.
+    // When everything is installed, leave depsStatus empty so nothing
+    // is ever shown to the user — no "All dependencies OK" flash.
     try {
-      depsStatus = await checkPythonDependencies();
-      if (depsStatus.includes('OK')) {
-        setTimeout(() => {
-          if (depsStatus.includes('OK')) {
-            depsStatus = '';
-          }
-        }, 3000);
+      const result = await checkPythonDependencies();
+      if (!result.includes('OK')) {
+        depsStatus = result;
+      } else {
+        depsStatus = '';
       }
     } catch (error) {
-      depsStatus = `Error: ${error}`;
+      depsStatus = `Missing dependency: ${error}`;
     }
   }
 
@@ -205,7 +206,7 @@
   {/if}
 
   <div class="field-card">
-    <label for="profile-url">Profile URL or Handle</label>
+    <label for="profile-url">Profile URL or handle</label>
     <input
       id="profile-url"
       type="text"
@@ -215,7 +216,6 @@
       oninput={clearSelectedProfile}
     />
     {#if !url.trim() && savedProfiles.length > 0}
-      <p class="hint-label">Or pick a saved profile</p>
       <div class="chip-list">
         {#each savedProfiles as profile, index}
           <button
@@ -241,7 +241,7 @@
   </div>
 
   <div class="segment-block">
-    <span class="segment-label">Content Type</span>
+    <span class="segment-label">Content type</span>
     <div class="pill-group">
       <button type="button" class:active={contentType === 'all'} onclick={() => contentType = 'all'} disabled={downloading}>All</button>
       <button type="button" class:active={contentType === 'photos'} onclick={() => contentType = 'photos'} disabled={downloading}>Photos</button>
@@ -270,14 +270,14 @@
 
   <div class="button-group">
     {#if downloading}
-      <button class="primary-btn stop-btn" onclick={handleStop}>Stop Download</button>
+      <button class="primary-btn stop-btn" onclick={handleStop}>Stop download</button>
     {:else}
       <button
         class="primary-btn"
         onclick={startDownload}
         disabled={!getDownloadUrl() || missingOutputDir || needsCookiesWarning || platformMismatch}
       >
-        Start Download
+        Start download
       </button>
     {/if}
   </div>
@@ -314,18 +314,24 @@
 </div>
 
 <style>
+  /* Centered column instead of left-hugging the container. */
   .download-manager {
-    padding: var(--padding);
-    max-width: 600px;
+    padding: 0;
+    max-width: 460px;
     width: 100%;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
   }
 
   .deps-check {
     padding: 10px 14px;
-    margin-bottom: var(--padding);
+    margin-bottom: 1.25rem;
     border-radius: var(--border-radius);
     font-size: 13px;
     font-weight: 500;
+    text-align: center;
   }
 
   .deps-check.ok {
@@ -341,7 +347,7 @@
 
   .status-alert {
     padding: 10px 14px;
-    margin-bottom: var(--padding);
+    margin-bottom: 1.25rem;
     border-radius: var(--border-radius);
     display: flex;
     justify-content: space-between;
@@ -374,9 +380,9 @@
   .field-card {
     background: var(--bg);
     border: 1px solid var(--input-border);
-    border-radius: 8px;
-    padding: 12px 14px;
-    margin-bottom: 14px;
+    border-radius: 10px;
+    padding: 16px 18px;
+    margin-bottom: 20px;
   }
 
   .field-card label {
@@ -384,18 +390,20 @@
     font-size: 13px;
     font-weight: 500;
     color: var(--text);
-    margin-bottom: 6px;
+    margin-bottom: 8px;
+    text-align: center;
   }
 
   .field-card input {
     width: 100%;
-    padding: 8px 12px;
+    padding: 10px 14px;
     background: var(--input-bg);
     border: 1px solid var(--input-border);
-    border-radius: 6px;
+    border-radius: 8px;
     color: var(--text);
     font-size: 14px;
     box-sizing: border-box;
+    text-align: center;
   }
 
   .field-card input:focus-visible {
@@ -408,17 +416,12 @@
     cursor: not-allowed;
   }
 
-  .hint-label {
-    font-size: 12.5px;
-    color: var(--text-secondary);
-    margin: 10px 0 6px;
-  }
-
   .hint-muted {
     font-size: 12.5px;
     color: var(--text-secondary);
     font-style: italic;
-    margin: 10px 0 0;
+    margin: 14px 0 0;
+    text-align: center;
   }
 
   .inline-link {
@@ -439,14 +442,16 @@
   .chip-list {
     display: flex;
     flex-wrap: wrap;
-    gap: 6px;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 14px;
   }
 
   .chip {
     display: flex;
     align-items: center;
     gap: 6px;
-    padding: 4px 12px;
+    padding: 5px 14px;
     border-radius: 16px;
     border: 1px solid var(--input-border);
     background: var(--button-elevated);
@@ -476,7 +481,8 @@
   }
 
   .segment-block {
-    margin-bottom: 6px;
+    margin-bottom: 20px;
+    text-align: center;
   }
 
   .segment-label {
@@ -484,17 +490,18 @@
     font-size: 13px;
     font-weight: 500;
     color: var(--text);
-    margin-bottom: 8px;
+    margin-bottom: 10px;
   }
 
   .pill-group {
     display: flex;
     flex-wrap: wrap;
-    gap: 6px;
+    justify-content: center;
+    gap: 8px;
   }
 
   .pill-group button {
-    padding: 6px 14px;
+    padding: 7px 16px;
     border-radius: 16px;
     border: 1px solid var(--input-border);
     background: var(--button-elevated);
@@ -522,16 +529,17 @@
   .field-warning {
     font-size: 12px;
     color: var(--error);
-    margin: 6px 0 0;
+    margin: 8px 0 0;
+    text-align: center;
   }
 
   .button-group {
-    margin: 16px 0 4px;
+    margin: 20px 0 4px;
   }
 
   .primary-btn {
     width: 100%;
-    padding: 10px;
+    padding: 12px;
     border: none;
     border-radius: var(--border-radius);
     font-weight: 500;
@@ -559,7 +567,7 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 14px 0 6px;
+    padding: 22px 0 6px;
   }
 
   .om-ring-track {
@@ -604,7 +612,7 @@
     font-size: 13px;
     font-weight: 500;
     color: var(--text);
-    margin: 8px 0 2px;
+    margin: 10px 0 2px;
     text-align: center;
   }
 
