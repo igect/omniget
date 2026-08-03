@@ -771,6 +771,7 @@ export type TranslationKeys =
   | 'nav.expand_plugins'
   | 'nav.home'
   | 'nav.marketplace'
+  | 'nav.open_omni'
   | 'nav.section_app'
   | 'nav.section_plugins'
   | 'nav.section_primary'
